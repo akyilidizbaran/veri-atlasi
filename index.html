@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sınav Kampı — Bilişim Sınavına Hazırlık</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=20260614-academic-1">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%23f8f5ed'/><path d='M28 68V32h19c13 0 24 8 24 18S60 68 47 68H28zm13-11h6c7 0 12-3 12-7s-5-7-12-7h-6v14z' fill='%23846b3b'/></svg>">
+</head>
+<body>
+<header class="topbar">
+  <button id="menuBtn" class="icon-btn" aria-label="Menü" title="Menü">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+  </button>
+  <a class="brand" href="#/"><span class="brand-mark">SK</span><span class="brand-text">Sınav Kampı</span></a>
+  <div class="search-wrap">
+    <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+    <input id="search" type="text" placeholder="Konu ara…" autocomplete="off" spellcheck="false">
+    <kbd class="search-kbd">/</kbd>
+    <div id="searchResults" class="search-results"></div>
+  </div>
+  <button id="themeBtn" class="icon-btn" aria-label="Tema değiştir" title="Tema değiştir"></button>
+</header>
+
+<div class="layout">
+  <nav id="sidebar" class="sidebar"></nav>
+  <div id="overlay" class="overlay"></div>
+  <main id="main" class="main"></main>
+</div>
+
+<script src="content/_modules.js?v=20260614-academic-1"></script>
+<script src="content/bilisim.js?v=20260614-academic-1"></script>
+<script src="content/isletim.js?v=20260614-academic-1"></script>
+<script src="content/sql-1.js?v=20260614-academic-1"></script>
+<script src="content/sql-2.js?v=20260614-academic-1"></script>
+<script src="content/csharp-1.js?v=20260614-academic-1"></script>
+<script src="content/csharp-2.js?v=20260614-academic-1"></script>
+<script src="vendor/gsap.min.js?v=3.12.5"></script>
+<script src="vendor/ScrollTrigger.min.js?v=3.12.5"></script>
+<script src="js/app.js?v=20260614-academic-1"></script>
+</body>
+</html>
