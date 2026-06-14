@@ -2,9 +2,9 @@
 
 ## 0) TL;DR (En güncel durum)
 
-* Şu an ne yapıyoruz? İçerik kapsamı genişletildi; konu sayfası scroll animasyonu için küçük okunurluk düzeltmesi yapıldı.
-* Son değişiklik neydi? Quiz kartlarının GSAP ScrollTrigger ayarı `start: 'top 94%'` ve `toggleActions: 'play none none none'` olacak şekilde değişti; hafif yukarı kaydırmada sorular artık kaybolmuyor.
-* Bir sonraki net adım ne? Kalan konulara aynı pekiştirme yapısıyla ek soru ve derin not eklenebilir.
+* Şu an ne yapıyoruz? Her konu başlığında en az 12 soru olacak şekilde soru kapsamı genişletildi.
+* Son değişiklik neydi? `content/question-packs.js` eklendi; mevcut soru sayısını hesaplayıp 12'nin altında kalan konulara tamamlayıcı kavram/senaryo/çeldirici soruları ekliyor.
+* Bir sonraki net adım ne? Kullanıcı geri bildirimiyle belirli konuların soru kalitesi, zorluk seviyesi veya konu anlatımı derinliği artırılabilir.
 
 ## 1) Proje Amacı ve Kapsam
 
@@ -26,9 +26,10 @@
   * `content/_modules.js`: modül metadata listesi ve `window.SINAV.register` kayıt sistemi.
   * `content/bilisim.js`, `content/isletim.js`, `content/sql-1.js`, `content/sql-2.js`, `content/csharp-1.js`, `content/csharp-2.js`: konu içerikleri.
   * `content/enrichments.js`: kritik konular için ek derinleştirme, çeldirici ve yeni quiz soruları.
+  * `content/question-packs.js`: her konu toplamını 12 soruya tamamlayan konu profili tabanlı soru paketleri.
   * `js/app.js`: route, render, sidebar, arama, tema, kod renklendirme, kopyalama ve quiz etkileşimi.
   * `css/style.css`: koyu/açık tema, layout, sidebar, kartlar, konu içeriği, kod blokları, quiz ve responsive stiller.
-* Veri akışı: `content/_modules.js` `window.SINAV` objesini kurar; diğer içerik dosyaları konuları register eder; `content/enrichments.js` ek pekiştirme paketlerini kaydeder; `js/app.js` hash route'a göre DOM'u üretir.
+* Veri akışı: `content/_modules.js` `window.SINAV` objesini kurar; diğer içerik dosyaları konuları register eder; `content/enrichments.js` ek pekiştirme paketlerini kaydeder; `content/question-packs.js` 12 soru hedefini tamamlar; `js/app.js` hash route'a göre DOM'u üretir.
 * Önemli dizinler/modüller:
   * `content/`: eğitim içeriği ve konu sırası.
   * `js/app.js`: davranış ve render kuralları.
@@ -60,6 +61,7 @@
 * 2026-06-14 — Karar: GitHub README Türkçe ve local çalıştırma odaklı yazıldı. | Gerekçe: Kullanıcı GitHub’da local ayağa kaldırma için gerekli README istedi. | Etki: `README.md` içinde `python3 -m http.server 4173 --bind 127.0.0.1` komutu, proje yapısı ve Pages private repo notu yer alıyor. | Alternatifler: Daha kısa sadece komut odaklı README.
 * 2026-06-14 — Karar: Ek anlatım ve yeni sorular ayrı `content/enrichments.js` dosyasında tutulacak. | Gerekçe: Mevcut uzun konu dosyalarını bozmadan kapsam artırmak, tasarım/okunurluğu korumak ve ileride konu bazlı eklemeyi kolaylaştırmak. | Etki: `content/_modules.js` içine `enrichments`/`enrich()` eklendi; `js/app.js` konu sonunda `Sınav Pekiştirme` bloğu render ediyor ve arama indeksine ek içerikleri dahil ediyor. | Alternatifler: Her konu dosyasını doğrudan büyütmek.
 * 2026-06-14 — Karar: Quiz/kart scroll animasyonları geri kaydırmada tersine dönmeyecek. | Gerekçe: `bo-02-yazilim-turleri` sayfasında sorular hafif yukarı kaydırınca kayboluyordu. | Etki: `js/app.js` içindeki `enhanceMotion()` fade ScrollTrigger başlangıcı daha aşağı alındı ve reverse kaldırıldı. | Alternatifler: GSAP fade animasyonunu tamamen kaldırmak.
+* 2026-06-14 — Karar: Her konu için minimum 12 soru hedefi `content/question-packs.js` ile uygulanacak. | Gerekçe: Kullanıcı her konu alt başlığında 12 soru istedi; daha fazla olan varsa korunacak. | Etki: 47 konunun tamamı 12 soruya tamamlandı; mevcut sorular korunuyor, ek paketler sadece eksik kalan sayıyı dolduruyor. | Alternatifler: Her içerik dosyasını manuel olarak büyütmek.
 
 ## 7) Milestones / Dönüm Noktaları (append-only)
 
@@ -70,6 +72,7 @@
 * 2026-06-14 — Milestone: GitHub README eklendi. | Sonuç: Local çalıştırma ve proje yapısı GitHub giriş sayfasında belgelenebilir hale geldi.
 * 2026-06-14 — Milestone: İlk kapsam genişletme turu tamamlandı. | Sonuç: 16 kritik konuya toplam 48 yeni pekiştirme sorusu ve derinleştirme notu eklendi; JOIN konu ekranı, ana sayaç ve arama Puppeteer ile doğrulandı.
 * 2026-06-14 — Milestone: Quiz scroll kaybolma davranışı düzeltildi. | Sonuç: `bo-02-yazilim-turleri` sayfasında Puppeteer ile hafif yukarı kaydırma testi yapıldı; quiz kartları görünür kaldı.
+* 2026-06-14 — Milestone: Tüm konular 12 soru hedefine tamamlandı. | Sonuç: 47 konu için sayım yapıldı; 12'nin altında konu kalmadı, toplam soru sayısı 564 oldu.
 
 ## 8) Yapılanlar
 
@@ -92,12 +95,13 @@
 * [x] `content/enrichments.js` ile 16 kritik konuya ek anlatım ve 48 yeni soru eklendi.
 * [x] Ek pekiştirme soruları ana sayaçta ve arama indeksinde görünür hale getirildi.
 * [x] Quiz kartlarının hafif yukarı kaydırmada kaybolmasına neden olan reverse animasyon düzeltildi.
+* [x] `content/question-packs.js` ile 47 konunun tamamı en az 12 soruya tamamlandı.
 
 ## 9) Yapılacaklar (Next)
 
 * [ ] Kullanıcı geri bildirimine göre akademik tema yoğunluğu, tipografi ölçeği veya renk sıcaklığı revizyonu yap.
 * [ ] Site yayını için bir seçenek seç: repo public + GitHub Pages, Pages destekleyen GitHub planı veya alternatif statik hosting.
-* [ ] Kalan konulara `content/enrichments.js` yapısıyla ek teorik alanlar ve açıklamalı sorular ekle.
+* [ ] Belirli konularda kullanıcı geri bildirimine göre daha zorlayıcı kod/sorgu okuma soruları ekle.
 * [ ] Gerekirse arama sonuç metinlerini daha ayrık okunacak şekilde iyileştir.
 
 ## 10) Bilinen Sorunlar / Teknik Borç / Riskler
@@ -116,6 +120,7 @@
 * GSAP ve ScrollTrigger yerel `vendor/` klasöründen yükleniyor; CDN bağımlılığı yok.
 * Eski tarayıcıda `sinav-theme` anahtarı koyu tema olarak kalmış olabilir; yeni akademik tema `sinav-theme-academic` anahtarıyla ayrıldı.
 * Ek pekiştirme paketlerinde soru metni/data `js/app.js` içinde `esc()` ile basılıyor; HTML enjeksiyonu yapılmıyor.
+* `content/question-packs.js` mevcut soru sayısını runtime'da hesaplar; 12'nin altındaysa ekler, 12 veya üzerindeyse dokunmaz.
 
 ### Güncelleme Kaydı
 

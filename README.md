@@ -46,7 +46,9 @@ http://127.0.0.1:5173/
 │   ├── sql-1.js
 │   ├── sql-2.js
 │   ├── csharp-1.js
-│   └── csharp-2.js
+│   ├── csharp-2.js
+│   ├── enrichments.js      # Kritik konular icin ek pekistirme bloklari
+│   └── question-packs.js   # Her konu icin 12 soru hedefini tamamlayan paketler
 └── vendor/
     ├── gsap.min.js
     └── ScrollTrigger.min.js
@@ -62,6 +64,7 @@ http://127.0.0.1:5173/
 - Kod kopyalama butonu
 - İnteraktif quiz kartları
 - Kritik konularda ek sınav pekiştirme blokları
+- Her konu başlığında en az 12 soru hedefi
 - Mobil menü ve responsive yerleşim
 - Yerel GSAP/ScrollTrigger dosyalarıyla bağımsız animasyonlar
 
@@ -74,7 +77,7 @@ http://127.0.0.1:5173/
 
 Konu içerikleri `content/*.js` dosyalarında `window.SINAV.register([...])` yapısıyla kaydolur.
 
-Ek derinleştirme notları ve yeni soru çeşitleri `content/enrichments.js` dosyasında tutulur. Bu yapı ana konu metinlerini bozmadan kritik konulara ek pratik eklemeyi sağlar.
+Ek derinleştirme notları ve yeni soru çeşitleri `content/enrichments.js` dosyasında tutulur. `content/question-packs.js`, mevcut soru sayısını hesaplayıp 12'nin altında kalan konulara tamamlayıcı sorular ekler. Bu yapı ana konu metinlerini bozmadan kritik konulara ek pratik eklemeyi sağlar.
 
 ## Geliştirme Notları
 
