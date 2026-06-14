@@ -2,9 +2,9 @@
 
 ## 0) TL;DR (En güncel durum)
 
-* Şu an ne yapıyoruz? Akademik, sade ve göz yormayan beyaz tema revizyonu tamamlandı.
-* Son değişiklik neydi? Varsayılan tema açık akademik stile alındı; ana pano, modül rotası ve konu/quiz ekranlarında kağıt tonları, düşük doygunluklu vurgu renkleri, küçük radius ve ince sınırlar uygulandı.
-* Bir sonraki net adım ne? Kullanıcı geri bildirimiyle konu içeriklerinde eksik teorik alanlar veya yeni açıklamalı sorular eklenebilir.
+* Şu an ne yapıyoruz? Private GitHub repo oluşturuldu ve kaynak kod pushlandı; GitHub Pages yayını mevcut GitHub planı nedeniyle private repo için açılamadı.
+* Son değişiklik neydi? `akyilidizbaran/sinav-sitesi` private repo’suna `main` branch pushlandı; doğrulama PNG’leri `.gitignore` ile dışarıda bırakıldı.
+* Bir sonraki net adım ne? Site yayını için repo public yapılmalı, Pages destekleyen GitHub planına geçilmeli veya Vercel/Netlify/Cloudflare Pages gibi alternatif deployment kullanılmalı.
 
 ## 1) Proje Amacı ve Kapsam
 
@@ -55,12 +55,14 @@
 * 2026-06-13 — Karar: GSAP ve ScrollTrigger yerel `vendor/` dosyalarıyla sabitlendi. | Gerekçe: CDN yüklenmezse animasyonların kaybolması ve doğrulamada belirsizlik oluşması önlendi. | Etki: `vendor/gsap.min.js` ve `vendor/ScrollTrigger.min.js` dosyaları dağıtıma dahil edilmeli. | Alternatifler: CDN kullanmak veya animasyonları yalnız CSS ile yapmak.
 * 2026-06-14 — Karar: Varsayılan görsel dil koyu premium arayüzden açık akademik temaya taşındı. | Gerekçe: Kullanıcı göz yormayan, sade beyaz ve ders çalışmaya uygun bir görünüm istedi. | Etki: `index.html` varsayılanı `data-theme="light"` oldu; `js/app.js` tema anahtarı `sinav-theme-academic`; `css/style.css` ana değişkenleri açık tema üzerine kurulu. | Alternatifler: Koyu temayı varsayılan bırakıp sadece açık tema override'ı yapmak.
 * 2026-06-14 — Karar: Modül vurgu renkleri düşük doygunluklu akademik tonlara çekildi. | Gerekçe: Önceki parlak cyan/mavi/sarı/mor tonlar beyaz tema üzerinde dikkat dağıtıyordu. | Etki: `content/_modules.js` renkleri muted sage, blue-grey, ochre ve muted violet oldu. | Alternatifler: Mevcut renkleri korumak.
+* 2026-06-14 — Karar: GitHub repo private olarak oluşturuldu. | Gerekçe: Kullanıcı açıkça private repo istedi. | Etki: Remote `origin` `https://github.com/akyilidizbaran/sinav-sitesi.git`; `main` branch pushlandı. | Alternatifler: Public repo oluşturup GitHub Pages’i ücretsiz açmak.
 
 ## 7) Milestones / Dönüm Noktaları (append-only)
 
 * 2026-06-13 — Milestone: İlk proje incelemesi tamamlandı. | Sonuç: Site amacı, içerik modeli, render akışı ve temel etkileşimler anlaşıldı.
 * 2026-06-13 — Milestone: Görsel yenileme ve içerik kapsamı ilk turu tamamlandı. | Sonuç: Ana pano, modül rotası, konu okuma/quiz ekranı yenilendi; yerel tarayıcıda desktop ve mobil doğrulandı.
 * 2026-06-14 — Milestone: Akademik beyaz tema revizyonu tamamlandı. | Sonuç: Ana sayfa, SQL modülü, JOIN konu ekranı ve mobil ana sayfa Puppeteer ile doğrulandı; yatay taşma ve konsol hatası görülmedi.
+* 2026-06-14 — Milestone: Private GitHub repo yayına hazır kaynak olarak oluşturuldu. | Sonuç: Kod `akyilidizbaran/sinav-sitesi` private repo’suna pushlandı; GitHub Pages private repo için mevcut plan nedeniyle HTTP 422 ile engellendi.
 
 ## 8) Yapılanlar
 
@@ -77,10 +79,13 @@
 * [x] Modül renkleri göz yormayan muted tonlara çekildi.
 * [x] Ana sayfa, modül ve konu/quiz yüzeyleri beyaz/ivory kağıt hissine taşındı.
 * [x] Puppeteer ile ana sayfa, SQL modülü, JOIN konu ekranı ve mobil ana sayfa doğrulandı.
+* [x] `.gitignore` eklendi; doğrulama PNG’leri repoya alınmadı.
+* [x] Private GitHub repo oluşturuldu ve `main` branch pushlandı.
 
 ## 9) Yapılacaklar (Next)
 
 * [ ] Kullanıcı geri bildirimine göre akademik tema yoğunluğu, tipografi ölçeği veya renk sıcaklığı revizyonu yap.
+* [ ] Site yayını için bir seçenek seç: repo public + GitHub Pages, Pages destekleyen GitHub planı veya alternatif statik hosting.
 * [ ] Gerekirse tek tek konu içeriklerinde eksik teorik alanlar veya yeni açıklamalı sorular ekle.
 * [ ] Gerekirse arama sonuç metinlerini daha ayrık okunacak şekilde iyileştir.
 
