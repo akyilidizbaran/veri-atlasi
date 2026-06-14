@@ -61,6 +61,7 @@ http://127.0.0.1:5173/
 - SQL ve C# kod bloklarında basit renklendirme
 - Kod kopyalama butonu
 - İnteraktif quiz kartları
+- Kritik konularda ek sınav pekiştirme blokları
 - Mobil menü ve responsive yerleşim
 - Yerel GSAP/ScrollTrigger dosyalarıyla bağımsız animasyonlar
 
@@ -72,6 +73,8 @@ http://127.0.0.1:5173/
 - C#
 
 Konu içerikleri `content/*.js` dosyalarında `window.SINAV.register([...])` yapısıyla kaydolur.
+
+Ek derinleştirme notları ve yeni soru çeşitleri `content/enrichments.js` dosyasında tutulur. Bu yapı ana konu metinlerini bozmadan kritik konulara ek pratik eklemeyi sağlar.
 
 ## Geliştirme Notları
 

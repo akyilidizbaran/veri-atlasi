@@ -2,9 +2,9 @@
 
 ## 0) TL;DR (En güncel durum)
 
-* Şu an ne yapıyoruz? Private GitHub repo oluşturuldu, kaynak kod pushlandı ve local çalıştırma odaklı README eklendi.
-* Son değişiklik neydi? `README.md` dosyası proje amacı, local sunucu komutu, klasör yapısı, hızlı kontrol ve GitHub Pages notuyla oluşturuldu.
-* Bir sonraki net adım ne? Site yayını için repo public yapılmalı, Pages destekleyen GitHub planına geçilmeli veya Vercel/Netlify/Cloudflare Pages gibi alternatif deployment kullanılmalı.
+* Şu an ne yapıyoruz? Site tasarımı korunarak içerik kapsamı genişletiliyor.
+* Son değişiklik neydi? `content/enrichments.js` eklendi; 16 kritik konuya derinleştirme notu, çeldirici kontrolü ve toplam 48 yeni pekiştirme sorusu bağlandı.
+* Bir sonraki net adım ne? Kalan konulara aynı pekiştirme yapısıyla ek soru ve derin not eklenebilir.
 
 ## 1) Proje Amacı ve Kapsam
 
@@ -25,9 +25,10 @@
   * `index.html`: statik kabuk; üst bar, arama alanı, sidebar, main mount point ve script sırası.
   * `content/_modules.js`: modül metadata listesi ve `window.SINAV.register` kayıt sistemi.
   * `content/bilisim.js`, `content/isletim.js`, `content/sql-1.js`, `content/sql-2.js`, `content/csharp-1.js`, `content/csharp-2.js`: konu içerikleri.
+  * `content/enrichments.js`: kritik konular için ek derinleştirme, çeldirici ve yeni quiz soruları.
   * `js/app.js`: route, render, sidebar, arama, tema, kod renklendirme, kopyalama ve quiz etkileşimi.
   * `css/style.css`: koyu/açık tema, layout, sidebar, kartlar, konu içeriği, kod blokları, quiz ve responsive stiller.
-* Veri akışı: `content/_modules.js` `window.SINAV` objesini kurar; diğer içerik dosyaları konuları register eder; `js/app.js` hash route'a göre DOM'u üretir.
+* Veri akışı: `content/_modules.js` `window.SINAV` objesini kurar; diğer içerik dosyaları konuları register eder; `content/enrichments.js` ek pekiştirme paketlerini kaydeder; `js/app.js` hash route'a göre DOM'u üretir.
 * Önemli dizinler/modüller:
   * `content/`: eğitim içeriği ve konu sırası.
   * `js/app.js`: davranış ve render kuralları.
@@ -57,6 +58,7 @@
 * 2026-06-14 — Karar: Modül vurgu renkleri düşük doygunluklu akademik tonlara çekildi. | Gerekçe: Önceki parlak cyan/mavi/sarı/mor tonlar beyaz tema üzerinde dikkat dağıtıyordu. | Etki: `content/_modules.js` renkleri muted sage, blue-grey, ochre ve muted violet oldu. | Alternatifler: Mevcut renkleri korumak.
 * 2026-06-14 — Karar: GitHub repo private olarak oluşturuldu. | Gerekçe: Kullanıcı açıkça private repo istedi. | Etki: Remote `origin` `https://github.com/akyilidizbaran/sinav-sitesi.git`; `main` branch pushlandı. | Alternatifler: Public repo oluşturup GitHub Pages’i ücretsiz açmak.
 * 2026-06-14 — Karar: GitHub README Türkçe ve local çalıştırma odaklı yazıldı. | Gerekçe: Kullanıcı GitHub’da local ayağa kaldırma için gerekli README istedi. | Etki: `README.md` içinde `python3 -m http.server 4173 --bind 127.0.0.1` komutu, proje yapısı ve Pages private repo notu yer alıyor. | Alternatifler: Daha kısa sadece komut odaklı README.
+* 2026-06-14 — Karar: Ek anlatım ve yeni sorular ayrı `content/enrichments.js` dosyasında tutulacak. | Gerekçe: Mevcut uzun konu dosyalarını bozmadan kapsam artırmak, tasarım/okunurluğu korumak ve ileride konu bazlı eklemeyi kolaylaştırmak. | Etki: `content/_modules.js` içine `enrichments`/`enrich()` eklendi; `js/app.js` konu sonunda `Sınav Pekiştirme` bloğu render ediyor ve arama indeksine ek içerikleri dahil ediyor. | Alternatifler: Her konu dosyasını doğrudan büyütmek.
 
 ## 7) Milestones / Dönüm Noktaları (append-only)
 
@@ -65,6 +67,7 @@
 * 2026-06-14 — Milestone: Akademik beyaz tema revizyonu tamamlandı. | Sonuç: Ana sayfa, SQL modülü, JOIN konu ekranı ve mobil ana sayfa Puppeteer ile doğrulandı; yatay taşma ve konsol hatası görülmedi.
 * 2026-06-14 — Milestone: Private GitHub repo yayına hazır kaynak olarak oluşturuldu. | Sonuç: Kod `akyilidizbaran/sinav-sitesi` private repo’suna pushlandı; GitHub Pages private repo için mevcut plan nedeniyle HTTP 422 ile engellendi.
 * 2026-06-14 — Milestone: GitHub README eklendi. | Sonuç: Local çalıştırma ve proje yapısı GitHub giriş sayfasında belgelenebilir hale geldi.
+* 2026-06-14 — Milestone: İlk kapsam genişletme turu tamamlandı. | Sonuç: 16 kritik konuya toplam 48 yeni pekiştirme sorusu ve derinleştirme notu eklendi; JOIN konu ekranı, ana sayaç ve arama Puppeteer ile doğrulandı.
 
 ## 8) Yapılanlar
 
@@ -84,12 +87,14 @@
 * [x] `.gitignore` eklendi; doğrulama PNG’leri repoya alınmadı.
 * [x] Private GitHub repo oluşturuldu ve `main` branch pushlandı.
 * [x] GitHub için local çalıştırma odaklı `README.md` eklendi.
+* [x] `content/enrichments.js` ile 16 kritik konuya ek anlatım ve 48 yeni soru eklendi.
+* [x] Ek pekiştirme soruları ana sayaçta ve arama indeksinde görünür hale getirildi.
 
 ## 9) Yapılacaklar (Next)
 
 * [ ] Kullanıcı geri bildirimine göre akademik tema yoğunluğu, tipografi ölçeği veya renk sıcaklığı revizyonu yap.
 * [ ] Site yayını için bir seçenek seç: repo public + GitHub Pages, Pages destekleyen GitHub planı veya alternatif statik hosting.
-* [ ] Gerekirse tek tek konu içeriklerinde eksik teorik alanlar veya yeni açıklamalı sorular ekle.
+* [ ] Kalan konulara `content/enrichments.js` yapısıyla ek teorik alanlar ve açıklamalı sorular ekle.
 * [ ] Gerekirse arama sonuç metinlerini daha ayrık okunacak şekilde iyileştir.
 
 ## 10) Bilinen Sorunlar / Teknik Borç / Riskler
@@ -107,6 +112,7 @@
 * Quiz kartları `data-answer` ve seçeneklerde `data-opt` uyumuna bağlı.
 * GSAP ve ScrollTrigger yerel `vendor/` klasöründen yükleniyor; CDN bağımlılığı yok.
 * Eski tarayıcıda `sinav-theme` anahtarı koyu tema olarak kalmış olabilir; yeni akademik tema `sinav-theme-academic` anahtarıyla ayrıldı.
+* Ek pekiştirme paketlerinde soru metni/data `js/app.js` içinde `esc()` ile basılıyor; HTML enjeksiyonu yapılmıyor.
 
 ### Güncelleme Kaydı
 

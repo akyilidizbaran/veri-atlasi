@@ -47,6 +47,17 @@
     return sum;
   }
 
+  function enrichmentQuestionCount(modId) {
+    var sum = 0;
+    if (!S.enrichments) return sum;
+    S.topics.forEach(function (t) {
+      if (modId && t.module !== modId) return;
+      var pack = S.enrichments[t.id];
+      if (pack && pack.questions) sum += pack.questions.length;
+    });
+    return sum;
+  }
+
   function moduleTone(id) {
     var tones = {
       bilisim: 'Kavram tanıma',
@@ -214,6 +225,66 @@
     });
   }
 
+  function renderEnrichment(topicId) {
+    var pack = S.enrichments && S.enrichments[topicId];
+    if (!pack) return '';
+
+    var html = '<section class="enrichment-pack">' +
+      '<h2>Sınav Pekiştirme</h2>' +
+      '<p class="practice-lead">' + esc(pack.focus) + '</p>';
+
+    if (pack.deep && pack.deep.length) {
+      html += '<h3>Derinleştirme Notları</h3><ul class="practice-list">';
+      pack.deep.forEach(function (item) { html += '<li>' + esc(item) + '</li>'; });
+      html += '</ul>';
+    }
+
+    if (pack.traps && pack.traps.length) {
+      html += '<div class="callout warn"><p><strong>Çeldirici kontrolü:</strong> ' +
+        esc(pack.traps.join(' ')) + '</p></div>';
+    }
+
+    if (pack.questions && pack.questions.length) {
+      html += '<h3>Yeni Soru Çeşitleri</h3>';
+      pack.questions.forEach(function (q) {
+        var answer = String(q.answer || '').toLowerCase();
+        html += '<div class="quiz-q practice-q" data-answer="' + esc(answer) + '">' +
+          '<p class="q-text"><strong>' + esc(q.kind || 'Pekiştirme') + ':</strong> ' + esc(q.text) + '</p>';
+        if (q.code) {
+          html += '<pre><code class="' + (q.lang ? 'lang-' + esc(q.lang) : '') + '">' + esc(q.code) + '</code></pre>';
+        }
+        html += '<div class="q-options">';
+        ['a', 'b', 'c', 'd'].forEach(function (opt) {
+          if (q.options && q.options[opt]) {
+            html += '<button class="q-opt" data-opt="' + opt + '">' + opt.toUpperCase() + ') ' + esc(q.options[opt]) + '</button>';
+          }
+        });
+        html += '</div><div class="q-explain"><strong>Açıklama:</strong> ' + esc(q.explain || '') + '</div></div>';
+      });
+    }
+
+    html += '</section>';
+    return html;
+  }
+
+  function enrichmentSearchText(topicId) {
+    var pack = S.enrichments && S.enrichments[topicId];
+    var parts = [];
+    if (!pack) return '';
+    if (pack.focus) parts.push(pack.focus);
+    if (pack.deep) Array.prototype.push.apply(parts, pack.deep);
+    if (pack.traps) Array.prototype.push.apply(parts, pack.traps);
+    if (pack.questions) {
+      pack.questions.forEach(function (q) {
+        parts.push(q.kind || '', q.text || '', q.code || '', q.explain || '');
+        if (q.options) {
+          ['a', 'b', 'c', 'd'].forEach(function (opt) { if (q.options[opt]) parts.push(q.options[opt]); });
+        }
+      });
+    }
+    return parts.join(' ');
+  }
+
   function enhanceMotion(root) {
     if (!window.gsap) return;
     if (window.ScrollTrigger) window.gsap.registerPlugin(window.ScrollTrigger);
@@ -328,7 +399,7 @@
       '<div><span class="strip-value">' + S.modules.length + '</span><span>modül</span></div>' +
       '<div><span class="strip-value">' + S.topics.length + '</span><span>konu</span></div>' +
       '<div><span class="strip-value">' + totalQuestionCount() + '</span><span>sınav sorusu</span></div>' +
-      '<div><span class="strip-value">1</span><span>net çalışma sırası</span></div>' +
+      '<div><span class="strip-value">' + enrichmentQuestionCount() + '</span><span>ek pekiştirme sorusu</span></div>' +
       '</section>';
 
     html += '<div class="section-h"><h2>Çalışma rotası</h2><span class="hint">önce kavram, sonra soru refleksi</span></div>';
@@ -448,7 +519,7 @@
       '</section>';
 
     html += '<div class="lesson-layout">';
-    html += '<article class="topic-content lesson-main">' + t.html + '</article>';
+    html += '<article class="topic-content lesson-main">' + t.html + renderEnrichment(t.id) + '</article>';
     html += '<aside class="lesson-aside" data-animate="fade">' +
       '<div class="aside-card">' +
       '<h3>Bu konuyu bitirme ölçütü</h3>' +
@@ -506,7 +577,7 @@
     var div = document.createElement('div');
     searchIndex = S.topics.map(function (t) {
       div.innerHTML = t.html;
-      var text = (div.textContent || '').toLowerCase();
+      var text = ((div.textContent || '') + ' ' + enrichmentSearchText(t.id)).toLowerCase();
       div.innerHTML = '';
       return { id: t.id, title: t.title, mod: getModule(t.module), text: text };
     });

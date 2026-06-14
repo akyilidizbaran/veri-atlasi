@@ -998,6 +998,22 @@ a:hover { text-decoration: underline; }
   white-space: nowrap;
 }
 
+.enrichment-pack {
+  margin-top: 58px;
+  padding-top: 4px;
+}
+.practice-lead {
+  font-size: 15.5px;
+}
+.practice-list {
+  border-left: 1px solid var(--border-soft);
+}
+.practice-q {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--mc) 7%, transparent), transparent 46%),
+    color-mix(in srgb, var(--surface) 98%, var(--bg));
+}
+
 /* Tables */
 
 .table-wrap {

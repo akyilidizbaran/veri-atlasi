@@ -112,8 +112,15 @@ window.SINAV = {
   ],
 
   topics: [],
+  enrichments: {},
 
   register: function (list) {
     Array.prototype.push.apply(this.topics, list);
+  },
+
+  enrich: function (map) {
+    for (var id in map) {
+      if (Object.prototype.hasOwnProperty.call(map, id)) this.enrichments[id] = map[id];
+    }
   }
 };
