@@ -2,8 +2,8 @@
 
 ## 0) TL;DR (En güncel durum)
 
-* Şu an ne yapıyoruz? Site tasarımı korunarak içerik kapsamı genişletiliyor.
-* Son değişiklik neydi? `content/enrichments.js` eklendi; 16 kritik konuya derinleştirme notu, çeldirici kontrolü ve toplam 48 yeni pekiştirme sorusu bağlandı.
+* Şu an ne yapıyoruz? İçerik kapsamı genişletildi; konu sayfası scroll animasyonu için küçük okunurluk düzeltmesi yapıldı.
+* Son değişiklik neydi? Quiz kartlarının GSAP ScrollTrigger ayarı `start: 'top 94%'` ve `toggleActions: 'play none none none'` olacak şekilde değişti; hafif yukarı kaydırmada sorular artık kaybolmuyor.
 * Bir sonraki net adım ne? Kalan konulara aynı pekiştirme yapısıyla ek soru ve derin not eklenebilir.
 
 ## 1) Proje Amacı ve Kapsam
@@ -59,6 +59,7 @@
 * 2026-06-14 — Karar: GitHub repo private olarak oluşturuldu. | Gerekçe: Kullanıcı açıkça private repo istedi. | Etki: Remote `origin` `https://github.com/akyilidizbaran/sinav-sitesi.git`; `main` branch pushlandı. | Alternatifler: Public repo oluşturup GitHub Pages’i ücretsiz açmak.
 * 2026-06-14 — Karar: GitHub README Türkçe ve local çalıştırma odaklı yazıldı. | Gerekçe: Kullanıcı GitHub’da local ayağa kaldırma için gerekli README istedi. | Etki: `README.md` içinde `python3 -m http.server 4173 --bind 127.0.0.1` komutu, proje yapısı ve Pages private repo notu yer alıyor. | Alternatifler: Daha kısa sadece komut odaklı README.
 * 2026-06-14 — Karar: Ek anlatım ve yeni sorular ayrı `content/enrichments.js` dosyasında tutulacak. | Gerekçe: Mevcut uzun konu dosyalarını bozmadan kapsam artırmak, tasarım/okunurluğu korumak ve ileride konu bazlı eklemeyi kolaylaştırmak. | Etki: `content/_modules.js` içine `enrichments`/`enrich()` eklendi; `js/app.js` konu sonunda `Sınav Pekiştirme` bloğu render ediyor ve arama indeksine ek içerikleri dahil ediyor. | Alternatifler: Her konu dosyasını doğrudan büyütmek.
+* 2026-06-14 — Karar: Quiz/kart scroll animasyonları geri kaydırmada tersine dönmeyecek. | Gerekçe: `bo-02-yazilim-turleri` sayfasında sorular hafif yukarı kaydırınca kayboluyordu. | Etki: `js/app.js` içindeki `enhanceMotion()` fade ScrollTrigger başlangıcı daha aşağı alındı ve reverse kaldırıldı. | Alternatifler: GSAP fade animasyonunu tamamen kaldırmak.
 
 ## 7) Milestones / Dönüm Noktaları (append-only)
 
@@ -68,6 +69,7 @@
 * 2026-06-14 — Milestone: Private GitHub repo yayına hazır kaynak olarak oluşturuldu. | Sonuç: Kod `akyilidizbaran/sinav-sitesi` private repo’suna pushlandı; GitHub Pages private repo için mevcut plan nedeniyle HTTP 422 ile engellendi.
 * 2026-06-14 — Milestone: GitHub README eklendi. | Sonuç: Local çalıştırma ve proje yapısı GitHub giriş sayfasında belgelenebilir hale geldi.
 * 2026-06-14 — Milestone: İlk kapsam genişletme turu tamamlandı. | Sonuç: 16 kritik konuya toplam 48 yeni pekiştirme sorusu ve derinleştirme notu eklendi; JOIN konu ekranı, ana sayaç ve arama Puppeteer ile doğrulandı.
+* 2026-06-14 — Milestone: Quiz scroll kaybolma davranışı düzeltildi. | Sonuç: `bo-02-yazilim-turleri` sayfasında Puppeteer ile hafif yukarı kaydırma testi yapıldı; quiz kartları görünür kaldı.
 
 ## 8) Yapılanlar
 
@@ -89,6 +91,7 @@
 * [x] GitHub için local çalıştırma odaklı `README.md` eklendi.
 * [x] `content/enrichments.js` ile 16 kritik konuya ek anlatım ve 48 yeni soru eklendi.
 * [x] Ek pekiştirme soruları ana sayaçta ve arama indeksinde görünür hale getirildi.
+* [x] Quiz kartlarının hafif yukarı kaydırmada kaybolmasına neden olan reverse animasyon düzeltildi.
 
 ## 9) Yapılacaklar (Next)
 

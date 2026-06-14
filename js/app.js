@@ -303,9 +303,9 @@
           ease: 'power2.out',
           scrollTrigger: window.ScrollTrigger ? {
             trigger: el,
-            start: 'top 88%',
-            end: 'bottom 20%',
-            toggleActions: 'play none none reverse'
+            start: 'top 94%',
+            end: 'bottom 12%',
+            toggleActions: 'play none none none'
           } : null
         });
     });
