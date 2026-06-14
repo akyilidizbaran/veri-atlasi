@@ -2,8 +2,8 @@
 
 ## 0) TL;DR (En güncel durum)
 
-* Şu an ne yapıyoruz? Private GitHub repo oluşturuldu ve kaynak kod pushlandı; GitHub Pages yayını mevcut GitHub planı nedeniyle private repo için açılamadı.
-* Son değişiklik neydi? `akyilidizbaran/sinav-sitesi` private repo’suna `main` branch pushlandı; doğrulama PNG’leri `.gitignore` ile dışarıda bırakıldı.
+* Şu an ne yapıyoruz? Private GitHub repo oluşturuldu, kaynak kod pushlandı ve local çalıştırma odaklı README eklendi.
+* Son değişiklik neydi? `README.md` dosyası proje amacı, local sunucu komutu, klasör yapısı, hızlı kontrol ve GitHub Pages notuyla oluşturuldu.
 * Bir sonraki net adım ne? Site yayını için repo public yapılmalı, Pages destekleyen GitHub planına geçilmeli veya Vercel/Netlify/Cloudflare Pages gibi alternatif deployment kullanılmalı.
 
 ## 1) Proje Amacı ve Kapsam
@@ -56,6 +56,7 @@
 * 2026-06-14 — Karar: Varsayılan görsel dil koyu premium arayüzden açık akademik temaya taşındı. | Gerekçe: Kullanıcı göz yormayan, sade beyaz ve ders çalışmaya uygun bir görünüm istedi. | Etki: `index.html` varsayılanı `data-theme="light"` oldu; `js/app.js` tema anahtarı `sinav-theme-academic`; `css/style.css` ana değişkenleri açık tema üzerine kurulu. | Alternatifler: Koyu temayı varsayılan bırakıp sadece açık tema override'ı yapmak.
 * 2026-06-14 — Karar: Modül vurgu renkleri düşük doygunluklu akademik tonlara çekildi. | Gerekçe: Önceki parlak cyan/mavi/sarı/mor tonlar beyaz tema üzerinde dikkat dağıtıyordu. | Etki: `content/_modules.js` renkleri muted sage, blue-grey, ochre ve muted violet oldu. | Alternatifler: Mevcut renkleri korumak.
 * 2026-06-14 — Karar: GitHub repo private olarak oluşturuldu. | Gerekçe: Kullanıcı açıkça private repo istedi. | Etki: Remote `origin` `https://github.com/akyilidizbaran/sinav-sitesi.git`; `main` branch pushlandı. | Alternatifler: Public repo oluşturup GitHub Pages’i ücretsiz açmak.
+* 2026-06-14 — Karar: GitHub README Türkçe ve local çalıştırma odaklı yazıldı. | Gerekçe: Kullanıcı GitHub’da local ayağa kaldırma için gerekli README istedi. | Etki: `README.md` içinde `python3 -m http.server 4173 --bind 127.0.0.1` komutu, proje yapısı ve Pages private repo notu yer alıyor. | Alternatifler: Daha kısa sadece komut odaklı README.
 
 ## 7) Milestones / Dönüm Noktaları (append-only)
 
@@ -63,6 +64,7 @@
 * 2026-06-13 — Milestone: Görsel yenileme ve içerik kapsamı ilk turu tamamlandı. | Sonuç: Ana pano, modül rotası, konu okuma/quiz ekranı yenilendi; yerel tarayıcıda desktop ve mobil doğrulandı.
 * 2026-06-14 — Milestone: Akademik beyaz tema revizyonu tamamlandı. | Sonuç: Ana sayfa, SQL modülü, JOIN konu ekranı ve mobil ana sayfa Puppeteer ile doğrulandı; yatay taşma ve konsol hatası görülmedi.
 * 2026-06-14 — Milestone: Private GitHub repo yayına hazır kaynak olarak oluşturuldu. | Sonuç: Kod `akyilidizbaran/sinav-sitesi` private repo’suna pushlandı; GitHub Pages private repo için mevcut plan nedeniyle HTTP 422 ile engellendi.
+* 2026-06-14 — Milestone: GitHub README eklendi. | Sonuç: Local çalıştırma ve proje yapısı GitHub giriş sayfasında belgelenebilir hale geldi.
 
 ## 8) Yapılanlar
 
@@ -81,6 +83,7 @@
 * [x] Puppeteer ile ana sayfa, SQL modülü, JOIN konu ekranı ve mobil ana sayfa doğrulandı.
 * [x] `.gitignore` eklendi; doğrulama PNG’leri repoya alınmadı.
 * [x] Private GitHub repo oluşturuldu ve `main` branch pushlandı.
+* [x] GitHub için local çalıştırma odaklı `README.md` eklendi.
 
 ## 9) Yapılacaklar (Next)
 
