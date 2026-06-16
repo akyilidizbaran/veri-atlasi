@@ -2,9 +2,9 @@
 
 ## 0) TL;DR (En güncel durum)
 
-* Şu an ne yapıyoruz? Her konu başlığında en az 12 soru olacak şekilde soru kapsamı genişletildi.
-* Son değişiklik neydi? `content/question-packs.js` eklendi; mevcut soru sayısını hesaplayıp 12'nin altında kalan konulara tamamlayıcı kavram/senaryo/çeldirici soruları ekliyor.
-* Bir sonraki net adım ne? Kullanıcı geri bildirimiyle belirli konuların soru kalitesi, zorluk seviyesi veya konu anlatımı derinliği artırılabilir.
+* Şu an ne yapıyoruz? Soru paketlerinde duplicate hissini azaltan ve yazım kalitesini toparlayan ikinci kalite turu tamamlandı.
+* Son değişiklik neydi? `content/question-packs.js` daha zor ve çeşitli soru tipleri üretecek şekilde genişletildi; ek soru paketlerine runtime Türkçe normalizasyonu eklendi.
+* Bir sonraki net adım ne? Kullanıcı isterse belirli modüller için daha üst zorlukta ek kod/sorgu okuma setleri hazırlanabilir.
 
 ## 1) Proje Amacı ve Kapsam
 
@@ -62,6 +62,7 @@
 * 2026-06-14 — Karar: Ek anlatım ve yeni sorular ayrı `content/enrichments.js` dosyasında tutulacak. | Gerekçe: Mevcut uzun konu dosyalarını bozmadan kapsam artırmak, tasarım/okunurluğu korumak ve ileride konu bazlı eklemeyi kolaylaştırmak. | Etki: `content/_modules.js` içine `enrichments`/`enrich()` eklendi; `js/app.js` konu sonunda `Sınav Pekiştirme` bloğu render ediyor ve arama indeksine ek içerikleri dahil ediyor. | Alternatifler: Her konu dosyasını doğrudan büyütmek.
 * 2026-06-14 — Karar: Quiz/kart scroll animasyonları geri kaydırmada tersine dönmeyecek. | Gerekçe: `bo-02-yazilim-turleri` sayfasında sorular hafif yukarı kaydırınca kayboluyordu. | Etki: `js/app.js` içindeki `enhanceMotion()` fade ScrollTrigger başlangıcı daha aşağı alındı ve reverse kaldırıldı. | Alternatifler: GSAP fade animasyonunu tamamen kaldırmak.
 * 2026-06-14 — Karar: Her konu için minimum 12 soru hedefi `content/question-packs.js` ile uygulanacak. | Gerekçe: Kullanıcı her konu alt başlığında 12 soru istedi; daha fazla olan varsa korunacak. | Etki: 47 konunun tamamı 12 soruya tamamlandı; mevcut sorular korunuyor, ek paketler sadece eksik kalan sayıyı dolduruyor. | Alternatifler: Her içerik dosyasını manuel olarak büyütmek.
+* 2026-06-16 — Karar: Soru paketleri konuya bağlı daha zor ve daha çeşitli kalıplarla üretilecek; görünür ek içeriklerde Türkçe normalizasyon runtime'da uygulanacak. | Gerekçe: Kullanıcı duplicate soruları azaltıp yazım kurallarını iyileştirmeyi istedi. | Etki: `content/question-packs.js` artık ayırt edici tanım, vaka, öncül yorumu, sıralama, C# kod çıktısı ve SQL sorgu yorumu gibi kalıplar üretir; ek paketler yüklenirken görünür metinler normalize edilir. | Alternatifler: Tüm içerik dosyalarını tek tek manuel düzeltmek.
 
 ## 7) Milestones / Dönüm Noktaları (append-only)
 
@@ -73,6 +74,7 @@
 * 2026-06-14 — Milestone: İlk kapsam genişletme turu tamamlandı. | Sonuç: 16 kritik konuya toplam 48 yeni pekiştirme sorusu ve derinleştirme notu eklendi; JOIN konu ekranı, ana sayaç ve arama Puppeteer ile doğrulandı.
 * 2026-06-14 — Milestone: Quiz scroll kaybolma davranışı düzeltildi. | Sonuç: `bo-02-yazilim-turleri` sayfasında Puppeteer ile hafif yukarı kaydırma testi yapıldı; quiz kartları görünür kaldı.
 * 2026-06-14 — Milestone: Tüm konular 12 soru hedefine tamamlandı. | Sonuç: 47 konu için sayım yapıldı; 12'nin altında konu kalmadı, toplam soru sayısı 564 oldu.
+* 2026-06-16 — Milestone: Soru kalite revizyonu tamamlandı. | Sonuç: Exact duplicate ek soru kökleri sıfırlandı; `bo-02`, `sql-07`, `cs-03` sayfalarında Puppeteer ile 12 soru, görünür açıklama ve kod bloğu davranışı doğrulandı.
 
 ## 8) Yapılanlar
 
@@ -96,12 +98,14 @@
 * [x] Ek pekiştirme soruları ana sayaçta ve arama indeksinde görünür hale getirildi.
 * [x] Quiz kartlarının hafif yukarı kaydırmada kaybolmasına neden olan reverse animasyon düzeltildi.
 * [x] `content/question-packs.js` ile 47 konunun tamamı en az 12 soruya tamamlandı.
+* [x] Ek soru jeneratörü duplicate kökleri azaltacak şekilde çeşitlendirildi.
+* [x] Ek soru ve pekiştirme paketlerinde görünür Türkçe metinler normalize edildi.
 
 ## 9) Yapılacaklar (Next)
 
 * [ ] Kullanıcı geri bildirimine göre akademik tema yoğunluğu, tipografi ölçeği veya renk sıcaklığı revizyonu yap.
 * [ ] Site yayını için bir seçenek seç: repo public + GitHub Pages, Pages destekleyen GitHub planı veya alternatif statik hosting.
-* [ ] Belirli konularda kullanıcı geri bildirimine göre daha zorlayıcı kod/sorgu okuma soruları ekle.
+* [ ] Belirli konularda kullanıcı geri bildirimine göre daha üst seviye kod/sorgu okuma soruları ekle.
 * [ ] Gerekirse arama sonuç metinlerini daha ayrık okunacak şekilde iyileştir.
 
 ## 10) Bilinen Sorunlar / Teknik Borç / Riskler
@@ -109,7 +113,7 @@
 * İçerik büyük HTML template string'leri içinde tutuluyor; kapsamlı içerik düzenlemelerinde kaçan karakterler ve backtick kullanımı dikkat ister.
 * Arama sonucu metni badge/modül metniyle bitişik görünebiliyor (`C#LINQC#` gibi); UI'da görsel olarak ayrılmış olsa da metin çıkarımında bitişik.
 * Build/test otomasyonu yok; doğrulama manuel veya tarayıcı otomasyonu ile yapılmalı.
-* Proje git deposu değil; değişiklik takibi için dış yedek veya sonradan git init gerekebilir.
+* Playwright MCP bu makinede yerel Chrome beklediği için otomatik browser install `sudo` talep edebilir; bu durumda Puppeteer doğrulaması daha pratik fallback oluyor.
 
 ## 11) Notlar ve Tuzaklar (Pitfalls)
 
@@ -124,4 +128,4 @@
 
 ### Güncelleme Kaydı
 
-* Son güncelleme: 2026-06-14
+* Son güncelleme: 2026-06-16

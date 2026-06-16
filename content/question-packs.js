@@ -428,6 +428,402 @@
     return picked;
   }
 
+  var trMap = {
+    'acik': 'açık',
+    'acisindan': 'açısından',
+    'ag': 'ağ',
+    'aga': 'ağa',
+    'agda': 'ağda',
+    'agdaki': 'ağdaki',
+    'agi': 'ağı',
+    'agla': 'ağla',
+    'aglar': 'ağlar',
+    'aglari': 'ağları',
+    'agirliklidir': 'ağırlıklıdır',
+    'alisverisini': 'alışverişini',
+    'amacina': 'amacına',
+    'amaci': 'amacı',
+    'anlamina': 'anlamına',
+    'araci': 'aracı',
+    'arayuzu': 'arayüzü',
+    'arsivi': 'arşivi',
+    'asamada': 'aşamada',
+    'bagimliliklari': 'bağımlılıkları',
+    'bagimlilikla': 'bağımlılıkla',
+    'bagimliliklariyla': 'bağımlılıklarıyla',
+    'bagimliliklarini': 'bağımlılıklarını',
+    'bagimli': 'bağımlı',
+    'bagli': 'bağlı',
+    'baglanip': 'bağlanıp',
+    'baglanmasi': 'bağlanması',
+    'baglayan': 'bağlayan',
+    'baglar': 'bağlar',
+    'bakim': 'bakım',
+    'basarili': 'başarılı',
+    'basariyi': 'başarıyı',
+    'baslangic': 'başlangıç',
+    'baslatan': 'başlatan',
+    'baslatir': 'başlatır',
+    'baslatma': 'başlatma',
+    'basligi': 'başlığı',
+    'basliginda': 'başlığında',
+    'basina': 'başına',
+    'belirleyici': 'belirleyici',
+    'bilgisayarin': 'bilgisayarın',
+    'baska': 'başka',
+    'bilesen': 'bileşen',
+    'bileseni': 'bileşeni',
+    'bilesenlerini': 'bileşenlerini',
+    'bilisim': 'bilişim',
+    'birakilmasini': 'bırakılmasını',
+    'birden': 'birden',
+    'birimi': 'birimi',
+    'birimini': 'birimini',
+    'butun': 'bütün',
+    'butunlugu': 'bütünlüğü',
+    'buyuk': 'büyük',
+    'buyur': 'büyür',
+    'cagiran': 'çağıran',
+    'calisan': 'çalışan',
+    'calisanlar': 'çalışanlar',
+    'calisma': 'çalışma',
+    'calismasi': 'çalışması',
+    'calismasini': 'çalışmasını',
+    'calistigi': 'çalıştığı',
+    'calistiran': 'çalıştıran',
+    'calistirir': 'çalıştırır',
+    'calistirilabilir': 'çalıştırılabilir',
+    'calistirma': 'çalıştırma',
+    'calistirmasi': 'çalıştırması',
+    'calistirmaz': 'çalıştırmaz',
+    'calistirsa': 'çalıştırsa',
+    'calisir': 'çalışır',
+    'carpim': 'çarpım',
+    'carpimini': 'çarpımını',
+    'celdirici': 'çeldirici',
+    'cekim': 'çekim',
+    'cekirdek': 'çekirdek',
+    'ceviren': 'çeviren',
+    'cevrilmesi': 'çevrilmesi',
+    'cikabilir': 'çıkabilir',
+    'cikar': 'çıkar',
+    'cikarma': 'çıkarma',
+    'cikmaya': 'çıkmaya',
+    'ciktisi': 'çıktısı',
+    'cikti': 'çıktı',
+    'cok': 'çok',
+    'cozmez': 'çözmez',
+    'cozum': 'çözüm',
+    'daha': 'daha',
+    'deger': 'değer',
+    'degeri': 'değeri',
+    'degerin': 'değerin',
+    'degerleri': 'değerleri',
+    'degerlerini': 'değerlerini',
+    'degerlendirme': 'değerlendirme',
+    'degerlerden': 'değerlerden',
+    'degerle': 'değerle',
+    'degerli': 'değerli',
+    'degere': 'değere',
+    'degildir': 'değildir',
+    'degil': 'değil',
+    'degisken': 'değişken',
+    'degiskene': 'değişkene',
+    'degiskenin': 'değişkenin',
+    'degistiren': 'değiştiren',
+    'degistirilebilir': 'değiştirilebilir',
+    'degistirme': 'değiştirme',
+    'degistirir': 'değiştirir',
+    'destegi': 'desteği',
+    'disaridan': 'dışarıdan',
+    'dogabilir': 'doğabilir',
+    'dogrudan': 'doğrudan',
+    'dogrudur': 'doğrudur',
+    'dogru': 'doğru',
+    'donduren': 'döndüren',
+    'dondurmesi': 'döndürmesi',
+    'donmesini': 'dönmesini',
+    'dondurur': 'döndürür',
+    'dondururse': 'döndürürse',
+    'donus': 'dönüş',
+    'donusumlerinde': 'dönüşümlerinde',
+    'donusturen': 'dönüştüren',
+    'donusturur': 'dönüştürür',
+    'donanim': 'donanım',
+    'donanimi': 'donanımı',
+    'dusuk': 'düşük',
+    'duzen': 'düzen',
+    'duzenler': 'düzenler',
+    'duzenlemek': 'düzenlemek',
+    'duzenlenmesi': 'düzenlenmesi',
+    'erisimi': 'erişimi',
+    'erisim': 'erişim',
+    'erisimin': 'erişimin',
+    'esitleyerek': 'eşitleyerek',
+    'eslesme': 'eşleşme',
+    'eslesmeyen': 'eşleşmeyen',
+    'eslesmeyi': 'eşleşmeyi',
+    'eslesen': 'eşleşen',
+    'eslestirilecegini': 'eşleştirileceğini',
+    'etkilesmesini': 'etkileşmesini',
+    'fisiksel': 'fiziksel',
+    'farkli': 'farklı',
+    'farklidir': 'farklıdır',
+    'gore': 'göre',
+    'goreceli': 'göreceli',
+    'gorelilik': 'görelilik',
+    'gorev': 'görev',
+    'gorevi': 'görevi',
+    'gorevleri': 'görevleri',
+    'gosteren': 'gösteren',
+    'gosterilecek': 'gösterilecek',
+    'gosterir': 'gösterir',
+    'gosterme': 'gösterme',
+    'gorulebilir': 'görülebilir',
+    'gorulebilen': 'görülebilen',
+    'gorunumu': 'görünümü',
+    'gorunumunu': 'görünümünü',
+    'gorunumlu': 'görünümlü',
+    'guvenli': 'güvenli',
+    'guvenligi': 'güvenliği',
+    'guvenligini': 'güvenliğini',
+    'guvenilir': 'güvenilir',
+    'guvenligini': 'güvenliğini',
+    'hata': 'hata',
+    'hizli': 'hızlı',
+    'hizlandirmaz': 'hızlandırmaz',
+    'iceren': 'içeren',
+    'icerigini': 'içeriğini',
+    'icerik': 'içerik',
+    'icerir': 'içerir',
+    'icermedigini': 'içermediğini',
+    'icinde': 'içinde',
+    'icin': 'için',
+    'iliskili': 'ilişkili',
+    'iliskilidir': 'ilişkilidir',
+    'iliskisi': 'ilişkisi',
+    'iliskisini': 'ilişkisini',
+    'iliski': 'ilişki',
+    'iliskiler': 'ilişkiler',
+    'iliskisel': 'ilişkisel',
+    'iletisim': 'iletişim',
+    'isleri': 'işleri',
+    'islemi': 'işlemi',
+    'islemin': 'işlemin',
+    'islemler': 'işlemler',
+    'islemleri': 'işlemleri',
+    'islem': 'işlem',
+    'isletim': 'işletim',
+    'kacinilan': 'kaçınılan',
+    'kac': 'kaç',
+    'kalici': 'kalıcı',
+    'kalicilikle': 'kalıcılıkla',
+    'karsilastirma': 'karşılaştırma',
+    'karsilastirmadir': 'karşılaştırmadır',
+    'karsilastirip': 'karşılaştırıp',
+    'karsi': 'karşı',
+    'karistirilan': 'karıştırılan',
+    'karistirilmamalidir': 'karıştırılmamalıdır',
+    'karistirir': 'karıştırır',
+    'karsilik': 'karşılık',
+    'kayit': 'kayıt',
+    'kaynak': 'kaynak',
+    'kisit': 'kısıt',
+    'kisitlari': 'kısıtları',
+    'kisitlar': 'kısıtlar',
+    'kisiler': 'kişiler',
+    'kisileri': 'kişileri',
+    'kisilerin': 'kişilerin',
+    'kismi': 'kısmi',
+    'kopyalandigi': 'kopyalandığı',
+    'kosul': 'koşul',
+    'kosula': 'koşula',
+    'kosulu': 'koşulu',
+    'kosulda': 'koşulda',
+    'kosullarda': 'koşullarda',
+    'kosullarin': 'koşulların',
+    'kosulsuz': 'koşulsuz',
+    'kullanici': 'kullanıcı',
+    'kullaniciya': 'kullanıcıya',
+    'kullanicinin': 'kullanıcının',
+    'kullanilan': 'kullanılan',
+    'kullanilabilecegini': 'kullanılabileceğini',
+    'kullanilabilir': 'kullanılabilir',
+    'kullanilabilirlik': 'kullanılabilirlik',
+    'kullanilmalidir': 'kullanılmalıdır',
+    'kullanima': 'kullanıma',
+    'kullanim': 'kullanım',
+    'kullanimini': 'kullanımını',
+    'kullanir': 'kullanır',
+    'kullanmak': 'kullanmak',
+    'kutuphane': 'kütüphane',
+    'mantiksal': 'mantıksal',
+    'miktari': 'miktarı',
+    'nesne': 'nesne',
+    'okunmalidir': 'okunmalıdır',
+    'olcude': 'ölçüde',
+    'oldugunu': 'olduğunu',
+    'olmasa': 'olmasa',
+    'olusturan': 'oluşturan',
+    'olusturamaz': 'oluşturamaz',
+    'olusturabilir': 'oluşturabilir',
+    'olusturmak': 'oluşturmak',
+    'olusturma': 'oluşturma',
+    'olusturur': 'oluşturur',
+    'olusturulmasi': 'oluşturulması',
+    'once': 'önce',
+    'onbellek': 'önbellek',
+    'onceligi': 'önceliği',
+    'onemlidir': 'önemlidir',
+    'ornegi': 'örneği',
+    'ornektir': 'örnektir',
+    'operator': 'operatör',
+    'operatorler': 'operatörler',
+    'operatoru': 'operatörü',
+    'ortami': 'ortamı',
+    'ozel': 'özel',
+    'ozelligini': 'özelliğini',
+    'ozellik': 'özellik',
+    'ozellikleri': 'özellikleri',
+    'paylasabilir': 'paylaşabilir',
+    'paylasabildigi': 'paylaşabildiği',
+    'paylasim': 'paylaşım',
+    'sag': 'sağ',
+    'sagda': 'sağda',
+    'saglamaz': 'sağlamaz',
+    'saglamasi': 'sağlaması',
+    'saglayan': 'sağlayan',
+    'saglar': 'sağlar',
+    'saglayabilir': 'sağlayabilir',
+    'saglanmasi': 'sağlanması',
+    'saglanmadiginda': 'sağlanmadığında',
+    'saglanmasini': 'sağlanmasını',
+    'sagliyor': 'sağlıyor',
+    'saklama': 'saklama',
+    'sayisi': 'sayısı',
+    'sayisal': 'sayısal',
+    'secenek': 'seçenek',
+    'seceneklerde': 'seçeneklerde',
+    'secimi': 'seçimi',
+    'secme': 'seçme',
+    'secmez': 'seçmez',
+    'secilen': 'seçilen',
+    'sekilde': 'şekilde',
+    'sey': 'şey',
+    'sifre': 'şifre',
+    'sik': 'sık',
+    'sikistirma': 'sıkıştırma',
+    'sinav': 'sınav',
+    'sinif': 'sınıf',
+    'siniflandirma': 'sınıflandırma',
+    'siniflandirilmasi': 'sınıflandırılması',
+    'sinifin': 'sınıfın',
+    'sinirlama': 'sınırlama',
+    'sinirlar': 'sınırlar',
+    'sinirlari': 'sınırları',
+    'siralanan': 'sıralanan',
+    'siralar': 'sıralar',
+    'siralamak': 'sıralamak',
+    'siralamasi': 'sıralaması',
+    'sirayla': 'sırayla',
+    'sorgulari': 'sorguları',
+    'sorulari': 'soruları',
+    'sorularinda': 'sorularında',
+    'sozlesme': 'sözleşme',
+    'satir': 'satır',
+    'satirlar': 'satırlar',
+    'satirlari': 'satırları',
+    'satirlarinin': 'satırlarının',
+    'satirlarini': 'satırlarını',
+    'satirli': 'satırlı',
+    'sureci': 'süreci',
+    'surekliligi': 'sürekliliği',
+    'surucu': 'sürücü',
+    'suruculerle': 'sürücülerle',
+    'tablodaki': 'tablodaki',
+    'tanimlayan': 'tanımlayan',
+    'tanimi': 'tanımı',
+    'tasiyabilir': 'taşıyabilir',
+    'tutarliligi': 'tutarlılığı',
+    'tur': 'tür',
+    'turleri': 'türleri',
+    'turunu': 'türünü',
+    'tum': 'tüm',
+    'uretebilir': 'üretebilir',
+    'ureten': 'üreten',
+    'uretir': 'üretir',
+    'uretilebilir': 'üretilebilir',
+    'uretilip': 'üretilip',
+    'uretilmeyecegi': 'üretilmeyeceği',
+    'uzerinden': 'üzerinden',
+    'uzerindeki': 'üzerindeki',
+    'uzerine': 'üzerine',
+    'uzerinde': 'üzerinde',
+    'ucretsiz': 'ücretsiz',
+    'varsayilan': 'varsayılan',
+    'veritabani': 'veritabanı',
+    'yalniz': 'yalnız',
+    'yalnizca': 'yalnızca',
+    'yanlis': 'yanlış',
+    'yardimci': 'yardımcı',
+    'yas': 'yaş',
+    'yazilim': 'yazılım',
+    'yazilimdir': 'yazılımdır',
+    'yazilimi': 'yazılımı',
+    'yazilimin': 'yazılımın',
+    'yazilimidir': 'yazılımıdır',
+    'yoneten': 'yöneten',
+    'yonetimi': 'yönetimi',
+    'yonetimine': 'yönetimine',
+    'yonetiminde': 'yönetiminde',
+    'yonetimini': 'yönetimini',
+    'yonetir': 'yönetir',
+    'yonlendiren': 'yönlendiren',
+    'yurutme': 'yürütme',
+    'yurutulmesi': 'yürütülmesi',
+    'yuksek': 'yüksek',
+    'yapilirsa': 'yapılırsa',
+    'ayni': 'aynı',
+    'hizla': 'hızla',
+    'korunacagi': 'korunacağı'
+  };
+
+  function escReg(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function trText(text) {
+    var out = String(text);
+    Object.keys(trMap).sort(function (a, b) {
+      return b.length - a.length;
+    }).forEach(function (key) {
+      var re = new RegExp('(^|[^A-Za-zÇĞİÖŞÜçğıöşü])(' + escReg(key) + ')(?=$|[^A-Za-zÇĞİÖŞÜçğıöşü])', 'gi');
+      out = out.replace(re, function (_, prefix, word) {
+        return prefix + keepCase(word, trMap[key]);
+      });
+    });
+    out = out.replace(/\b([A-Z][A-Z0-9+#<>/*-]*) de\b/g, "$1'de");
+    return out;
+  }
+
+  function keepCase(source, replacement) {
+    if (source.length > 1 && source.toLocaleUpperCase('tr-TR') === source) {
+      return replacement.toLocaleUpperCase('tr-TR');
+    }
+    if (source.charAt(0).toLocaleUpperCase('tr-TR') === source.charAt(0)) {
+      return replacement.charAt(0).toLocaleUpperCase('tr-TR') + replacement.slice(1);
+    }
+    return replacement;
+  }
+
+  function nameOf(term) {
+    return trText(term.name);
+  }
+
+  function defOf(term) {
+    return trText(term.def);
+  }
+
   function withAnswer(correct, wrongs, index) {
     var keys = ['a', 'b', 'c', 'd'];
     var answer = keys[index % 4];
@@ -442,47 +838,143 @@
   function question(topic, profile, n) {
     var terms = pickTerms(profile, n, 4);
     var a = terms[0], b = terms[1], c = terms[2], d = terms[3];
-    var style = n % 6;
+    var style = n % 10;
     var qa;
 
     if (style === 0) {
-      qa = withAnswer(a.def, [b.def, c.def, d.def], n);
-      return make('Kavram tanima', '"' + a.name + '" icin en dogru aciklama hangisidir?', qa, a.name + ' bu konuda "' + a.def + '" anlamiyla kullanilir.');
+      qa = withAnswer(defOf(a), [defOf(b), defOf(c), defOf(d)], n);
+      return make('Ayırt edici tanım', topic.title + ' kapsamında "' + nameOf(a) + '" kavramını diğer seçeneklerden ayıran en doğru açıklama hangisidir?', qa, nameOf(a) + ' bu başlıkta "' + defOf(a) + '" anlamıyla kullanılır.');
     }
 
     if (style === 1) {
-      qa = withAnswer(a.name, [b.name, c.name, d.name], n);
-      return make('Ters tanim', '"' + a.def + '" ifadesi hangi kavrama karsilik gelir?', qa, 'Verilen tanim dogrudan ' + a.name + ' kavramini anlatir.');
+      qa = withAnswer(nameOf(a), [nameOf(b), nameOf(c), nameOf(d)], n);
+      return make('Ters yorum', topic.title + ' sorusunda "' + defOf(a) + '" ifadesi hangi kavrama karşılık gelir?', qa, 'Verilen tanım doğrudan ' + nameOf(a) + ' kavramını anlatır.');
     }
 
     if (style === 2) {
-      qa = withAnswer(a.name, [b.name, c.name, d.name], n);
-      return make('Senaryo', profile.scenario + ' gereken bir soruda oncelikle hangi kavram secilmelidir?', qa, 'Senaryonun ana ipucu ' + a.name + ' kavramina baglanir.');
+      if (topic.module === 'sql') return sqlQuestion(topic, profile, terms, n);
+      if (topic.module === 'csharp') return csharpQuestion(topic, profile, terms, n);
+      qa = withAnswer(nameOf(a), [nameOf(b), nameOf(c), nameOf(d)], n);
+      return make('Vaka analizi', topic.title + ' kapsamında ' + trText(profile.scenario).toLowerCase() + ' beklenen bir sınav sorusunda en belirleyici ipucu hangi kavrama götürür?', qa, 'Vakadaki ana ipucu ' + nameOf(a) + ' kavramıyla doğrudan ilişkilidir.');
     }
 
     if (style === 3) {
-      qa = withAnswer(a.name + ': ' + a.def, [b.name + ': ' + a.def, c.name + ': ' + b.def, d.name + ': ' + c.def], n);
-      return make('Eslesme', topic.title + ' basliginda dogru kavram-aciklama eslesmesi hangisidir?', qa, a.name + ' ile verilen aciklama birbirini tamamlar.');
+      qa = withAnswer(nameOf(a) + ': ' + defOf(a), [nameOf(b) + ': ' + defOf(a), nameOf(c) + ': ' + defOf(b), nameOf(d) + ': ' + defOf(c)], n);
+      return make('Doğru eşleştirme', topic.title + ' başlığında doğru kavram-açıklama eşleşmesi hangisidir?', qa, nameOf(a) + ' ile verilen açıklama birbirini tamamlar; diğer seçeneklerde kavram ile açıklama bilinçli olarak yer değiştirmiştir.');
     }
 
     if (style === 4) {
-      var trap = profile.traps[n % profile.traps.length];
-      qa = withAnswer(trap, [a.name + ' her zaman ' + b.name + ' ile ayni seydir.', c.name + ' bu konu kapsaminda hic sorulmaz.', d.name + ' sadece gorsel tasarim ayaridir.'], n);
-      return make('Celdirici kontrolu', 'Bu baslikta sinav celdiricisi olarak dikkat edilmesi gereken ifade hangisidir?', qa, 'Bu ifade konunun sik karistirilan noktasini isaret eder: ' + trap);
+      var trap = trText(profile.traps[n % profile.traps.length]);
+      qa = withAnswer(trap, [
+        nameOf(a) + ' ile ' + nameOf(b) + ' her koşulda aynı görevi yapar.',
+        nameOf(c) + ' yalnızca görsel tercih olduğu için sınavda teknik anlam taşımaz.',
+        nameOf(d) + ' kullanıldığında diğer tüm kavramlar otomatik olarak gereksiz kalır.'
+      ], n);
+      return make('Çeldirici seçimi', topic.title + ' başlığında aşağıdaki ifadelerden hangisi sınav çeldiricisi olarak özellikle dikkate alınmalıdır?', qa, 'Bu ifade konunun sık karıştırılan noktasını hedefler: ' + trap);
     }
 
-    qa = withAnswer(profile.key, [b.name, c.name, d.name], n);
-    return make('Kapsam', topic.title + ' basliginin ana calisma odağı hangisidir?', qa, 'Bu konu temel olarak ' + profile.key + ' etrafinda okunmalidir.');
+    if (style === 5) {
+      qa = withAnswer('Yalnız I ve III', ['Yalnız II', 'I, II ve III', 'Yalnız III'], n);
+      return make('Öncül yorumu',
+        'I. ' + nameOf(a) + ' bu konunun temel kavramlarından biridir. II. ' + nameOf(b) + ' her durumda ' + nameOf(a) + ' ile aynı sonucu verir. III. ' + trText(profile.traps[(n + 1) % profile.traps.length]) + ' Buna göre hangi öncüller güvenilir kabul edilmelidir?',
+        qa,
+        'I doğrudur; III konunun çeldirici noktasını doğru işaret eder. II ise iki farklı kavramı koşulsuz eşitleyerek hatalı genelleme yapar.');
+    }
+
+    if (style === 6) {
+      qa = withAnswer(nameOf(d) + ' -> ' + nameOf(c) + ' -> ' + nameOf(b) + ' -> ' + nameOf(a), [
+        nameOf(a) + ' -> ' + nameOf(b) + ' -> ' + nameOf(c) + ' -> ' + nameOf(d),
+        nameOf(b) + ' -> ' + nameOf(a) + ' -> ' + nameOf(d) + ' -> ' + nameOf(c),
+        nameOf(c) + ' -> ' + nameOf(d) + ' -> ' + nameOf(a) + ' -> ' + nameOf(b)
+      ], n);
+      return make('Sıralama', topic.title + ' için ' + nameOf(a) + ', ' + nameOf(b) + ', ' + nameOf(c) + ' ve ' + nameOf(d) + ' kavramları birlikte sorulduğunda hangi okuma sırası daha tutarlıdır?', qa, 'Doğru seçenek, kavramları daha genel çerçeveden daha somut uygulama veya sonuç düzeyine indirerek okur.');
+    }
+
+    if (style === 7) {
+      qa = withAnswer(nameOf(b) + ': ' + defOf(a), [nameOf(a) + ': ' + defOf(a), nameOf(c) + ': ' + defOf(c), nameOf(d) + ': ' + defOf(d)], n);
+      return make('Hatalı eşleştirme', 'Aşağıdaki eşleştirmelerden hangisi bilinçli olarak hatalı verilmiştir?', qa, nameOf(b) + ' kavramı, ' + nameOf(a) + ' için verilen açıklamayla eşleştirildiği için seçenek hatalıdır.');
+    }
+
+    if (style === 8) {
+      if (topic.module === 'sql') return sqlQuestion(topic, profile, terms, n + 3);
+      if (topic.module === 'csharp') return csharpQuestion(topic, profile, terms, n + 3);
+      qa = withAnswer('Önce tanımı, sonra sınırını ve karıştırıldığı kavramı kontrol etmek', [
+        'Yalnızca kavram adını ezberlemek',
+        'Tüm seçenekleri aynı kategori kabul etmek',
+        'Soru kökünü okumadan en tanıdık terimi işaretlemek'
+      ], n);
+      return make('Strateji', topic.title + ' sorusunda ' + nameOf(a) + ' ile ' + nameOf(b) + ' birbirine çok yakın görünüyorsa en sağlam çözüm yolu hangisidir?', qa, 'Zor sorularda doğru cevap çoğu zaman kavramın sınırını ve ne olmadığını okuyarak bulunur.');
+    }
+
+    qa = withAnswer(trText(profile.key), [nameOf(b), nameOf(c), nameOf(d)], n);
+    return make('Kapsam sentezi', topic.title + ' başlığındaki bilgileri tek bir çalışma odağına indirgemek gerekirse en doğru odak hangisidir?', qa, 'Bu konu temel olarak ' + trText(profile.key) + ' etrafında okunmalıdır.');
   }
 
-  function make(kind, text, qa, explain) {
+  function sqlQuestion(topic, profile, terms, n) {
+    var a = terms[0], b = terms[1], c = terms[2], d = terms[3];
+    var code = 'SELECT ' + safeSqlName(nameOf(a)) + ', COUNT(*)\nFROM tablo\nWHERE durum = \'aktif\'\nGROUP BY ' + safeSqlName(nameOf(a)) + '\nHAVING COUNT(*) > 1;';
+    var qa = withAnswer('WHERE satırları gruplamadan önce, HAVING ise oluşan grupları filtreler.', [
+      'HAVING her zaman FROM bölümünden önce çalışır.',
+      'WHERE yalnızca ORDER BY ile birlikte kullanılabilir.',
+      'GROUP BY sonucu sıralar; aggregate hesaplamasıyla ilişkisi yoktur.'
+    ], n);
+    return make('Sorgu yorumu', topic.title + ' bağlamında aşağıdaki sorgu için en doğru yorum hangisidir?', qa, 'Sorguda WHERE kaynak satırları azaltır; GROUP BY grupları oluşturur; HAVING ise COUNT(*) sonucuna göre grupları eler.', code, 'sql');
+  }
+
+  function csharpQuestion(topic, profile, terms, n) {
+    var a = terms[0];
+    var code = 'var items = new List<int> { 1, 2, 3 };\nvar copy = items;\ncopy.Add(4);\nConsole.WriteLine(items.Count);';
+    var qa = withAnswer('4', ['3', '0', 'Derleme hatası'], n);
+    if (topic.id.indexOf('operator') !== -1 || topic.id.indexOf('tuzak') !== -1) {
+      code = 'int x = 4;\nint y = x++ + ++x;\nConsole.WriteLine(y);';
+      qa = withAnswer('10', ['8', '9', 'Derleme hatası'], n);
+      return make('Kod çıktısı', 'Aşağıdaki kodun çıktısı nedir?', qa, 'x++ önce 4 değerini kullanır, sonra x 5 olur; ++x önce 6 yapar ve 6 değerini kullanır. Toplam 10 olur.', code, 'csharp');
+    }
+    return make('Kod davranışı', '"' + nameOf(a) + '" konusuyla ilişkili olarak aşağıdaki kodun çıktısı nedir?', qa, 'List<T> bir reference type nesnesidir; copy ve items aynı listeyi gösterdiği için eklenen eleman iki referanstan da görünür.', code, 'csharp');
+  }
+
+  function safeSqlName(text) {
+    return trText(text).toLowerCase()
+      .replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u')
+      .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'alan';
+  }
+
+  function make(kind, text, qa, explain, code, lang) {
     return {
       kind: kind,
       text: text,
+      code: code,
+      lang: lang,
       options: qa.options,
       answer: qa.answer,
       explain: explain
     };
+  }
+
+  function normalizePack(pack) {
+    if (!pack) return;
+    if (pack.focus) pack.focus = trText(pack.focus);
+    if (pack.deep) {
+      pack.deep = pack.deep.map(function (item) { return trText(item); });
+    }
+    if (pack.traps) {
+      pack.traps = pack.traps.map(function (item) { return trText(item); });
+    }
+    if (pack.questions) {
+      pack.questions.forEach(normalizeQuestion);
+    }
+  }
+
+  function normalizeQuestion(q) {
+    if (!q) return;
+    q.kind = trText(q.kind || '');
+    q.text = trText(q.text || '');
+    q.explain = trText(q.explain || '');
+    if (q.options) {
+      Object.keys(q.options).forEach(function (key) {
+        q.options[key] = trText(q.options[key]);
+      });
+    }
   }
 
   S.topics.forEach(function (topic) {
@@ -491,8 +983,13 @@
     var pack = ensurePack(topic, profile);
     var current = countBaseQuestions(topic.html) + pack.questions.length;
     var need = Math.max(0, TARGET - current);
+    var start = pack.questions.length;
     for (var i = 0; i < need; i++) {
-      pack.questions.push(question(topic, profile, pack.questions.length + i));
+      pack.questions.push(question(topic, profile, start + i));
     }
+  });
+
+  Object.keys(S.enrichments).forEach(function (id) {
+    normalizePack(S.enrichments[id]);
   });
 })();
