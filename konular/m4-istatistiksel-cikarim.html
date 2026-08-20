@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>İstatistiksel Çıkarım ve A/B Testleri — Veri Atlası</title>
+<meta name="description" content="Örneklemden evrene çıkarım: Merkezi Limit Teoremi, hipotez testi, p-değerinin doğru yorumu, güven aralığı, t-testi, ki-kare ve uçtan uca A/B testi tasarımı — peeking ve çoklu test tuzaklarıyla birlikte.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m4" data-slug="m4-istatistiksel-cikarim">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m4">4. Analitik ve İstatistik</a><span class="sep">/</span>
+        <span>İstatistiksel Çıkarım ve A/B Testleri</span>
+      </nav>
+      <span class="mod-badge">Modül 4 · Analitik ve İstatistik</span>
+      <h1>İstatistiksel Çıkarım ve A/B Testleri</h1>
+      <p class="en-title">Statistical Inference &amp; A/B Testing</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~18 dk okuma</span>
+        <span class="chip">🔤 15 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Bu fark gerçek mi, şans mı?</h2>
+        <p><a href="m4-eda.html">EDA konusunda</a> veriyi tanımayı öğrendik; şimdi işin felsefi ama son derece pratik sorusuna geliyoruz. Yeni ödeme sayfasını 4.000 kullanıcıya gösterdin: dönüşüm %10,2'den %11,4'e çıktı. Patron mutlu — ama bu fark yeni tasarımın eseri mi, yoksa o hafta şansına biraz daha istekli kullanıcı mı denk geldi? İstatistiksel çıkarımın tek işi bu soruyu disipline etmektir: <strong>"elimdeki örneklemden, evrenin tamamı hakkında ne söyleyebilirim?"</strong></p>
+        <p>İki kavramı ayıralım. <strong>Evren (population)</strong>, hakkında konuşmak istediğin grubun tamamıdır: tüm mevcut ve gelecek kullanıcıların. Onu hiçbir zaman ölçemezsin. <strong>Örneklem (sample)</strong>, elindeki sınırlı gözlem kümesidir: o haftaki 4.000 kullanıcı. Çıkarım, küçükten büyüğe atılan köprüdür — ve köprünün taşıyıcı ayağı örneklemin <em>rastgele</em> seçilmiş olmasıdır.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 300" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Evrenden örnekleme, örneklemden evrene çıkarım">
+            <defs>
+              <marker id="inf-arr-a" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              <marker id="inf-arr-b" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--ok)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <ellipse cx="185" cy="155" rx="145" ry="105" fill="rgba(var(--acc-rgb),.07)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="185" y="38" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Evren (population)</text>
+              <g fill="var(--muted)" opacity=".75">
+                <circle cx="95" cy="125" r="3.5"/><circle cx="130" cy="90" r="3.5"/><circle cx="175" cy="75" r="3.5"/>
+                <circle cx="225" cy="87" r="3.5"/><circle cx="260" cy="120" r="3.5"/><circle cx="90" cy="180" r="3.5"/>
+                <circle cx="120" cy="215" r="3.5"/><circle cx="160" cy="230" r="3.5"/><circle cx="210" cy="225" r="3.5"/>
+                <circle cx="255" cy="200" r="3.5"/><circle cx="285" cy="165" r="3.5"/><circle cx="140" cy="155" r="3.5"/>
+                <circle cx="185" cy="185" r="3.5"/><circle cx="230" cy="155" r="3.5"/><circle cx="105" cy="150" r="3.5"/>
+                <circle cx="200" cy="110" r="3.5"/><circle cx="155" cy="115" r="3.5"/><circle cx="245" cy="235" r="3.5"/>
+              </g>
+              <g fill="var(--acc)">
+                <circle cx="150" cy="135" r="4"/><circle cx="220" cy="180" r="4"/><circle cx="112" cy="195" r="4"/>
+                <circle cx="240" cy="95" r="4"/><circle cx="190" cy="145" r="4"/><circle cx="82" cy="155" r="4"/>
+              </g>
+              <text x="185" y="284" text-anchor="middle" fill="var(--muted)" font-size="11">tüm kullanıcılar — gerçek oran bilinmez</text>
+
+              <rect x="470" y="90" width="185" height="130" rx="12" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="562" y="74" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Örneklem (sample)</text>
+              <g fill="var(--acc)">
+                <circle cx="505" cy="125" r="4"/><circle cx="535" cy="155" r="4"/><circle cx="565" cy="120" r="4"/>
+                <circle cx="595" cy="155" r="4"/><circle cx="520" cy="185" r="4"/><circle cx="585" cy="190" r="4"/>
+                <circle cx="615" cy="128" r="4"/><circle cx="620" cy="178" r="4"/>
+              </g>
+              <text x="562" y="244" text-anchor="middle" fill="var(--muted)" font-size="11">n gözlem — oran hesaplanır</text>
+
+              <path d="M335 118 C 390 96, 420 96, 464 112" fill="none" stroke="var(--acc)" stroke-width="2" marker-end="url(#inf-arr-a)"/>
+              <text x="399" y="86" text-anchor="middle" fill="var(--acc)" font-size="12" font-weight="700">örnekleme (rastgele!)</text>
+              <path d="M464 198 C 420 220, 390 220, 338 200" fill="none" stroke="var(--ok)" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#inf-arr-b)"/>
+              <text x="399" y="242" text-anchor="middle" fill="var(--ok)" font-size="12" font-weight="700">çıkarım (inference)</text>
+              <text x="399" y="258" text-anchor="middle" fill="var(--muted)" font-size="10.5">örneklemden evren hakkında sonuç</text>
+            </g>
+          </svg>
+          <figcaption>Evrenin tamamı asla ölçülemez; rastgele örneklemden hesaplanan değerlerle evren hakkında kontrollü tahmin yapılır.</figcaption>
+        </figure>
+
+        <p>Rastgelelik bozulursa çıkarım da bozulur; buna <strong>örnekleme yanlılığı (sampling bias)</strong> denir. Tarihin ünlü dersi: 1936 ABD seçiminde Literary Digest dergisi 2 milyondan fazla anket topladı ve seçimi açık farkla yanlış tahmin etti — çünkü anket listesi telefon ve otomobil sahiplerinden (o günün varlıklı kesiminden) derlenmişti. Ders net: <strong>yanlı örneklemi büyütmek hatayı düzeltmez, sadece yanlış cevaba olan güveni büyütür.</strong></p>
+
+        <h2>Merkezi Limit Teoremi: istatistiğin taşıyıcı kolonu</h2>
+        <p>Peki tek bir örneklemden evrene nasıl köprü kuruluyor? Sihir, <strong>Merkezi Limit Teoremi'nde (Central Limit Theorem — CLT)</strong> saklı. Bir düşünce deneyi yap: evrenden n=50'lik bir örneklem çek, ortalamasını not et; bunu 1.000 kez tekrarla ve elindeki 1.000 ortalamanın histogramını çiz. CLT der ki: <em>tek tek gözlemlerin dağılımı ne kadar çarpık olursa olsun</em> (gelir dağılımı gibi), örneklem <strong>ortalamalarının</strong> dağılımı, n büyüdükçe çan eğrisine (normal dağılıma) yaklaşır.</p>
+        <p>Bu neden devrimsel? Çünkü çan eğrisinin matematiği bilinir: ortalamanın nereye düşeceğini, ne kadar oynayacağını hesaplayabiliriz. Bu oynamanın adı <strong>standart hata</strong>dır (standard error = σ/√n) ve paydadaki karekök önemli bir pratik gerçeği söyler: tahmini iki kat hassaslaştırmak için <em>dört kat</em> veri gerekir. Birazdan kuracağımız hipotez testleri ve güven aralıkları, tamamen bu çan eğrisinin üzerine oturur.</p>
+        <div class="note"><b>Kaba kural: n ≥ 30.</b> Ders kitapları "örneklem 30'u geçince CLT devreye girer" der; bu makul bir başlangıç eşiğidir ama evrensel yasa değildir. Dağılım aşırı çarpıksa (ör. sepet tutarları, gecikme süreleri) çan şekline yaklaşmak için çok daha büyük n gerekebilir. İkna olmamışsan kendi verinle simülasyonu yap — on satır pandas koduyla CLT'yi gözünle görürsün.</div>
+
+        <h2>Hipotez testi: istatistiğin masumiyet karinesi</h2>
+        <p>Şimdi çerçeveyi kuralım. Hipotez testi bir mahkeme gibi çalışır: sanık, aksini gösteren güçlü kanıt olana dek masumdur. İstatistikte "masumiyet", <strong>H0 (sıfır hipotezi)</strong>dir: "fark yok, etki yok, her şey şanstan ibaret". Karşısında <strong>H1 (alternatif hipotez)</strong> durur: "gerçek bir fark var". Deney verisi kanıttır; soru şudur: <em>bu kanıt, masumiyet varsayımını çürütecek kadar güçlü mü?</em></p>
+        <p>Kanıt gücünün ölçüsü <strong>p-değeri (p-value)</strong>dir ve tanımını kelimesi kelimesine öğrenmeye değer: <strong>"H0 doğru olsaydı, elimizdeki kadar veya daha uç bir sonucu görme olasılığı."</strong> p = 0.03 demek: fark gerçekten olmasaydı, sırf şans eseri bu kadar büyük bir fark görme ihtimalimiz %3 olurdu demek. Bu olasılık, önceden seçilen <strong>anlamlılık düzeyi α</strong>'nın (gelenek: 0.05) altındaysa H0 reddedilir ve sonuca "istatistiksel olarak anlamlı" denir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 300" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kontrol ve varyant dağılımları, örtüşme bölgesi ve p-değeri gölgesi">
+            <defs>
+              <marker id="inf-arr-c" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--muted)"/></marker>
+              <marker id="inf-arr-d" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--bad)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <line x1="60" y1="235" x2="660" y2="235" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <!-- kontrol eğrisi -->
+              <path d="M100 235 C 190 231, 200 75, 280 75 C 360 75, 370 231, 460 235 Z" fill="rgba(var(--acc-rgb),.10)" stroke="var(--acc)" stroke-width="2"/>
+              <!-- varyant eğrisi -->
+              <path d="M240 235 C 330 231, 340 75, 420 75 C 500 75, 510 231, 600 235 Z" fill="var(--ok)" fill-opacity=".08" stroke="var(--ok)" stroke-width="2"/>
+              <!-- p-value gölgesi: kontrolün sağ kuyruğu -->
+              <path d="M420 212 C 435 224, 448 231, 460 235 L420 235 Z" fill="var(--bad)" fill-opacity=".45"/>
+              <line x1="420" y1="70" x2="420" y2="235" stroke="var(--bad)" stroke-width="1.4" stroke-dasharray="5 4"/>
+              <text x="420" y="58" text-anchor="middle" fill="var(--bad)" font-size="11.5" font-weight="700">gözlenen fark</text>
+              <!-- etiketler -->
+              <text x="215" y="98" text-anchor="middle" fill="var(--acc)" font-size="12.5" font-weight="700">kontrol (A)</text>
+              <text x="487" y="98" text-anchor="middle" fill="var(--ok)" font-size="12.5" font-weight="700">varyant (B)</text>
+              <text x="350" y="272" text-anchor="middle" fill="var(--muted)" font-size="11">örtüşme büyükse fark şansla açıklanabilir → p büyür</text>
+              <path d="M350 258 L350 195" stroke="var(--muted)" stroke-width="1.3" fill="none" marker-end="url(#inf-arr-c)"/>
+              <text x="583" y="140" text-anchor="middle" fill="var(--bad)" font-size="11.5" font-weight="700">kırmızı alan ≈ p-değeri</text>
+              <text x="583" y="156" text-anchor="middle" fill="var(--muted)" font-size="10.5">H0 doğruyken bu kadar uç</text>
+              <text x="583" y="170" text-anchor="middle" fill="var(--muted)" font-size="10.5">sonuçların olasılığı</text>
+              <path d="M545 180 C 505 205, 470 220, 448 228" fill="none" stroke="var(--bad)" stroke-width="1.4" marker-end="url(#inf-arr-d)"/>
+            </g>
+          </svg>
+          <figcaption>Şematik gösterim: iki grubun metrik dağılımları. Eğriler ayrıştıkça şans açıklaması zayıflar; kırmızı kuyruk p-değerini temsil eder.</figcaption>
+        </figure>
+
+        <div class="warn"><b>En sık yanlış yorum.</b> p-değeri, "H0'ın doğru olma olasılığı" ya da "sonucun şans eseri olma olasılığı" DEĞİLDİR. Koşullu bir olasılıktır: önce "H0 doğru" varsayılır, veri o dünyada ne kadar şaşırtıcı diye bakılır. Ayrıca α=0.05, Ronald Fisher'dan kalma pratik bir gelenektir — doğa yasası değil. p=0.049 ile p=0.051 arasında kutsal bir sınır yoktur.</div>
+
+        <p>Karar iki türlü yanlış çıkabilir ve ikisinin adı vardır: gerçekte fark yokken "fark var" demek <strong>Tip I hata</strong> (yanlış alarm — olasılığı tam olarak α'dır), gerçek bir farkı gözden kaçırmak <strong>Tip II hata</strong>dır (olasılığı β; 1−β'ye <em>istatistiksel güç</em> denir, birazdan döneceğiz):</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 330" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Hipotez testi karar matrisi: Tip I ve Tip II hata">
+            <g font-family="inherit">
+              <text x="460" y="30" text-anchor="middle" fill="var(--muted)" font-size="12" font-weight="700" letter-spacing="1">GERÇEK DURUM</text>
+              <text x="350" y="60" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">H0 doğru — gerçekte fark yok</text>
+              <text x="570" y="60" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">H0 yanlış — gerçekte fark var</text>
+              <text x="28" y="178" text-anchor="middle" fill="var(--muted)" font-size="12" font-weight="700" letter-spacing="1" transform="rotate(-90 28 178)">TESTİN KARARI</text>
+              <text x="130" y="118" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">H0'ı reddettik</text>
+              <text x="130" y="134" text-anchor="middle" fill="var(--muted)" font-size="10.5">("fark var" dedik)</text>
+              <text x="130" y="218" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">H0'ı reddedemedik</text>
+              <text x="130" y="234" text-anchor="middle" fill="var(--muted)" font-size="10.5">("kanıt yetersiz" dedik)</text>
+
+              <rect x="245" y="80" width="210" height="90" rx="10" fill="var(--bad)" fill-opacity=".13" stroke="var(--bad)" stroke-width="1.6"/>
+              <text x="350" y="112" text-anchor="middle" fill="var(--bad)" font-size="13" font-weight="700">TİP I HATA</text>
+              <text x="350" y="132" text-anchor="middle" fill="var(--ink)" font-size="11">yanlış alarm — olasılığı: α</text>
+              <text x="350" y="150" text-anchor="middle" fill="var(--muted)" font-size="10.5">(masum sanığı mahkûm etmek)</text>
+
+              <rect x="465" y="80" width="210" height="90" rx="10" fill="var(--ok)" fill-opacity=".13" stroke="var(--ok)" stroke-width="1.4"/>
+              <text x="570" y="116" text-anchor="middle" fill="var(--ok)" font-size="13" font-weight="700">DOĞRU KARAR</text>
+              <text x="570" y="138" text-anchor="middle" fill="var(--ink)" font-size="11">farkı yakaladık — güç (power) = 1 − β</text>
+
+              <rect x="245" y="180" width="210" height="90" rx="10" fill="var(--ok)" fill-opacity=".13" stroke="var(--ok)" stroke-width="1.4"/>
+              <text x="350" y="216" text-anchor="middle" fill="var(--ok)" font-size="13" font-weight="700">DOĞRU KARAR</text>
+              <text x="350" y="238" text-anchor="middle" fill="var(--ink)" font-size="11">şansı şans olarak tanıdık (1 − α)</text>
+
+              <rect x="465" y="180" width="210" height="90" rx="10" fill="var(--warn)" fill-opacity=".15" stroke="var(--warn)" stroke-width="1.6"/>
+              <text x="570" y="212" text-anchor="middle" fill="var(--warn)" font-size="13" font-weight="700">TİP II HATA</text>
+              <text x="570" y="232" text-anchor="middle" fill="var(--ink)" font-size="11">farkı kaçırdık — olasılığı: β</text>
+              <text x="570" y="250" text-anchor="middle" fill="var(--muted)" font-size="10.5">(suçluyu serbest bırakmak)</text>
+
+              <text x="460" y="308" text-anchor="middle" fill="var(--muted)" font-size="11">α'yı küçültmek Tip I'i azaltır ama Tip II'yi büyütür — ikisi arasında denge kurulur</text>
+            </g>
+          </svg>
+          <figcaption>Karar matrisi: iki doğru, iki yanlış sonuç. α yanlış alarm oranını, β kaçırma oranını kontrol eder.</figcaption>
+        </figure>
+
+        <h2>Güven aralığı: nokta değil, aralık konuş</h2>
+        <p>"Dönüşüm %11,4" cümlesi fazla kendinden emindir; başka bir 4.000 kullanıcıyla %10,9 da çıkabilirdi. Olgun rapor dili <strong>güven aralığıdır (confidence interval)</strong>: "%95 güven aralığıyla dönüşüm %10,4 – %12,4 arasında." Aralık, tahminin belirsizliğini görünür kılar: dar aralık = bol veri, keskin tahmin; geniş aralık = "daha veri toplamadan büyük laf etme".</p>
+        <p>%95'in <em>doğru</em> yorumu inceliklidir: aynı deneyi aynı yöntemle 100 kez tekrarlasan, kurduğun 100 aralıktan yaklaşık 95'i evrenin gerçek değerini yakalar. Yani %95 senin aralığının değil, <em>yönteminin</em> başarı oranıdır. Pratik bir bonus: iki grubun farkı için kurulan %95 aralığı sıfırı içermiyorsa, α=0.05'lik test de "anlamlı" der — aralık ve test aynı madalyonun iki yüzüdür.</p>
+
+        <h2>Hangi test ne zaman: t-testi ve ki-kare</h2>
+        <p>Çerçeve tamam; şimdi alet çantası. Sahada iki test, ihtiyaçların büyük kısmını karşılar:</p>
+        <ul>
+          <li><strong>t-testi</strong> — iki grubun <em>ortalamasını</em> karşılaştırır: sepet tutarı, sayfada geçirilen süre, teslimat gecikmesi gibi <em>sürekli</em> metrikler. Varsayılan tercih, grupların varyansını eşit saymayan Welch t-testidir; CLT sayesinde büyük örneklemde normallik şartı da yumuşar.</li>
+          <li><strong>Ki-kare (chi-square) testi</strong> — <em>kategorik</em> verinin sayımlarını karşılaştırır: dönüştü/dönüşmedi, plan A/B/C seçimi, iade var/yok. "Gözlenen sayımlar, 'fark yok' beklentisinden ne kadar sapıyor?" diye bakar. İki oranın karşılaştırması (2×2 tablo), ki-karenin en klasik kullanımıdır.</li>
+        </ul>
+        <p>Ezber cümlesi: <strong>metrik sürekliyse t-testi, sayım/oransa ki-kare.</strong> Dönüşüm oranı için kullanılan z-testi de matematiksel olarak 2×2 ki-karenin ikizidir — hangisini kullandığın sonucu değiştirmez.</p>
+
+        <figure class="codebox">
+          <figcaption>Python — scipy ile iki grup karşılaştırması (dönüşüm senaryosu)</figcaption>
+          <pre><code data-lang="python">import numpy as np
+from scipy import stats
+
+# Senaryo: ödeme sayfası A/B testi. Her kullanıcı 0 (dönüşmedi) / 1 (dönüştü)
+np.random.seed(42)
+kontrol = np.random.binomial(1, 0.102, size=4000)   # gerçek oran %10.2 varsayımıyla
+varyant = np.random.binomial(1, 0.114, size=4000)   # gerçek oran %11.4 varsayımıyla
+
+print(f"kontrol: {kontrol.mean():.4f}  varyant: {varyant.mean():.4f}")
+
+# Welch t-testi: iki ortalamayı karşılaştırır (0/1 veride ortalama = dönüşüm oranı)
+# Not: büyük örneklemde 0/1 veriye t-testi, oranlar için z-testiyle pratikte özdeştir
+t_ist, p = stats.ttest_ind(varyant, kontrol, equal_var=False)
+print(f"t = {t_ist:.2f}, p = {p:.4f}")
+
+# Yorum kuralı (α = 0.05):
+# p &lt; 0.05 → "H0 doğru olsaydı bu kadar uç fark çok nadir görülürdü" → H0'ı reddet
+# p ≥ 0.05 → kanıt yetersiz; DİKKAT: bu "fark yok" demek DEĞİL, "gösteremedik" demek
+
+# Aynı soruya ki-kare ile bakış: 2x2 sayım tablosu (dönüşen / dönüşmeyen)
+tablo = [[varyant.sum(), len(varyant) - varyant.sum()],
+         [kontrol.sum(), len(kontrol) - kontrol.sum()]]
+chi2, p2, dof, _ = stats.chi2_contingency(tablo)
+print(f"ki-kare p = {p2:.4f}")   # t-testiyle aynı hikâyeyi anlatmalı</code></pre>
+        </figure>
+
+        <h2>A/B testi: uçtan uca disiplin</h2>
+        <p>A/B testi, buraya kadarki her parçanın ürüne dönüşmüş hâlidir: kullanıcıları <em>rastgele</em> iki gruba böl, tek bir değişikliği yalnız birine göster, metriği topla, testi çalıştır. Rastgele bölmek pazarlama süsü değil, deneyin bilimsel temelidir: cihaz, saat, ülke, alışkanlık gibi bilinen-bilinmeyen tüm karıştırıcı etkenleri iki gruba eşit dağıtır; böylece kalan tek sistematik fark, senin değişikliğin olur.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 760 250" width="760" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A/B testi akışı: trafik, rastgele bölme, varyantlar, metrik, test ve karar">
+            <defs>
+              <marker id="inf-arr-e" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <rect x="15" y="95" width="90" height="60" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="60" y="121" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Trafik</text>
+              <text x="60" y="139" text-anchor="middle" fill="var(--muted)" font-size="10.5">tüm ziyaretçiler</text>
+              <path d="M108 125 L132 125" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#inf-arr-e)"/>
+
+              <rect x="136" y="95" width="125" height="60" rx="10" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="198" y="121" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Rastgele böl</text>
+              <text x="198" y="139" text-anchor="middle" fill="var(--muted)" font-size="10.5">50 / 50</text>
+              <path d="M264 108 C 290 85, 300 70, 316 62" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#inf-arr-e)"/>
+              <path d="M264 142 C 290 165, 300 180, 316 188" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#inf-arr-e)"/>
+
+              <rect x="320" y="32" width="140" height="55" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="390" y="55" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">A · Kontrol</text>
+              <text x="390" y="73" text-anchor="middle" fill="var(--muted)" font-size="10.5">mevcut tasarım</text>
+              <rect x="320" y="163" width="140" height="55" rx="10" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="390" y="186" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">B · Varyant</text>
+              <text x="390" y="204" text-anchor="middle" fill="var(--muted)" font-size="10.5">yeni tasarım</text>
+              <path d="M464 60 C 490 78, 495 88, 508 100" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#inf-arr-e)"/>
+              <path d="M464 190 C 490 172, 495 162, 508 150" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#inf-arr-e)"/>
+
+              <rect x="512" y="95" width="118" height="60" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="571" y="121" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Metrik topla</text>
+              <text x="571" y="139" text-anchor="middle" fill="var(--muted)" font-size="10.5">dönüşüm, tutar…</text>
+              <path d="M633 125 L654 125" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#inf-arr-e)"/>
+
+              <rect x="658" y="95" width="90" height="60" rx="10" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="703" y="118" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Test → karar</text>
+              <text x="703" y="136" text-anchor="middle" fill="var(--muted)" font-size="10.5">t / ki-kare</text>
+              <text x="703" y="148" text-anchor="middle" fill="var(--muted)" font-size="10.5">p &lt; α ?</text>
+
+              <text x="380" y="240" text-anchor="middle" fill="var(--muted)" font-size="11">randomizasyon iki grubu her açıdan benzer kılar — kalan tek fark, test edilen değişikliktir</text>
+            </g>
+          </svg>
+          <figcaption>Uçtan uca A/B akışı. Süre ve örneklem büyüklüğü deney başlamadan belirlenir; karar ancak süre dolunca verilir.</figcaption>
+        </figure>
+
+        <p>İyi bir deney, veriden önce kâğıt üzerinde tasarlanır ve üç sayı seçilir: yakalamak istediğin en küçük iş değeri taşıyan fark, yani <strong>MDE (minimum detectable effect)</strong>; yanlış alarm toleransın <strong>α</strong>; ve gerçek farkı yakalama gücün <strong>power (1−β, gelenek: 0.80)</strong>. Bu üçlü, gereken örneklem büyüklüğünü matematiksel olarak belirler — ve ilişki acımasızdır: MDE'yi yarıya indirmek, gereken kullanıcı sayısını yaklaşık dörde katlar. Süreyi de örneklem hedefi + tam hafta döngüleri belirler: hafta içi/hafta sonu kullanıcıları farklı davrandığından deney tam hafta katlarında koşturulur.</p>
+
+        <figure class="codebox">
+          <figcaption>Python — güven aralığı + deney öncesi örneklem/power hesabı (statsmodels)</figcaption>
+          <pre><code data-lang="python">from statsmodels.stats.proportion import proportion_confint, proportion_effectsize
+from statsmodels.stats.power import NormalIndPower
+
+# 1) Güven aralığı: 4000 kullanıcıdan 456'sı dönüştü
+n, basari = 4000, 456
+print(f"nokta tahmin: {basari / n:.4f}")            # 0.114
+alt, ust = proportion_confint(basari, n, alpha=0.05, method="wilson")
+print(f"%95 GA: [{alt:.4f}, {ust:.4f}]")
+# Yorum: bu YÖNTEMLE kurulan aralıkların ~%95'i evrenin gerçek oranını yakalar
+
+# 2) Deneyden ÖNCE: kaç kullanıcı gerekir? (power analizi)
+etki = proportion_effectsize(0.115, 0.10)           # taban %10, MDE = +1.5 puan
+n_gerekli = NormalIndPower().solve_power(
+    effect_size=etki, alpha=0.05, power=0.80, alternative="two-sided")
+print(f"grup başına ≈ {n_gerekli:,.0f} kullanıcı")
+
+# Okuma: power=0.80 → gerçek fark buysa, deneyin onu yakalama şansı %80 (β=%20)
+# MDE'yi 1.5 puandan 0.75'e indirirsen gereken n yaklaşık 4 katına çıkar</code></pre>
+        </figure>
+
+        <p>Son olarak, deney disiplinini bozan üç meşhur tuzak:</p>
+        <ul>
+          <li><strong>Peeking (erken gözetleme):</strong> p-değerine her gün bakıp "anlamlı olduğu an" deneyi durdurmak. Her bakış yeni bir şans denemesidir; bu alışkanlık Tip I hata oranını α=0.05'ten çok yukarı şişirir. Süre önceden belirlenir, karar süre sonunda verilir.</li>
+          <li><strong>Çoklu test problemi:</strong> 20 metriğe aynı anda bakarsan, hiçbir gerçek etki olmasa bile ortalama 1 tanesi sırf şansla p&lt;0.05 çıkar. Çözüm: tek bir birincil metrik seç; çok karşılaştırma zorunluysa Bonferroni gibi düzeltmeler uygula.</li>
+          <li><strong>İstatistiksel ≠ pratik anlamlılık:</strong> milyonlarca kullanıcıyla %0,01'lik fark bile "anlamlı" çıkar — ama sunucu maliyetini bile karşılamayabilir. p-değeri farkın <em>gerçekliğini</em> söyler, <em>büyüklüğünü ve değerini</em> söylemez; o yüzden raporda etki büyüklüğü + güven aralığı birlikte sunulur.</li>
+        </ul>
+        <div class="tip"><b>Deney günlüğü tut.</b> Hipotezini, birincil metriğini, MDE'ni, örneklem hedefini ve bitiş tarihini deney başlamadan yaz (buna pre-registration denir). Bu tek alışkanlık; peeking, metrik avcılığı ve "sonuca göre hikâye uydurma" tuzaklarının üçünü birden kapatır.</div>
+
+        <h2>A/B testi yapamadığında: nedensel çıkarım</h2>
+        <p>A/B testi altın standarttır çünkü <strong>randomizasyon</strong>, bilinen bilinmeyen tüm karıştırıcı etkenleri ortalamada dengeler. Ama her soruda deney yapamazsın: geçmişte alınmış bir zam kararının etkisini ölçmek, bir yasa değişikliğinin sonucunu incelemek ya da etik olarak rastgele atama yapılamayan durumlar (kimseye bilerek kötü hizmet veremezsin) için elinde yalnızca <em>gözlemsel veri</em> vardır.</p>
+        <p><strong>Nedensel çıkarım (causal inference)</strong>, gözlemsel veriden neden-sonuç ilişkisi çıkarmaya çalışan yöntemler ailesidir. Baş düşmanı <strong>karıştırıcı değişkenlerdir (confounder)</strong>: hem sebebi hem sonucu birlikte etkileyen gizli üçüncü faktör. Klasik örnek: "sadakat programına katılanlar %40 daha çok harcıyor." Program mı işe yarıyor, yoksa <em>zaten çok harcayanlar</em> mı programa katılıyor? Ham karşılaştırma bu ikisini ayırt edemez.</p>
+        <ul>
+          <li><strong>Fark-içinde-fark (difference-in-differences):</strong> Değişiklikten etkilenen grup ile etkilenmeyen bir kontrol grubunun, değişiklik <em>öncesi ve sonrası</em> farklarını karşılaştırırsın. Böylece iki grubu birlikte etkileyen genel eğilimler (mevsim, ekonomi, kampanya dönemi) sadeleşir.</li>
+          <li><strong>Eşleştirme (matching):</strong> Uygulamaya maruz kalan her birime, gözlenen özellikleri benzeyen bir "ikiz" bulup yalnızca onunla karşılaştırırsın.</li>
+          <li><strong>Nedensel diyagramlar:</strong> Değişkenler arası ok haritası çizerek hangisini kontrol etmen gerektiğini belirlersin. Sezgiye aykırı ama önemli: <em>her değişkeni kontrol etmek</em> sonucu düzeltmez, bozabilir.</li>
+        </ul>
+
+        <div class="warn"><b>Bu yöntemler A/B testinin yerini tutmaz.</b> Hepsi "gözlemediğim önemli bir karıştırıcı yok" gibi <b>kanıtlanamayan</b> varsayımlara dayanır. Kural nettir: deney yapabiliyorsan yap. Nedensel çıkarım, deney gerçekten mümkün olmadığında başvurulan ikinci en iyi yoldur ve bulguları her zaman daha temkinli bir dille sunulur.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Bu sayfanın kavramları, unvanın ne olursa olsun peşini bırakmaz:</p>
+        <ul>
+          <li><strong>Ürün analitiği →</strong> her buton, fiyat ve öneri algoritması değişikliği bir A/B testidir; büyük teknoloji şirketleri aynı anda yüzlerce deney koşturur.</li>
+          <li><strong>Makine öğrenmesi →</strong> "yeni model eskisinden iyi mi?" sorusu da bir çıkarım sorusudur: tek bir test skoru farkı şans olabilir; <a href="m5-model-degerlendirme.html">model değerlendirme</a> konusundaki cross-validation, bu belirsizliği ölçme yöntemidir.</li>
+          <li><strong>Veri mühendisliği →</strong> <a href="m3-veri-kalitesi.html">veri kalitesi</a> alarmları örtük birer hipotez testidir: "bugünkü kayıt dağılımı düne göre anormal mi sapmış?"</li>
+          <li><strong>MLOps →</strong> üretimdeki modelin girdi dağılımı kayması (drift), ki-kare benzeri testlerle izlenir — <a href="m8-monitoring.html">monitoring</a> konusunda göreceksin.</li>
+          <li><strong>Raporlama →</strong> güven aralığını görselle anlatmak ayrı bir beceridir; bir sonraki konu <a href="m4-gorsellestirme.html">Veri Görselleştirme</a> tam da bunu işliyor.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>p = 0.03 çıktı. Bu sayının doğru okunuşu nedir?</summary>
+            <div class="answer">"<b>H0 doğru olsaydı</b> (gerçekte fark yoksa), elimizdeki kadar veya daha uç bir sonucu görme olasılığı %3." H0'ın doğru olma olasılığı, ya da sonucun %97 kesin olduğu anlamına <b>gelmez</b>. α=0.05'ten küçük olduğu için H0 reddedilir.</div>
+          </details>
+          <details class="quiz">
+            <summary>Tip I ve Tip II hatayı bir cümleyle ayırt et. Hangisinin olasılığını α kontrol eder?</summary>
+            <div class="answer"><b>Tip I:</b> fark yokken "var" demek (yanlış alarm) — olasılığını <b>α</b> kontrol eder. <b>Tip II:</b> gerçek farkı kaçırmak — olasılığı β'dır ve 1−β'ye istatistiksel güç denir. α'yı küçültmek Tip I'i azaltırken Tip II riskini büyütür; ikisi bir dengedir.</div>
+          </details>
+          <details class="quiz">
+            <summary>Deney sürerken her gün p-değerine bakıp "anlamlı" olduğu gün durdurmak (peeking) neden yanlıştır?</summary>
+            <div class="answer">p-değeri deney boyunca şansla dalgalanır; her bakış <b>yeni bir şans denemesidir</b>. "İlk anlamlı göründüğü an durursan", gerçekte etkisi olmayan değişiklikleri "başarılı" ilan etme oranın α=0.05'in çok üzerine çıkar. Doğrusu: örneklem büyüklüğünü ve süreyi önceden belirle, kararı süre dolunca ver.</div>
+          </details>
+          <details class="quiz">
+            <summary>"%95 güven aralığı [%10,4 – %12,4]" ifadesinin doğru yorumu nedir?</summary>
+            <div class="answer">Aynı deneyi aynı yöntemle çok kez tekrarlasak, kurulan aralıkların <b>yaklaşık %95'i evrenin gerçek değerini yakalar</b> — %95, tek bir aralığın değil, yöntemin başarı oranıdır. Bonus: fark için kurulan %95 aralığı sıfırı içermiyorsa, α=0.05'te test de "anlamlı" der.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Evren (Popülasyon)</span><span class="term-en">Population</span><span class="lvl lvl-orta">Orta</span></div><p>Hakkında sonuç çıkarmak istediğin grubun tamamı; genellikle doğrudan ölçülemez, örneklemle temsil edilir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Örneklem</span><span class="term-en">Sample</span><span class="lvl lvl-orta">Orta</span></div><p>Evrenden çekilen sınırlı gözlem kümesi. Rastgele seçilmediyse büyüklüğü ne olursa olsun yanlı sonuç verir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Merkezi Limit Teoremi</span><span class="term-en">Central Limit Theorem</span><span class="lvl lvl-ileri">İleri</span></div><p>Örneklem ortalamalarının dağılımı, verinin kendi dağılımı çarpık olsa bile n büyüdükçe normale yaklaşır; test ve aralıkların temeli.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Hipotez Testi</span><span class="term-en">Hypothesis Testing</span><span class="lvl lvl-orta">Orta</span></div><p>"Fark yok" varsayımını veriyle sınama çerçevesi: H0 kur, veriyi topla, kanıt gücünü p-değeriyle ölç.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">H0 (Sıfır Hipotezi)</span><span class="term-en">Null Hypothesis</span><span class="lvl lvl-orta">Orta</span></div><p>"Etki/fark yok, gözlenen sapma şanstan" varsayımı. Test, bu masumiyet karinesini çürütmeye çalışır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">p-değeri</span><span class="term-en">p-value</span><span class="lvl lvl-orta">Orta</span></div><p>H0 doğruyken eldeki kadar veya daha uç sonuç görme olasılığı. H0'ın doğruluk olasılığı değildir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Anlamlılık Düzeyi (α)</span><span class="term-en">Significance Level</span><span class="lvl lvl-orta">Orta</span></div><p>H0'ı reddetmek için önceden seçilen eşik; aynı zamanda göze alınan yanlış alarm oranı. Gelenek: 0.05.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Tip I &amp; Tip II Hata</span><span class="term-en">Type I &amp; II Error</span><span class="lvl lvl-ileri">İleri</span></div><p>Tip I: yokken "var" demek (α). Tip II: varken kaçırmak (β). Birini azaltmak diğerini büyütür.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Güven Aralığı</span><span class="term-en">Confidence Interval</span><span class="lvl lvl-orta">Orta</span></div><p>Nokta tahmin yerine belirsizliği gösteren aralık; %95, yöntemin uzun vadeli yakalama oranıdır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">t-testi</span><span class="term-en">t-test</span><span class="lvl lvl-orta">Orta</span></div><p>İki grubun ortalamasını karşılaştıran test; sepet tutarı, süre gibi sürekli metriklerin standart aracı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Ki-kare Testi</span><span class="term-en">Chi-square Test</span><span class="lvl lvl-ileri">İleri</span></div><p>Kategorik sayımların beklenenden sapmasını ölçer; dönüşüm gibi oran karşılaştırmalarının klasik testi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">A/B Testi</span><span class="term-en">A/B Testing</span><span class="lvl lvl-orta">Orta</span></div><p>Kullanıcıları rastgele bölüp tek değişikliğin etkisini kontrollü ölçme deneyi; ürün kararlarının bilimsel yöntemi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">İstatistiksel Güç</span><span class="term-en">Statistical Power</span><span class="lvl lvl-ileri">İleri</span></div><p>Gerçek bir etki varsa testin onu yakalama olasılığı (1−β). Örneklem büyüklüğü planlamasının merkezindedir.</p></div>
+
+          <div class="term"><div class="term-head"><span class="term-tr">Nedensel Çıkarım</span><span class="term-en">Causal Inference</span><span class="lvl lvl-ileri">İleri</span></div><p>Deney yapılamadığında gözlemsel veriden neden-sonuç ilişkisi çıkarmaya çalışan yöntemler ailesi (fark-içinde-fark, eşleştirme).</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Karıştırıcı Değişken</span><span class="term-en">Confounder</span><span class="lvl lvl-orta">Orta</span></div><p>Hem sebebi hem sonucu etkileyerek sahte ilişki üreten gizli üçüncü faktör; randomizasyonun çözdüğü asıl sorun budur.</p></div>        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m4-istatistiksel-cikarim">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m4-eda.html"><span>← Önceki</span><b>Keşifsel Veri Analizi ve pandas</b></a>
+          <a class="next" href="m4-gorsellestirme.html"><span>Sonraki →</span><b>Veri Görselleştirme</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

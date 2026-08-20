@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Model Deployment ve Serving — Veri Atlası</title>
+<meta name="description" content="Eğitilmiş modeli gerçek kullanıcılara açmak: model artifact'leri, FastAPI ile REST servisi, Docker, Kubernetes ve online/batch serving desenleri.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m8" data-slug="m8-deployment">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m8">8. MLOps ve Üretim</a><span class="sep">/</span>
+        <span>Model Deployment ve Serving</span>
+      </nav>
+      <span class="mod-badge">Modül 8 · MLOps ve Üretim</span>
+      <h1>Model Deployment ve Serving</h1>
+      <p class="en-title">Model Deployment &amp; Serving</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~18 dk okuma</span>
+        <span class="chip">🔤 13 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Notebook'ta biten proje, başlamamış projedir</h2>
+        <p>Modelini eğittin, AUC güzel, grafikler parlıyor. Ama acı gerçek şu: notebook'ta yaşayan bir model hiçbir şeyi değiştiremez. Kimseye fiyat öneremez, hiçbir sahtecilik işlemini durduramaz, tek bir müşteriye e-posta attıramaz. Model ancak bir kullanıcıya ya da başka bir sisteme <strong>değdiğinde</strong> değer üretir — o âna kadar yaptığın şey, ne kadar başarılı olursa olsun, bir prova.</p>
+        <p>İşte <strong>deployment (yayına alma)</strong> tam olarak bu köprüyü kurar: eğitilmiş modeli, başka yazılımların <em>güvenle çağırabileceği</em>, her seferinde aynı davranan, ayakta kalan bir servise dönüştürme işi. Bu sayfada o yolculuğu adım adım yürüyeceğiz: önce modeli dosyaya döküp taşınabilir yapacağız, sonra bir API ile çağrılabilir kılacağız, Docker ile her yerde aynı çalışmasını garantileyeceğiz ve en sonda Kubernetes ile ölçeklendireceğiz.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 780 175" width="780" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Notebook'tan Kubernetes'e deployment yolculuğu">
+            <defs>
+              <marker id="arrA1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="390" y="24" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Deployment yolculuğu — her durak modele yeni bir yetenek ekler</text>
+              <rect x="15" y="50" width="130" height="56" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="80" y="74" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Notebook</text>
+              <text x="80" y="92" text-anchor="middle" fill="var(--muted)" font-size="11">keşif + eğitim</text>
+              <text x="80" y="130" text-anchor="middle" fill="var(--muted)" font-size="10.5">model burada doğar</text>
+              <path d="M145 78 L166 78" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrA1)"/>
+              <rect x="171" y="50" width="130" height="56" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="236" y="74" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Artifact</text>
+              <text x="236" y="92" text-anchor="middle" fill="var(--muted)" font-size="11">.joblib / .onnx</text>
+              <text x="236" y="130" text-anchor="middle" fill="var(--muted)" font-size="10.5">taşınabilir dosya</text>
+              <path d="M301 78 L322 78" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrA1)"/>
+              <rect x="327" y="50" width="130" height="56" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="392" y="74" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">REST API</text>
+              <text x="392" y="92" text-anchor="middle" fill="var(--muted)" font-size="11">/predict</text>
+              <text x="392" y="130" text-anchor="middle" fill="var(--muted)" font-size="10.5">çağrılabilir servis</text>
+              <path d="M457 78 L478 78" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrA1)"/>
+              <rect x="483" y="50" width="130" height="56" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="548" y="74" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Docker</text>
+              <text x="548" y="92" text-anchor="middle" fill="var(--muted)" font-size="11">image</text>
+              <text x="548" y="130" text-anchor="middle" fill="var(--muted)" font-size="10.5">her yerde aynı ortam</text>
+              <path d="M613 78 L634 78" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrA1)"/>
+              <rect x="639" y="50" width="130" height="56" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="704" y="74" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Kubernetes</text>
+              <text x="704" y="92" text-anchor="middle" fill="var(--muted)" font-size="11">replikalar</text>
+              <text x="704" y="130" text-anchor="middle" fill="var(--muted)" font-size="10.5">ölçek + öz-iyileşme</text>
+            </g>
+          </svg>
+          <figcaption>Yolculuk şeridi: soldan sağa her durak modeli üretime bir adım daha yaklaştırır. Her projenin son durağa gitmesi gerekmez.</figcaption>
+        </figure>
+
+        <h2>Model artifact: eğitimin dondurulmuş çıktısı</h2>
+        <p>Eğitim bittiğinde elinde bellekte yaşayan bir Python nesnesi vardır: ağırlıklar, öğrenilmiş parametreler, yapı. Notebook'u kapattığın an bu nesne yok olur. İlk adım onu diske dökmek — buna <strong>serialization (serileştirme)</strong> denir ve ortaya çıkan dosyaya <strong>model artifact</strong> denir. Üç yaygın yol var:</p>
+        <ul>
+          <li><strong>pickle</strong> — Python'un yerleşik yöntemi; herhangi bir Python nesnesini bayt dizisine çevirir (güvenmediğin kaynaktan gelen pickle dosyasını asla yükleme: açılırken kod çalıştırabilir).</li>
+          <li><strong>joblib</strong> — pickle'ın NumPy dizilerinde çok daha verimli çalışan hâli; scikit-learn dünyasının fiili standardı.</li>
+          <li><strong>ONNX</strong> — framework'ten bağımsız açık format; PyTorch'ta eğitip C# ya da mobil cihazda çalıştırmak gibi "eğit bir yerde, çalıştır her yerde" senaryolarının anahtarı.</li>
+        </ul>
+        <p>Kritik nokta şu: artifact yalnızca model değildir. Eğitimde kullandığın <strong>ön işleme adımları</strong> (scaler, encoder, eksik değer doldurma) ve <strong>sürüm bilgisi</strong> de pakete dahil olmalı. Serviste eğitimdekinden farklı bir ön işleme çalışırsa model hata vermez — sessizce <em>yanlış</em> tahmin üretir. Bu sinsi soruna <a href="m8-feature-store.html">feature store konusunda</a> "training-serving skew" adıyla tekrar döneceğiz.</p>
+
+        <div class="tip"><b>Pipeline olarak kaydet.</b> scikit-learn'de ön işleme + modeli tek <code>Pipeline</code> nesnesinde birleştirip öyle serileştir; böylece "model + ön işleme + sürüm" paketi tek dosyada bütün kalır ve serviste bölünmez.</div>
+
+        <h2>REST API ile servis: /predict kapısı</h2>
+        <p>Artifact diske indi; şimdi onu çağrılabilir yapma zamanı. En yaygın yöntem, modeli bir <strong>REST API</strong>'nin arkasına koymak: istemci HTTP ile JSON gönderir, servis JSON döner. <a href="m1-bilgisayar-temelleri.html">Modül 1'de tanıştığın</a> istek–yanıt döngüsünün ta kendisi — sadece bu kez yanıtı bir model üretiyor. Python dünyasında bunun için en sevilen araç <strong>FastAPI</strong>: hızlı, tip destekli ve otomatik dokümantasyon üretiyor.</p>
+        <p>Bir tahmin isteğinin servis içindeki hayatı hep aynı dört adımdır: <strong>istek gelir → girdi doğrulanır ve ön işlenir → model tahmin eder → JSON yanıt döner</strong>. Bu zincirin en çok atlanan halkası doğrulama. Dış dünyadan gelen veriye asla güvenemezsin: yaş alanına <code>"otuz"</code> yazan, alanı boş bırakan, negatif harcama gönderen istemciler olacak. <strong>pydantic</strong> şemaları bu çöpü kapıda çevirir: tip ya da aralık tutmazsa istek modele hiç ulaşmadan <code>422</code> hatasıyla reddedilir.</p>
+
+        <figure class="codebox">
+          <figcaption>Python — FastAPI ile minimal model servisi</figcaption>
+          <pre><code data-lang="python"># main.py — eğitilmiş modeli REST API olarak sunar
+import joblib
+from fastapi import FastAPI
+from pydantic import BaseModel, Field
+
+app = FastAPI(title="Churn Tahmin Servisi")
+
+# Artifact uygulama açılırken BİR KEZ yüklenir (her istekte değil!)
+model = joblib.load("model/churn_v3.joblib")
+
+class Musteri(BaseModel):
+    # pydantic şeması: tip/aralık tutmayan istek 422 ile reddedilir
+    yas: int = Field(ge=18, le=100)
+    aylik_harcama: float = Field(ge=0)
+    uyelik_ay: int = Field(ge=0)
+
+@app.post("/predict")
+def predict(m: Musteri):
+    X = [[m.yas, m.aylik_harcama, m.uyelik_ay]]
+    olasilik = model.predict_proba(X)[0][1]
+    return {"churn_olasiligi": round(float(olasilik), 3)}</code></pre>
+        </figure>
+
+        <p>Tek makinede tek servis başlangıç için yeter; ama trafik artınca aynı API'den birden fazla kopya (replika) çalıştırır, önlerine istekleri paylaştıran bir <strong>load balancer</strong> koyarsın. İsteğin uçtan uca yolculuğu şöyle görünür:</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 740 265" width="740" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tahmin isteğinin istemciden yanıta yaşam döngüsü">
+            <defs>
+              <marker id="arrA2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              <marker id="arrA2b" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--ok)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="370" y="18" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Bir tahmin isteğinin yaşam döngüsü</text>
+              <rect x="15" y="100" width="100" height="62" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="65" y="127" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">İstemci</text>
+              <text x="65" y="145" text-anchor="middle" fill="var(--muted)" font-size="11">web / mobil</text>
+              <path d="M115 131 L166 131" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrA2)"/>
+              <text x="141" y="120" text-anchor="middle" fill="var(--muted)" font-size="10.5">istek ~2 ms</text>
+              <rect x="170" y="100" width="130" height="62" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="235" y="127" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Load Balancer</text>
+              <text x="235" y="145" text-anchor="middle" fill="var(--muted)" font-size="11">trafiği dağıtır</text>
+              <path d="M300 131 L376 57" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrA2)"/>
+              <path d="M300 131 L376 131" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrA2)"/>
+              <path d="M300 131 L376 205" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrA2)"/>
+              <text x="338" y="118" text-anchor="middle" fill="var(--muted)" font-size="10.5">~1 ms</text>
+              <rect x="380" y="30" width="170" height="54" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="465" y="53" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">API replikası 1</text>
+              <text x="465" y="71" text-anchor="middle" fill="var(--muted)" font-size="10.5">FastAPI + model</text>
+              <rect x="380" y="104" width="170" height="54" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="465" y="127" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">API replikası 2</text>
+              <text x="465" y="145" text-anchor="middle" fill="var(--muted)" font-size="10.5">tahmin ~40 ms</text>
+              <rect x="380" y="178" width="170" height="54" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="465" y="201" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">API replikası 3</text>
+              <text x="465" y="219" text-anchor="middle" fill="var(--muted)" font-size="10.5">FastAPI + model</text>
+              <path d="M550 131 L601 131" stroke="var(--ok)" stroke-width="1.8" marker-end="url(#arrA2b)"/>
+              <rect x="605" y="100" width="120" height="62" rx="10" fill="var(--dg-box)" stroke="var(--ok)" stroke-width="1.6"/>
+              <text x="665" y="127" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">JSON yanıt</text>
+              <text x="665" y="145" text-anchor="middle" fill="var(--muted)" font-size="11">toplam ~45 ms</text>
+              <text x="370" y="256" text-anchor="middle" fill="var(--muted)" font-size="10.5">Latency = isteğin yola çıkışından yanıtın dönüşüne kadar geçen toplam süre (burada ~45 ms)</text>
+            </g>
+          </svg>
+          <figcaption>Load balancer isteği en müsait replikaya yollar; replika sayısı arttıkça sistem hem daha çok isteği kaldırır hem tek replika çökünce ayakta kalır.</figcaption>
+        </figure>
+
+        <h2>Docker: "benim makinemde çalışıyordu"nun ilacı</h2>
+        <p>Servisi sunucuya kopyaladın, çalışmadı. Sende Python 3.12, sunucuda 3.9; sende scikit-learn 1.5, orada 1.2 — aynı kod, farklı ortam, farklı (ya da hiç) sonuç. Yazılım tarihinin en klişe cümlesi de burada doğuyor: <em>"ama benim makinemde çalışıyordu"</em>. <strong>Docker</strong> bu derde kökten çözüm getirir: uygulamayı işletim sistemi kütüphaneleri, Python sürümü, bağımlılıkları ve kodun kendisiyle birlikte tek pakete koyar.</p>
+        <p>İki kavramı ayırmak her şeyi netleştirir: <strong>image</strong>, paketin değişmez kalıbıdır — bir kere inşa edilir, her yerde aynıdır. <strong>Container</strong> ise o kalıptan başlatılan çalışan kopyadır; aynı image'dan istediğin kadar özdeş container ayağa kaldırabilirsin. Kalıbın tarifi de <strong>Dockerfile</strong> adlı metin dosyasında satır satır yazılıdır: hangi temel imajdan başla, hangi bağımlılıkları kur, hangi dosyaları kopyala, açılınca hangi komutu çalıştır.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 250" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dockerfile'dan image'a, image'dan container'lara">
+            <defs>
+              <marker id="arrA3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <rect x="20" y="90" width="150" height="66" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="95" y="118" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Dockerfile</text>
+              <text x="95" y="137" text-anchor="middle" fill="var(--muted)" font-size="10.5">tarif · metin dosyası</text>
+              <path d="M170 123 L232 123" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrA3)"/>
+              <text x="201" y="112" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="700">docker build</text>
+              <rect x="237" y="90" width="150" height="66" rx="10" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="312" y="118" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Image</text>
+              <text x="312" y="137" text-anchor="middle" fill="var(--muted)" font-size="10.5">kalıp · değişmez</text>
+              <path d="M387 123 L449 54" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrA3)"/>
+              <path d="M387 123 L449 123" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrA3)"/>
+              <path d="M387 123 L449 192" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrA3)"/>
+              <text x="418" y="108" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="700">docker run ×3</text>
+              <rect x="454" y="25" width="225" height="58" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="566" y="50" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Container 1 · laptop</text>
+              <text x="566" y="68" text-anchor="middle" fill="var(--muted)" font-size="10.5">çalışan kopya</text>
+              <rect x="454" y="94" width="225" height="58" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="566" y="119" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Container 2 · CI sunucusu</text>
+              <text x="566" y="137" text-anchor="middle" fill="var(--muted)" font-size="10.5">çalışan kopya</text>
+              <rect x="454" y="163" width="225" height="58" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="566" y="188" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Container 3 · production</text>
+              <text x="566" y="206" text-anchor="middle" fill="var(--muted)" font-size="10.5">çalışan kopya</text>
+              <text x="350" y="242" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="600">Aynı image → üç farklı ortamda birebir aynı davranış</text>
+            </g>
+          </svg>
+          <figcaption>Dockerfile tariftir, image o tariften bir kez inşa edilen kalıptır, container kalıptan çalışan kopyadır. "Benim makinemde çalışıyordu" cümlesi burada tarihe karışır.</figcaption>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Dockerfile — model servisinin imaj tarifi, satır satır</figcaption>
+          <pre><code data-lang="text"># Temel katman: küçük boyutlu resmî Python imajı
+FROM python:3.12-slim
+
+# Bundan sonraki komutların çalışacağı dizin
+WORKDIR /app
+
+# Önce bağımlılıklar: bu katman cache'lenir,
+# kod değişince bağımlılıklar yeniden kurulmaz (hızlı build)
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Uygulama kodu ve model artifact'i imaja kopyalanır
+COPY main.py .
+COPY model/ ./model/
+
+# Container ayağa kalkınca çalışacak komut: API sunucusu
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]</code></pre>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Terminal — imajı inşa et, çalıştır, test et</figcaption>
+          <pre><code data-lang="bash"># 1) İmajı inşa et (tarif → kalıp) ve sürüm etiketi ver
+docker build -t churn-api:v3 .
+
+# 2) Container'ı başlat: makinenin 8000 portunu container'a bağla
+docker run -d -p 8000:8000 --name churn churn-api:v3
+
+# 3) Servisi gerçek bir istekle test et
+curl -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{"yas": 34, "aylik_harcama": 249.9, "uyelik_ay": 12}'
+
+# Beklenen yanıt:
+# {"churn_olasiligi": 0.87}</code></pre>
+        </figure>
+
+        <h2>Kubernetes: container ordusunun orkestra şefi</h2>
+        <p>Tek container'ı elle yönetmek kolay. Peki üç replika çalıştırıp çökeni otomatik yeniden başlatmak, gece trafiği düşünce ikiye inmek, kampanya günü ona çıkmak, yeni sürümü kesintisiz devreye almak? Bunları elle yapmak bir noktadan sonra imkânsızlaşır. <strong>Kubernetes</strong> (kısaca K8s), container'ları sunucu kümeleri üzerinde yöneten orkestrasyon sistemidir. Üç temel kavramı yüzeysel tanıman şimdilik yeter:</p>
+        <ul>
+          <li><strong>Pod</strong> — K8s'in en küçük çalıştırma birimi; genelde tek container barındırır (bazen sıkı çalışan birkaç container birlikte).</li>
+          <li><strong>Deployment</strong> — "bu image'dan 3 replika istiyorum" bildirimi. K8s gerçek durumu sürekli istenene eşitler: bir pod çökerse yenisini açar.</li>
+          <li><strong>Service</strong> — sürekli doğup ölen pod'ların önünde sabit bir adres; küme içi load balancer görevi görür.</li>
+        </ul>
+        <p>Üstüne bir de <strong>autoscaling</strong> fikri gelir: CPU kullanımı ya da istek sayısı artınca replika sayısını otomatik artır, yük düşünce azalt. Böylece hem kampanya trafiğini kaldırır hem gece boşta sunucu parası ödemezsin.</p>
+
+        <div class="warn"><b>Her projede K8s gerekmez.</b> Tek model + makul trafik için yönetilen bir container servisi (Cloud Run, App Runner vb. — <a href="m3-bulut.html">bulut konusuna</a> bak) çok daha az dertle aynı işi görür. Kubernetes'in kendisi de bakım isteyen bir sistemdir; onu "CV'de dursun" diye değil, gerçekten çok servisli/çok replikalı bir ölçeğe gelince kur.</div>
+
+        <h2>Serving desenleri: online, batch, streaming</h2>
+        <p>Her tahmin anında üretilmek zorunda değildir. Servis mimarini seçerken asıl soru şudur: <em>tahmin ne kadar taze olmalı?</em> Cevaba göre üç desen var:</p>
+        <ul>
+          <li><strong>Online inference</strong> — istek gelir, model o an tahmin eder, yanıt milisaniyeler içinde döner. Ödeme anında sahtecilik kontrolü, sayfa açılırken ürün önerisi gibi "bekleyemeyen" işler. Burada kral <em>latency</em>'dir (tek isteğin yanıt süresi).</li>
+          <li><strong>Batch inference</strong> — tahminler zamanlanmış bir işle topluca üretilir: gece 02:00'de bütün müşteriler skorlanır, sonuçlar bir tabloya yazılır, gündüz uygulama sadece tabloyu okur. Kampanya listeleri, aylık risk raporları gibi işler. Burada kral <em>throughput</em>'tur (birim zamanda işlenen kayıt sayısı); zamanlamayı da <a href="m3-orkestrasyon.html">Airflow gibi orkestratörler</a> yapar.</li>
+          <li><strong>Streaming inference</strong> — olaylar aktıkça tahmin: <a href="m3-streaming.html">Kafka'dan gelen</a> her tıklama/işlem event'i anında skorlanır. Online ile batch arasında bir yerde durur.</li>
+        </ul>
+        <p>Latency ile throughput çoğu zaman birbirine karşı optimize edilir: istekleri gruplayıp (batching) modele topluca vermek GPU'yu doyurur ve throughput'u uçurur, ama gruptaki ilk isteğin bekleme süresi — yani latency — artar. Doğru denge tamamen ürüne bağlıdır.</p>
+
+        <div class="note"><b>LLM serving ayrı bir lig.</b> Büyük dil modellerini sunmak için vLLM gibi araçlar, gelen istekleri GPU üzerinde sürekli ve akıllıca gruplayarak (continuous batching) aynı donanımdan kat kat fazla token/saniye çıkarır — <a href="m7-llm-temelleri.html">LLM temelleri</a> konusunun üretim tarafı.</div>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 285" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Online inference ile batch inference karşılaştırması">
+            <defs>
+              <marker id="arrA4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <rect x="12" y="30" width="340" height="230" rx="12" fill="rgba(var(--acc-rgb),.05)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <circle cx="48" cy="60" r="15" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.8"/>
+              <path d="M48 60 L48 50 M48 60 L56 64" stroke="var(--acc)" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="196" y="65" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Online inference</text>
+              <rect x="67" y="88" width="230" height="34" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="182" y="110" text-anchor="middle" fill="var(--ink)" font-size="11">kullanıcı isteği — tek kayıt</text>
+              <path d="M182 122 L182 144" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrA4)"/>
+              <rect x="67" y="148" width="230" height="34" rx="8" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="182" y="170" text-anchor="middle" fill="var(--ink)" font-size="11">API + model — anında tahmin</text>
+              <path d="M182 182 L182 204" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrA4)"/>
+              <rect x="67" y="208" width="230" height="34" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="182" y="230" text-anchor="middle" fill="var(--ink)" font-size="11">yanıt ~50 ms içinde döner</text>
+
+              <rect x="368" y="30" width="340" height="230" rx="12" fill="rgba(var(--acc-rgb),.05)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <rect x="390" y="46" width="32" height="28" rx="4" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.8"/>
+              <rect x="390" y="46" width="32" height="9" rx="4" fill="rgba(var(--acc-rgb),.35)"/>
+              <path d="M397 43 L397 50 M415 43 L415 50" stroke="var(--acc)" stroke-width="1.8" stroke-linecap="round"/>
+              <text x="406" y="68" text-anchor="middle" fill="var(--acc)" font-size="8" font-weight="700">02:00</text>
+              <text x="552" y="65" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Batch inference</text>
+              <rect x="423" y="88" width="230" height="34" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="538" y="110" text-anchor="middle" fill="var(--ink)" font-size="11">veritabanında 1 milyon kayıt</text>
+              <path d="M538 122 L538 144" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrA4)"/>
+              <rect x="423" y="148" width="230" height="34" rx="8" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="538" y="170" text-anchor="middle" fill="var(--ink)" font-size="11">gece 02:00 — toplu skorlama işi</text>
+              <path d="M538 182 L538 204" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrA4)"/>
+              <rect x="423" y="208" width="230" height="34" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="538" y="230" text-anchor="middle" fill="var(--ink)" font-size="11">sonuçlar tabloya yazılır</text>
+
+              <text x="182" y="277" text-anchor="middle" fill="var(--muted)" font-size="10.5">düşük latency · her an hazır</text>
+              <text x="538" y="277" text-anchor="middle" fill="var(--muted)" font-size="10.5">yüksek throughput · latency önemsiz</text>
+            </g>
+          </svg>
+          <figcaption>Solda saat işler: tek istek, anında yanıt. Sağda takvim işler: gecede bir, milyonlarca kayıt. Soru hep aynı — tahmin ne kadar taze olmalı?</figcaption>
+        </figure>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Deployment, "ML mühendisi" ile "notebook'ta model eğiten kişi" arasındaki çizgidir. İlk işinde büyük olasılıkla şunlarla karşılaşacaksın:</p>
+        <ul>
+          <li><strong>İlk görevin model eğitmek olmayabilir →</strong> çoğu ekipte yeni gelenin ilk işi, hazır bir modeli FastAPI'ye sarıp Docker'lamaktır. Bu sayfa o işin birebir tarifi.</li>
+          <li><strong>"Container'da çalışmıyor" mesaileri →</strong> eksik bağımlılık, yanlış Python sürümü, unutulan model dosyası… Dockerfile okuma-yazma günlük rutin hâline gelir.</li>
+          <li><strong>Latency SLO tartışmaları →</strong> "p95 latency 100 ms altında olacak" gibi hedefler mimariyi belirler; batch'e alınabilecek her tahmin, online servisten yük düşürür.</li>
+          <li><strong>Gece skorlama pipeline'ları →</strong> batch inference işleri <a href="m3-orkestrasyon.html">orkestrasyon</a> DAG'lerinin en sık görülen düğümlerindendir.</li>
+          <li><strong>Deploy sonrası hayat →</strong> model canlıya çıktığı an iş bitmez, başlar: izleme ve drift'i <a href="m8-monitoring.html">monitoring konusunda</a>, tüm bu sürecin otomasyonunu ise <a href="m8-cicd-tracking.html">CI/CD konusunda</a> göreceğiz.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Model artifact'e neden yalnızca model ağırlıklarını değil, ön işlemeyi de koyarız?</summary>
+            <div class="answer">Model, eğitimde gördüğü <b>ön işlenmiş</b> veriyi bekler. Serviste farklı (ya da eksik) bir ön işleme çalışırsa model hata vermez; sessizce <b>yanlış tahmin</b> üretir. Bu yüzden "model + ön işleme + sürüm" tek paket hâlinde (örn. sklearn Pipeline) serileştirilir.</div>
+          </details>
+          <details class="quiz">
+            <summary>Image ile container arasındaki fark nedir?</summary>
+            <div class="answer"><b>Image kalıp, container çalışan kopyadır.</b> Image bir kez inşa edilir ve değişmezdir; aynı image'dan laptopta, CI'da ve production'da istediğin kadar özdeş container başlatabilirsin. "Her yerde aynı çalışır" garantisi tam da bu değişmezlikten gelir.</div>
+          </details>
+          <details class="quiz">
+            <summary>Kubernetes'e ne zaman gerçekten ihtiyaç duyarsın?</summary>
+            <div class="answer">Çok sayıda replika/servisi yönetmek, çökeni otomatik yeniden başlatmak ve yükle birlikte <b>otomatik ölçeklenmek</b> gerektiğinde. Tek model + makul trafik için yönetilen container servisleri (Cloud Run vb.) genelde yeter — K8s'in kendisi de bakım maliyeti olan bir sistemdir.</div>
+          </details>
+          <details class="quiz">
+            <summary>Churn kampanya listesi için online mı batch inference mı seçersin, neden?</summary>
+            <div class="answer"><b>Batch.</b> Kampanya listesi anlık tahmin gerektirmez; gece tüm müşterileri topluca skorlayıp tabloya yazmak hem ucuz hem basittir (yüksek throughput, latency önemsiz). Online serving, ödeme anındaki sahtecilik kontrolü gibi <b>bekleyemeyen</b> tahminler içindir.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Deployment (Yayına Alma)</span><span class="term-en">Deployment</span><span class="lvl lvl-orta">Orta</span></div><p>Eğitilmiş modeli başka sistemlerin güvenle çağırabileceği bir servise dönüştürme süreci; modelin değer üretmeye başladığı an.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Model Artifact</span><span class="term-en">Model Artifact</span><span class="lvl lvl-orta">Orta</span></div><p>Eğitim sonunda diske kaydedilen paket: ağırlıklar + ön işleme + sürüm bilgisi. Servis, tahmini bu dosyayı yükleyerek yapar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Serialization (pickle/ONNX)</span><span class="term-en">Model Serialization</span><span class="lvl lvl-orta">Orta</span></div><p>Bellekteki model nesnesini diske yazılabilir baytlara çevirme. pickle/joblib Python'a bağlıdır; ONNX framework'ten bağımsızdır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">REST API</span><span class="term-en">REST API</span><span class="lvl lvl-orta">Orta</span></div><p>HTTP üzerinden JSON alıp JSON dönen istek–yanıt arayüzü; model servislerinin en yaygın sunum biçimi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">FastAPI</span><span class="term-en">FastAPI</span><span class="lvl lvl-orta">Orta</span></div><p>Python'da hızlı, tip destekli API framework'ü; pydantic doğrulaması ve otomatik dokümantasyonuyla model servislerinin standardı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Endpoint</span><span class="term-en">Endpoint</span><span class="lvl lvl-orta">Orta</span></div><p>API'nin dışarıya açtığı tekil adres (örn. POST /predict); istemciler modelle yalnızca bu kapılardan konuşur.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Docker</span><span class="term-en">Docker</span><span class="lvl lvl-orta">Orta</span></div><p>Uygulamayı tüm bağımlılıklarıyla tek pakette çalıştıran container platformu; "benim makinemde çalışıyordu"nun ilacı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Image &amp; Container</span><span class="term-en">Image &amp; Container</span><span class="lvl lvl-orta">Orta</span></div><p>Image değişmez kalıp, container o kalıptan çalışan canlı kopyadır; aynı image'dan sınırsız özdeş container açılabilir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Dockerfile</span><span class="term-en">Dockerfile</span><span class="lvl lvl-orta">Orta</span></div><p>Image'ın nasıl inşa edileceğini satır satır anlatan tarif dosyası: temel imaj, bağımlılıklar, kod, başlangıç komutu.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Kubernetes</span><span class="term-en">Kubernetes</span><span class="lvl lvl-ileri">İleri</span></div><p>Çok sayıda container'ı küme üzerinde yöneten orkestrasyon sistemi: çökeni diriltir, yükü dağıtır, otomatik ölçekler.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Pod</span><span class="term-en">Pod</span><span class="lvl lvl-ileri">İleri</span></div><p>Kubernetes'in en küçük çalıştırma birimi; bir ya da birkaç container'ı birlikte barındırır, Deployment kaç replika olacağını söyler.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Latency &amp; Throughput</span><span class="term-en">Latency &amp; Throughput</span><span class="lvl lvl-orta">Orta</span></div><p>Latency tek isteğin yanıt süresi, throughput birim zamanda işlenen iş miktarı; biri iyileşirken çoğu zaman diğeri feda edilir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Online &amp; Batch Inference</span><span class="term-en">Online &amp; Batch Inference</span><span class="lvl lvl-orta">Orta</span></div><p>Online: istek anında tek kayda tahmin. Batch: zamanlanmış işle milyonlarca kaydı topluca skorlama. Seçim tahminin tazelik ihtiyacına bağlı.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m8-deployment">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m7-llm-degerlendirme.html"><span>← Önceki</span><b>LLM Değerlendirme ve LLMOps</b></a>
+          <a class="next" href="m8-cicd-tracking.html"><span>Sonraki →</span><b>CI/CD ve Experiment Tracking</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

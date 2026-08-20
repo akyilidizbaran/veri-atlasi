@@ -1,0 +1,15 @@
+/* Sözlük verisi — Modül 2 / Konu: m2-scraping */
+window.GLOSSARY = (window.GLOSSARY || []).concat([
+  { tr: "Web Scraping", en: "Web Scraping", lvl: "orta", mod: "m2", topic: "m2-scraping", def: "İnsanlar için tasarlanmış web sayfalarından programatik olarak yapılandırılmış veri çıkarma işi. Resmî API ya da hazır veri dosyası yoksa başvurulan son çaredir." },
+  { tr: "Crawler (Örümcek)", en: "Crawler / Spider", lvl: "orta", mod: "m2", topic: "m2-scraping", def: "Bağlantıları takip ederek sayfadan sayfaya gezen otomatik program. Crawling \"sayfaları bulma\", scraping ise \"veriyi çıkarma\" işidir." },
+  { tr: "DOM", en: "Document Object Model", lvl: "orta", mod: "m2", topic: "m2-scraping", def: "Tarayıcının HTML'den kurduğu ağaç yapısı; her etiket bir düğümdür ve kendi özellikleri ile çocukları vardır. Scraping bu ağaçta gezinmektir." },
+  { tr: "CSS Seçici", en: "CSS Selector", lvl: "orta", mod: "m2", topic: "m2-scraping", def: "DOM'daki düğümleri tarif etme dili (örn. div.urun span.fiyat). Kazıma yazmanın temel becerisi, doğru seçiciyi kurabilmektir." },
+  { tr: "requests", en: "requests", lvl: "baslangic", mod: "m2", topic: "m2-scraping", def: "Python'da HTTP istekleri atmanın standart kütüphanesi; sayfa indirmenin ve API çağırmanın aracı. Tarayıcı değildir, JavaScript çalıştırmaz." },
+  { tr: "BeautifulSoup", en: "BeautifulSoup", lvl: "orta", mod: "m2", topic: "m2-scraping", def: "HTML metnini gezilebilir bir ağaca çeviren Python kütüphanesi; CSS seçicilerle düğüm bulmayı ve metin çıkarmayı sağlar." },
+  { tr: "robots.txt", en: "robots.txt", lvl: "orta", mod: "m2", topic: "m2-scraping", def: "Sitenin kökünde duran ve botlara hangi yolların açık olduğunu bildiren dosya. Teknik olarak bağlayıcı değildir ama kazımanın ilk etik kontrolüdür." },
+  { tr: "Rate Limiting (Hız Sınırlama)", en: "Rate Limiting", lvl: "orta", mod: "m2", topic: "m2-scraping", def: "İstek hızını bilinçli olarak kısmak. Sunucuyu yormamak ve IP engeline takılmamak için istekler arasında beklenir; hızlı bot engellenen bottur." },
+  { tr: "User-Agent", en: "User-Agent", lvl: "orta", mod: "m2", topic: "m2-scraping", def: "İsteği kimin attığını bildiren HTTP başlığı. Botunu adı ve iletişim bilgisiyle dürüstçe tanıtmak hem nezaket hem de sorumluluk göstergesidir." },
+  { tr: "Headless Browser", en: "Headless Browser", lvl: "ileri", mod: "m2", topic: "m2-scraping", def: "Arayüzsüz çalışan gerçek tarayıcı (Playwright, Selenium). JavaScript ile sonradan yüklenen içeriği kazımak için kullanılır; güçlü ama yavaş ve kırılgandır." },
+  { tr: "Sayfalama", en: "Pagination", lvl: "baslangic", mod: "m2", topic: "m2-scraping", def: "Verinin sayfa sayfa sunulması. Kazıyıcının sayfa çevirme ve boş sayfa geldiğinde durmayı bilme mantığı buna dayanır." },
+  { tr: "Exponential Backoff", en: "Exponential Backoff", lvl: "orta", mod: "m2", topic: "m2-scraping", def: "Başarısız istekte bekleme süresini katlayarak artırma (1s, 2s, 4s…). 429 ve 503 gibi geçici hatalarda standart yeniden deneme stratejisidir." }
+]);

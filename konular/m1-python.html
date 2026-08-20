@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python: Verinin Ana Dili — Veri Atlası</title>
+<meta name="description" content="Python'un veri dünyasındaki yeri: değişkenler ve temel tipler, list/tuple/dict/set, fonksiyonlar ve comprehension, exception handling, OOP'ye giriş, pip ve virtual environment ile paket yönetimi.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m1" data-slug="m1-python">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m1">1. Temeller ve Hazırlık</a><span class="sep">/</span>
+        <span>Python: Verinin Ana Dili</span>
+      </nav>
+      <span class="mod-badge">Modül 1 · Temeller ve Hazırlık</span>
+      <h1>Python: Verinin Ana Dili</h1>
+      <p class="en-title">Python for Data</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-baslangic">Başlangıç</span>
+        <span class="chip">⏱️ ~18 dk okuma</span>
+        <span class="chip">🔤 15 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Neden Python?</h2>
+        <p>Veri ekibinde hangi araca dokunsan altından Python çıkar: pandas ile tablo işlersin — Python. Airflow'da pipeline kurarsın — her DAG bir Python dosyasıdır. PyTorch ile model eğitirsin — yine Python. Bu bir moda değil, pratik bir uzlaşma: veri ekosistemi ortak dil olarak Python'da buluştu. Üç sebebi var:</p>
+        <ul>
+          <li><strong>Ekosistemin ortak dili</strong> — veri toplama, temizleme, modelleme ve servise açma zincirinin her halkasının bir Python API'si var. Öğrendiğin tek dil, yol haritasının tamamında seninle geliyor.</li>
+          <li><strong>Kütüphane zenginliği</strong> — PyPI'da yüz binlerce hazır paket var; "bunu benden önce biri yazmıştır" varsayımı Python'da genelde doğru çıkar.</li>
+          <li><strong>Okunabilirlik</strong> — sözdizimi sade, İngilizceye yakın. Veri projelerinde kod bir kez yazılır ama defalarca okunur; en çok okuyacak kişi de altı ay sonraki sensin.</li>
+        </ul>
+        <p>Alternatifler yok değil: <strong>R</strong> istatistik ve akademide güçlüdür ama pipeline ve servis mühendisliği tarafında ekosistemi dardır; <strong>SQL</strong> rakip değil tamamlayıcıdır — veriyi sorgular ama uygulama yazamazsın, <a href="m2-sql.html">Modül 2'de</a> derinlemesine göreceğiz; <strong>Scala</strong> Spark'ın doğduğu dildir ama dik öğrenme eğrisi yüzünden çoğu ekip Spark'ı PySpark üzerinden Python'la kullanır.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 340" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Python veri ekosistemi haritası">
+            <g font-family="inherit">
+              <!-- bağlantı çizgileri -->
+              <path d="M350 142 L110 86 M350 142 L350 86 M350 142 L590 86 M350 198 L110 254 M350 198 L350 254 M350 198 L590 254" stroke="var(--dg-line)" stroke-width="1.3" fill="none"/>
+              <!-- üst sıra -->
+              <rect x="25" y="28" width="170" height="58" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="110" y="52" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">NumPy</text>
+              <text x="110" y="70" text-anchor="middle" fill="var(--muted)" font-size="10.5">sayısal diziler · Modül 4–6</text>
+              <rect x="265" y="28" width="170" height="58" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="350" y="52" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">pandas</text>
+              <text x="350" y="70" text-anchor="middle" fill="var(--muted)" font-size="10.5">tablo verisi · Modül 4</text>
+              <rect x="505" y="28" width="170" height="58" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="590" y="52" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">scikit-learn</text>
+              <text x="590" y="70" text-anchor="middle" fill="var(--muted)" font-size="10.5">klasik ML · Modül 5</text>
+              <!-- merkez -->
+              <rect x="280" y="142" width="140" height="56" rx="12" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)" stroke-width="1.8"/>
+              <text x="350" y="167" text-anchor="middle" fill="var(--ink)" font-size="15" font-weight="700">Python</text>
+              <text x="350" y="185" text-anchor="middle" fill="var(--muted)" font-size="10.5">ortak dil</text>
+              <!-- alt sıra -->
+              <rect x="25" y="254" width="170" height="58" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="110" y="278" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Airflow</text>
+              <text x="110" y="296" text-anchor="middle" fill="var(--muted)" font-size="10.5">orkestrasyon · Modül 3</text>
+              <rect x="265" y="254" width="170" height="58" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="350" y="278" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">PyTorch</text>
+              <text x="350" y="296" text-anchor="middle" fill="var(--muted)" font-size="10.5">derin öğrenme · Modül 6</text>
+              <rect x="505" y="254" width="170" height="58" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="590" y="278" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">FastAPI</text>
+              <text x="590" y="296" text-anchor="middle" fill="var(--muted)" font-size="10.5">model servisi · Modül 8</text>
+            </g>
+          </svg>
+          <figcaption>Yol haritandaki büyük kütüphanelerin hepsi Python'la konuşur. Bu sayfada dilin çekirdeğini öğreniyoruz; haritadaki kutular ilgili modüllerde tek tek açılacak.</figcaption>
+        </figure>
+
+        <h2>Değişkenler ve temel tipler</h2>
+        <p>Bir <strong>değişken (variable)</strong>, bir değere yapıştırılan isim etiketidir: <code>yas = 34</code> yazdığında bellekteki 34 değerine "yas" diye seslenebilir hâle gelirsin. Python'da tip bildirmezsin; <strong>dinamik tipleme (dynamic typing)</strong> sayesinde tip, değişkenin değil <em>değerin</em> özelliğidir ve atama anında kendiliğinden belli olur.</p>
+        <p>Dört temel <strong>veri tipi (data type)</strong> ile işe başlarsın:</p>
+        <ul>
+          <li><strong>int</strong> — tam sayı: satır sayısı, adet, yıl.</li>
+          <li><strong>float</strong> — ondalıklı sayı: tutar, oran, model skoru.</li>
+          <li><strong>str</strong> — metin: isimler, kategoriler, ham CSV satırları.</li>
+          <li><strong>bool</strong> — <code>True</code>/<code>False</code>: filtre koşullarının ve bayrakların tipi.</li>
+        </ul>
+        <p>Bir de "değer yok"u temsil eden <code>None</code> var — eksik veriyle uğraşırken sık karşılaşacaksın. Tipini merak ettiğin her değeri <code>type(deger)</code> ile sorgulayabilirsin.</p>
+        <div class="warn"><b>Dinamik tiplemenin bedeli.</b> <code>"3" + 5</code> ifadesi Python'da <code>TypeError</code> fırlatır; hatayı yazarken değil <em>çalışırken</em> görürsün. Sahadaki karşılığı şu: CSV'den okunan her alan <code>str</code> gelir — toplama, ortalama gibi işlemlerden önce <code>int()</code>/<code>float()</code> ile çevirmeyi unutursan pipeline ortasında patlar.</div>
+
+        <h2>Koleksiyonlar: list, tuple, dict, set</h2>
+        <p>Veri işinde tek değerle çalışmazsın; kayıtlar hep çoğuldur. Python'un dört yerleşik kabı vardır ve doğru kabı seçmek hem kodu hem performansı belirler:</p>
+        <ul>
+          <li><strong>list (liste)</strong> — sıralı ve değiştirilebilir (mutable). Günlük iş atın: satırlar, dosya adları, skorlar.</li>
+          <li><strong>tuple (demet)</strong> — sıralı ama değişmez (immutable). Sabit kayıtlar (koordinat, RGB), fonksiyondan çoklu değer döndürme; değişmez olduğu için dict anahtarı olabilir.</li>
+          <li><strong>dict (sözlük)</strong> — anahtar → değer eşlemesi. API'lerin JSON yanıtlarının Python'daki doğal karşılığı.</li>
+          <li><strong>set (küme)</strong> — tekrarsız eleman topluluğu. Tekilleştirme ve "bu elemanı daha önce gördüm mü?" sorusunun hızlı cevabı.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 300" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="list, tuple, dict ve set karşılaştırma tablosu">
+            <g font-family="inherit">
+              <!-- başlık kutuları -->
+              <rect x="125" y="25" width="140" height="60" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="195" y="50" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="700">list</text>
+              <text x="195" y="70" text-anchor="middle" fill="var(--muted)" font-size="11">[10, 20, 20]</text>
+              <rect x="273" y="25" width="140" height="60" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="343" y="50" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="700">tuple</text>
+              <text x="343" y="70" text-anchor="middle" fill="var(--muted)" font-size="11">(10, 20, 20)</text>
+              <rect x="421" y="25" width="140" height="60" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="491" y="50" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="700">dict</text>
+              <text x="491" y="70" text-anchor="middle" fill="var(--muted)" font-size="11">{"a": 1, "b": 2}</text>
+              <rect x="569" y="25" width="140" height="60" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="639" y="50" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="700">set</text>
+              <text x="639" y="70" text-anchor="middle" fill="var(--muted)" font-size="11">{10, 20}</text>
+              <!-- satır zeminleri -->
+              <rect x="10" y="100" width="700" height="34" rx="6" fill="rgba(var(--acc-rgb),.06)"/>
+              <rect x="10" y="170" width="700" height="34" rx="6" fill="rgba(var(--acc-rgb),.06)"/>
+              <!-- satır: sıralı mı -->
+              <text x="15" y="122" fill="var(--muted)" font-size="11.5" font-weight="700">Sıralı mı?</text>
+              <text x="195" y="122" text-anchor="middle" fill="var(--ok)" font-size="13" font-weight="700">✓</text>
+              <text x="343" y="122" text-anchor="middle" fill="var(--ok)" font-size="13" font-weight="700">✓</text>
+              <text x="491" y="122" text-anchor="middle" fill="var(--ok)" font-size="13" font-weight="700">✓</text>
+              <text x="639" y="122" text-anchor="middle" fill="var(--bad)" font-size="13" font-weight="700">✗</text>
+              <!-- satır: değişir mi -->
+              <text x="15" y="157" fill="var(--muted)" font-size="11.5" font-weight="700">Değişir mi?</text>
+              <text x="195" y="157" text-anchor="middle" fill="var(--ok)" font-size="13" font-weight="700">✓</text>
+              <text x="343" y="157" text-anchor="middle" fill="var(--bad)" font-size="13" font-weight="700">✗</text>
+              <text x="491" y="157" text-anchor="middle" fill="var(--ok)" font-size="13" font-weight="700">✓</text>
+              <text x="639" y="157" text-anchor="middle" fill="var(--ok)" font-size="13" font-weight="700">✓</text>
+              <!-- satır: tekrar -->
+              <text x="15" y="192" fill="var(--muted)" font-size="11.5" font-weight="700">Tekrar olur mu?</text>
+              <text x="195" y="192" text-anchor="middle" fill="var(--ok)" font-size="13" font-weight="700">✓</text>
+              <text x="343" y="192" text-anchor="middle" fill="var(--ok)" font-size="13" font-weight="700">✓</text>
+              <text x="491" y="192" text-anchor="middle" font-size="11.5"><tspan fill="var(--muted)">anahtar: </tspan><tspan fill="var(--bad)" font-weight="700">✗</tspan></text>
+              <text x="639" y="192" text-anchor="middle" fill="var(--bad)" font-size="13" font-weight="700">✗</text>
+              <!-- satır: erişim -->
+              <text x="15" y="227" fill="var(--muted)" font-size="11.5" font-weight="700">Erişim</text>
+              <text x="195" y="227" text-anchor="middle" fill="var(--ink)" font-size="11">index: a[0]</text>
+              <text x="343" y="227" text-anchor="middle" fill="var(--ink)" font-size="11">index: t[0]</text>
+              <text x="491" y="227" text-anchor="middle" fill="var(--ink)" font-size="11">anahtar: d["a"]</text>
+              <text x="639" y="227" text-anchor="middle" fill="var(--ink)" font-size="11">üyelik: x in s</text>
+              <!-- tipik kullanım -->
+              <text x="195" y="262" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="600">günlük iş atı</text>
+              <text x="343" y="262" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="600">sabit kayıt, çoklu dönüş</text>
+              <text x="491" y="262" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="600">anahtar→değer, JSON</text>
+              <text x="639" y="262" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="600">tekilleştirme, üyelik</text>
+              <text x="360" y="290" text-anchor="middle" fill="var(--faint)" font-size="10.5">dict, Python 3.7+'da ekleme sırasını korur; set'in ise sıra garantisi yoktur</text>
+            </g>
+          </svg>
+          <figcaption>Dört koleksiyonun kimlik kartı. Seçimi üç soru belirler: sıra önemli mi, içerik değişecek mi, erişim index'le mi anahtarla mı?</figcaption>
+        </figure>
+
+        <div class="tip"><b>Pratik seçim kuralı.</b> Sıra ve tekrar önemliyse <code>list</code>; kayıt sabit kalacaksa <code>tuple</code>; "şunun karşılığı bu" diyorsan <code>dict</code>; "daha önce gördüm mü?" diye soruyorsan <code>set</code>. Kararsız kaldığında list ile başla — refactor etmesi kolaydır.</div>
+
+        <figure class="codebox">
+          <figcaption>Python — temel tipler, f-string ve koleksiyonların mini turu</figcaption>
+          <pre><code data-lang="python"># Temel tipler: değeri atadığın anda tip belli olur (dinamik tipleme)
+musteri = "Ayşe"          # str   — metin
+yas = 34                  # int   — tam sayı
+sepet_tutari = 249.90     # float — ondalıklı sayı
+uye_mi = True             # bool  — True / False
+
+# f-string: değişkeni metnin içine gömmenin modern yolu
+print(f"{musteri} ({yas}), sepet: {sepet_tutari:.2f} TL")
+
+# Dört koleksiyonun mini turu
+urunler = ["klavye", "mouse", "klavye"]      # list  — sıralı, değişir
+konum = (41.01, 28.97)                       # tuple — değişmez ikili
+fiyatlar = {"klavye": 899, "mouse": 349}     # dict  — anahtar → değer
+markalar = {"logi", "corsair", "logi"}       # set   — tekrarı attı!
+
+urunler.append("monitör")     # listeye ekleme
+print(fiyatlar["klavye"])     # anahtarla erişim → 899
+print(len(markalar))          # 2 → set aynı elemanı iki kez tutmaz</code></pre>
+        </figure>
+
+        <h2>Akış kontrolü ve fonksiyonlar</h2>
+        <p>Koleksiyonları doldurmak işin yarısı; asıl iş onların üzerinde dolaşıp karar vermekte. <strong>if/elif/else</strong> koşul dallandırır, <strong>for</strong> bir koleksiyonun üzerinde eleman eleman dolaşır, <strong>while</strong> koşul sürdükçe döner. Python'da blokları süslü parantez değil <strong>girinti (indentation)</strong> tanımlar — 4 boşluk burada süs değil, sözdiziminin kendisidir.</p>
+        <p><strong>Fonksiyon (function)</strong>, <code>def</code> ile tanımlanan isimli kod bloğudur: parametre alır, iş yapar, <code>return</code> ile değer döndürür. Veri temizliği adımlarını fonksiyonlara bölmek, aynı dönüşümü on farklı yerde kopyalamaktan kurtarır; parametrelere varsayılan değer vererek (<code>def oku(dosya, ayirici=",")</code>) esneklik kazanırsın. <strong>lambda</strong> ise tek ifadelik isimsiz fonksiyondur — <code>sorted(kayitlar, key=lambda k: k["tutar"])</code> gibi "küçük bir kural lazım" anlarının aracı.</p>
+        <p>Python'un imza sözdizimi <strong>comprehension</strong>'dır: bir döngü + filtreyi tek satırda yeni bir koleksiyona dönüştürür. Okuması "şunlardan, şu koşula uyanların, şusunu topla" diye soldan sağa akar. İki seviyeden derin iç içe comprehension yazma — okunabilirlik ölür, klasik döngüye dönmek daha dürüsttür.</p>
+
+        <figure class="codebox">
+          <figcaption>Python — satış kayıtlarını döngüyle ve comprehension ile filtrelemek</figcaption>
+          <pre><code data-lang="python">satislar = [
+    {"urun": "klavye",   "tutar": 899,  "kanal": "web"},
+    {"urun": "mouse",    "tutar": 349,  "kanal": "magaza"},
+    {"urun": "kulaklik", "tutar": 1299, "kanal": "web"},
+    {"urun": "hub",      "tutar": 499,  "kanal": "web"},
+]
+
+# 1) Klasik döngü: web kanalındaki 500 TL üstü satışların ürünleri
+buyuk_web = []
+for s in satislar:
+    if s["kanal"] == "web" and s["tutar"] &gt; 500:
+        buyuk_web.append(s["urun"])
+
+# 2) Aynı iş tek satırda — list comprehension
+buyuk_web = [s["urun"] for s in satislar
+             if s["kanal"] == "web" and s["tutar"] &gt; 500]
+
+# 3) Dict comprehension: ürün → KDV'li fiyat
+kdvli = {s["urun"]: round(s["tutar"] * 1.20, 2) for s in satislar}
+
+print(buyuk_web)      # ['klavye', 'kulaklik']
+print(kdvli["hub"])   # 598.8</code></pre>
+        </figure>
+
+        <h2>Hatalarla yaşamak: exception handling</h2>
+        <p>Gerçek dünya verisi kirlidir: boş alanlar, bozuk satırlar, beklenmedik tipler. Kod "mutlu yol"un dışına çıktığında Python bir <strong>exception (istisna)</strong> fırlatır; yakalamazsan program o anda ölür. 10 milyon satırlık bir yüklemenin 3 bozuk satır yüzünden gece 03:00'te çökmesi, veri mühendisinin klasik kâbusudur — <strong>try/except</strong> tam bunun sigortasıdır: riskli kodu <code>try</code> bloğuna alırsın, beklediğin hata tiplerini <code>except</code> ile karşılarsın.</p>
+        <p>En sık karşılaşacağın exception'lar:</p>
+        <ul>
+          <li><code>ValueError</code> — tip doğru ama değer uygunsuz: <code>float("abc")</code>.</li>
+          <li><code>TypeError</code> — uyumsuz tipler: <code>"3" + 5</code>.</li>
+          <li><code>KeyError</code> — dict'te olmayan anahtar: <code>kayit["adres"]</code>.</li>
+          <li><code>IndexError</code> — listede olmayan index: <code>satirlar[999]</code>.</li>
+          <li><code>FileNotFoundError</code> — yanlış path; <a href="m1-bilgisayar-temelleri.html">önceki konudaki</a> dosya sistemi bilgin burada devreye girer. Aynı sayfadaki encoding bahsinin hatası da <code>UnicodeDecodeError</code> olarak karşına çıkar.</li>
+        </ul>
+
+        <figure class="codebox">
+          <figcaption>Python — bozuk CSV satırlarına dayanıklı parse</figcaption>
+          <pre><code data-lang="python">def parse_satis(satir):
+    """Bir CSV satırını sözlüğe çevirir; bozuksa None döner."""
+    try:
+        tarih, urun, tutar, para = satir.split(",")
+        return {"tarih": tarih, "urun": urun, "tutar": float(tutar)}
+    except ValueError as hata:
+        # float("") ya da eksik/fazla sütun buraya düşer
+        print(f"Satır atlandı: {satir!r} → {hata}")
+        return None
+
+satirlar = [
+    "2026-08-20,klavye,899,TRY",
+    "2026-08-21,mouse,,TRY",       # tutar alanı boş — bozuk satır!
+]
+
+temiz = []
+for s in satirlar:
+    kayit = parse_satis(s)
+    if kayit is not None:          # hatalı satır pipeline'ı durdurmaz
+        temiz.append(kayit)
+
+print(len(temiz))   # 1 → bozuk satır loglandı, işlem devam etti</code></pre>
+        </figure>
+
+        <div class="warn"><b>Çıplak except yazma.</b> <code>except:</code> her şeyi yutar — kendi yazım hatalarını, hatta Ctrl+C'yi bile. Hep beklediğin spesifik tipi yakala (<code>except ValueError:</code>); "ne geleceğini bilmiyorum" durumunda bile en azından <code>except Exception as e:</code> deyip hatayı logla. Sessizce yutulan hata, yanlış rapora dönüşür.</div>
+
+        <h2>OOP'ye giriş: her DataFrame bir nesnedir</h2>
+        <p>Nesne yönelimli programlamanın (OOP) iki kavramını şimdiden tanıman gerekiyor. <strong>Sınıf (class)</strong>, veriyi ve o veriyle yapılabilecek işleri bir arada tanımlayan kalıptır; <strong>nesne (object)</strong> ise o kalıptan üretilmiş somut örnektir. Kurabiye kalıbı sınıfsa, tepsiden çıkan her kurabiye bir nesnedir: hepsi aynı biçimde ama her biri ayrı bir varlık. Nesneye bağlı fonksiyonlara <strong>method</strong>, nesneye bağlı verilere <strong>attribute (öznitelik)</strong> denir; sınıfın kurucusu <code>__init__</code>, nesnenin kendisine işaret eden ad ise <code>self</code>'tir.</p>
+        <p>Bunu neden şimdi öğreniyorsun? Çünkü kullanacağın her kütüphane OOP ile yazıldı. <code>df = pd.read_csv("satis.csv")</code> satırında <code>df</code>, pandas'ın <strong>DataFrame sınıfından</strong> üretilmiş bir nesnedir; <code>df.head()</code> çağrısı o sınıfın bir method'u, <code>df.shape</code> bir attribute'udur. Dokümantasyondaki "<em>groupby() returns a DataFrameGroupBy object</em>" cümlesi artık şifreli değil: bir method çağırdın, sana başka bir sınıfın nesnesi döndü.</p>
+        <p>Kendi sınıfını her gün yazmayacaksın; ama okuyacak ve zaman zaman genişleteceksin: Airflow'da özel bir operator, PyTorch'ta <a href="m6-sinir-aglari.html">kendi modelini</a> tanımlayan <code>nn.Module</code> alt sınıfı — hepsi aynı <code>class</code> sözdizimi.</p>
+
+        <h2>Paket ekosistemi: pip, venv ve import</h2>
+        <p>Python'un gücü çekirdek dilden çok paketlerinden gelir. <strong>Modül (module)</strong>, <code>import</code> ile yüklenebilen bir .py dosyasıdır; paket ise modüllerin klasörlenmiş hâlidir. <code>math</code>, <code>json</code>, <code>datetime</code>, <code>csv</code> gibi standart kütüphane modülleri kurulum gerektirmez; gerisini merkezi depo PyPI'dan <strong>pip</strong> ile kurarsın: <code>pip install pandas</code>.</p>
+        <p>Sorun şurada başlar: eski projen pandas 1.5'e, yeni projen pandas 2.2'ye ihtiyaç duyuyorsa ve her şeyi makinene global kuruyorsan, ikisi aynı anda var olamaz — birini güncellediğinde öbürü kırılır. Çözüm, her projeye kendi izole paket dünyasını vermek: <strong>virtual environment (sanal ortam)</strong>.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 320" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sanal ortam: paket çakışması sorunu ve çözümü">
+            <defs>
+              <marker id="arrVenvA" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <!-- sorun -->
+              <text x="160" y="34" text-anchor="middle" fill="var(--bad)" font-size="11.5" font-weight="700">SORUN — tek global kurulum</text>
+              <rect x="20" y="46" width="280" height="234" rx="12" fill="var(--dg-box)" stroke="var(--bad)" stroke-width="1.5" stroke-dasharray="6 4"/>
+              <rect x="60" y="78" width="200" height="40" rx="8" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/>
+              <text x="160" y="102" text-anchor="middle" fill="var(--ink)" font-size="11.5">proje-eski → pandas 1.5</text>
+              <text x="160" y="152" text-anchor="middle" fill="var(--bad)" font-size="12.5" font-weight="700">✗ sürüm çakışması</text>
+              <text x="160" y="170" text-anchor="middle" fill="var(--muted)" font-size="10.5">global ortamda tek pandas olabilir</text>
+              <rect x="60" y="196" width="200" height="40" rx="8" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/>
+              <text x="160" y="220" text-anchor="middle" fill="var(--ink)" font-size="11.5">proje-yeni → pandas 2.2</text>
+              <text x="160" y="264" text-anchor="middle" fill="var(--muted)" font-size="10.5">birini kurunca öbürü kırılır</text>
+              <!-- geçiş oku -->
+              <path d="M310 163 L385 163" stroke="var(--acc)" stroke-width="2" marker-end="url(#arrVenvA)"/>
+              <text x="347" y="148" text-anchor="middle" fill="var(--acc)" font-size="11" font-weight="700">python -m venv</text>
+              <!-- çözüm -->
+              <text x="537" y="34" text-anchor="middle" fill="var(--ok)" font-size="11.5" font-weight="700">ÇÖZÜM — her projeye sanal ortam</text>
+              <rect x="395" y="46" width="285" height="112" rx="12" fill="var(--dg-box)" stroke="var(--ok)" stroke-width="1.5"/>
+              <text x="537" y="70" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">proje-eski/.venv</text>
+              <rect x="415" y="82" width="115" height="34" rx="8" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/>
+              <text x="472" y="103" text-anchor="middle" fill="var(--ink)" font-size="11">pandas 1.5</text>
+              <rect x="545" y="82" width="115" height="34" rx="8" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/>
+              <text x="602" y="103" text-anchor="middle" fill="var(--ink)" font-size="11">numpy 1.26</text>
+              <text x="537" y="140" text-anchor="middle" fill="var(--muted)" font-size="10">sürümler requirements.txt ile kayıtlı</text>
+              <rect x="395" y="190" width="285" height="112" rx="12" fill="var(--dg-box)" stroke="var(--ok)" stroke-width="1.5"/>
+              <text x="537" y="214" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">proje-yeni/.venv</text>
+              <rect x="415" y="226" width="115" height="34" rx="8" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/>
+              <text x="472" y="247" text-anchor="middle" fill="var(--ink)" font-size="11">pandas 2.2</text>
+              <rect x="545" y="226" width="115" height="34" rx="8" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/>
+              <text x="602" y="247" text-anchor="middle" fill="var(--ink)" font-size="11">pyarrow 17</text>
+              <text x="537" y="284" text-anchor="middle" fill="var(--muted)" font-size="10">iki ortam birbirinden habersiz — çakışma yok</text>
+            </g>
+          </svg>
+          <figcaption>Sanal ortam, "senin makinende çalışıyor ama bende çalışmıyor" sorununun da ilacıdır: ortamı requirements.txt'ten herkes aynen kurabilir.</figcaption>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Bash — sanal ortam ve pip iş akışı</figcaption>
+          <pre><code data-lang="bash"># Proje klasöründe izole bir ortam yarat
+python3 -m venv .venv
+
+# Ortamı etkinleştir (macOS/Linux) — Windows: .venv\Scripts\activate
+source .venv/bin/activate
+
+# Paketleri artık bu ortama kuruyorsun
+pip install pandas numpy
+
+# Kurulu sürümleri dosyaya dondur → ekip aynı ortamı kurabilsin
+pip freeze &gt; requirements.txt
+
+# Başka bir makinede aynı ortamı kurmak
+pip install -r requirements.txt</code></pre>
+        </figure>
+
+        <div class="note"><b>conda da duyacaksın.</b> Data science dünyasında pip + venv ikilisinin yanında conda/miniforge da yaygındır: paketlerle birlikte Python sürümünü ve C tabanlı bağımlılıkları da yönetir. Mantık aynıdır — projeye izole ortam. Ekibin hangisini kullanıyorsa ona uy; ikisini aynı ortamda karıştırma.</div>
+
+        <h2>Regex: metin temizliğinin İsviçre çakısı</h2>
+        <p><strong>Düzenli ifadeler (regular expressions / regex)</strong>, metin içinde desen arama dilidir. Veri işlerinde neredeyse her gün karşına çıkar: bir kolondan telefon numarası ayıklamak, log satırından tarih çekmek, bozuk karakterleri temizlemek, e-posta formatını doğrulamak. Python'da <code>re</code> modülüyle, pandas'ta ise doğrudan <code>.str</code> erişimcisiyle kullanılır.</p>
+        <p>Ezberlenmesi gereken yapı taşı azdır:</p>
+        <ul>
+          <li><code>\d</code> rakam, <code>\w</code> harf/rakam/alt çizgi, <code>\s</code> boşluk; büyük harfli hâlleri (<code>\D</code>, <code>\W</code>, <code>\S</code>) tersini ifade eder.</li>
+          <li><code>+</code> bir veya daha fazla, <code>*</code> sıfır veya daha fazla, <code>?</code> isteğe bağlı, <code>{2,4}</code> belirli sayıda tekrar.</li>
+          <li><code>[abc]</code> karakter kümesi, <code>[^abc]</code> bu kümenin dışı, <code>.</code> herhangi bir karakter.</li>
+          <li><code>( )</code> yakalama grubu — asıl güç buradadır: eşleşmenin <em>istediğin parçasını</em> geri alırsın.</li>
+          <li><code>^</code> satır başı, <code>$</code> satır sonu.</li>
+        </ul>
+
+        <figure class="codebox">
+          <figcaption>Python — re ve pandas ile desen yakalama</figcaption>
+          <pre><code data-lang="python">import re
+
+log = "2026-08-20 14:32:11 ERROR kullanici=482 mesaj=Odeme reddedildi"
+
+# Ham dizge kullan (r"..."): aksi hâlde Python \d gibi kaçışları kendisi yorumlar
+tarih = re.search(r"\d{4}-\d{2}-\d{2}", log).group()       # '2026-08-20'
+
+# Yakalama grubu ile PARÇAYI al: kullanici= sonrasındaki rakamlar
+kullanici = re.search(r"kullanici=(\d+)", log).group(1)      # '482'
+
+# Birden çok grubu tek seferde çöz
+desen = r"^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}) (\w+)"
+tarih, saat, seviye = re.match(desen, log).groups()          # ('2026-08-20', '14:32:11', 'ERROR')
+
+# pandas'ta kolonun tamamına tek satırda uygula
+df["telefon"] = df["ham"].str.replace(r"[^\d]", "", regex=True)      # rakam dışını sil
+df["il_kodu"] = df["telefon"].str.extract(r"^0?(\d{3})")             # ilk üç haneyi çıkar
+df["gecerli"] = df["eposta"].str.match(r"^[\w.+-]+@[\w-]+\.[a-z]{2,}$")</code></pre>
+        </figure>
+
+        <div class="tip"><b>Regex güçlüdür ama okunmaz olabilir.</b> Üç satırlık bir desen yazdıysan altı ay sonra kendin bile çözemezsin — desenin yanına ne yaptığını yazan bir yorum bırak. Ayrıca kural şu: basit ayıklamalar için regex, <b>yapılandırılmış formatlar için o formatın kendi ayrıştırıcısı</b>. HTML'i regex ile ayrıştırmak sahada klasikleşmiş bir hatadır; onun için <a href="m2-scraping.html">BeautifulSoup</a> vardır.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Bu sayfadaki her başlık, yol haritasının ilerleyen duraklarında şu kılıklarla geri gelecek:</p>
+        <ul>
+          <li><strong>dict/list bilgisi →</strong> <a href="m2-sql.html">SQL sorgularını</a> Python'dan çalıştırdığında sonuçlar sana dict listesi olarak dönecek; API'lerden çektiğin JSON da öyle.</li>
+          <li><strong>Fonksiyonlar ve modüller →</strong> <a href="m3-orkestrasyon.html">Airflow'da</a> her DAG bir Python dosyası, her task çoğu zaman bir Python fonksiyonudur.</li>
+          <li><strong>OOP →</strong> <a href="m4-eda.html">pandas ile EDA</a> baştan sona nesne ve method zinciridir: <code>df.groupby().agg().reset_index()</code>.</li>
+          <li><strong>Exception handling →</strong> üretimdeki her pipeline'ın etrafı try/except ve loglarla örülüdür; <a href="m3-veri-kalitesi.html">veri kalitesi</a> konusunun temelidir.</li>
+          <li><strong>venv/requirements.txt →</strong> <a href="m8-deployment.html">deployment</a> aşamasında Docker imajları requirements.txt'ten kurulur; sürüm sabitleme üretim disiplininin ta kendisidir.</li>
+          <li><strong>Mülakatlar →</strong> "şu listeyi tekilleştir", "şu dict'i tersine çevir" tarzı ısınma soruları comprehension ve koleksiyon bilgisiyle saniyeler içinde çözülür.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Bir fonksiyondan hem şehir adını hem sıcaklığı birlikte döndürmek istiyorsun. list yerine tuple seçmenin gerekçeleri neler?</summary>
+            <div class="answer"><b>Değişmezlik ve niyet.</b> <code>return ("İzmir", 34.2)</code> sabit bir kayıttır; tuple bunun sonradan değiştirilmeyeceğini garanti eder ve kodu okuyana "bu bir yapı, büyüyen bir liste değil" mesajı verir. Ayrıca tuple hash'lenebilir olduğu için gerekirse dict anahtarı olabilir — list olamaz.</div>
+          </details>
+          <details class="quiz">
+            <summary><code>[s["urun"] for s in satislar if s["kanal"] == "web"]</code> ifadesi ne üretir?</summary>
+            <div class="answer">Kanalı "web" olan satış kayıtlarının <b>ürün adlarından oluşan yeni bir list</b>. Soldan sağa oku: "satislar'daki her s için, kanal web ise, s'nin ürününü topla". for + if + append üçlüsünün tek satıra sıkışmış hâlidir; orijinal listeye dokunmaz.</div>
+          </details>
+          <details class="quiz">
+            <summary><code>musteri["adres"]</code> satırı KeyError fırlatıp programı çökertti. İki farklı çözüm yolu söyle.</summary>
+            <div class="answer"><b>1)</b> <code>try/except KeyError:</code> ile hatayı yakalayıp satırı loglayarak devam etmek. <b>2)</b> <code>musteri.get("adres", "bilinmiyor")</code> kullanmak — anahtar yoksa exception yerine varsayılan değer döner. Eksik alanın "normal" olduğu kirli veride get(), niyeti daha net anlatır.</div>
+          </details>
+          <details class="quiz">
+            <summary>İki projen farklı pandas sürümü istiyor. Global kuruluma devam edersen ne olur, doğru kurulum nedir?</summary>
+            <div class="answer">Global ortamda tek pandas sürümü olabilir: birini güncellediğinde öbür proje <b>sessizce kırılır</b>. Doğrusu her proje klasöründe <code>python -m venv .venv</code> ile ayrı sanal ortam kurmak, paketleri oraya yüklemek ve sürümleri <code>requirements.txt</code> ile kayıt altına almak.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Değişken</span><span class="term-en">Variable</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Bir değere yapıştırılan isim etiketi; atamayla oluşur, tipi taşıdığı değerden gelir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Veri Tipi</span><span class="term-en">Data Type</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Değerin türü (int, float, str, bool); hangi işlemlerin geçerli olduğunu belirler.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Liste</span><span class="term-en">List</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Sıralı ve değiştirilebilir koleksiyon; günlük veri işlerinin varsayılan kabı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Sözlük (Dict)</span><span class="term-en">Dictionary</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Anahtar → değer eşlemesi; JSON ve API yanıtlarının Python'daki doğal karşılığı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Demet (Tuple)</span><span class="term-en">Tuple</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Değişmez sıralı koleksiyon; sabit kayıtlar ve fonksiyondan çoklu dönüş için.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Küme (Set)</span><span class="term-en">Set</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Tekrarsız eleman topluluğu; tekilleştirme ve hızlı üyelik testinin aracı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Fonksiyon</span><span class="term-en">Function</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>def ile tanımlanan, parametre alıp değer döndüren tekrar kullanılabilir kod bloğu.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Comprehension</span><span class="term-en">Comprehension</span><span class="lvl lvl-orta">Orta</span></div><p>Döngü + filtreyi tek satırda yeni bir koleksiyona dönüştüren Python sözdizimi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Exception (İstisna)</span><span class="term-en">Exception</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Çalışma zamanı hata sinyali; try/except ile yakalanıp yönetilir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Sınıf</span><span class="term-en">Class</span><span class="lvl lvl-orta">Orta</span></div><p>Veri ve davranışı bir arada tanımlayan kalıp; nesnelerin üretildiği şablon.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Nesne</span><span class="term-en">Object</span><span class="lvl lvl-orta">Orta</span></div><p>Bir sınıftan üretilmiş somut örnek; her DataFrame bir nesnedir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Modül</span><span class="term-en">Module</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>import ile yüklenen Python dosyası; kodu organize etmenin temel birimi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">pip</span><span class="term-en">pip</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Python'un paket yöneticisi; PyPI'daki kütüphaneleri kurar ve günceller.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Sanal Ortam</span><span class="term-en">Virtual Environment</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Projeye özel izole paket alanı; sürüm çakışmalarını baştan önler.</p></div>
+
+          <div class="term"><div class="term-head"><span class="term-tr">Regex (Düzenli İfade)</span><span class="term-en">Regular Expression</span><span class="lvl lvl-orta">Orta</span></div><p>Metinde desen arama dili; veri temizliğinin, log ayrıştırmanın ve format doğrulamanın gündelik aleti.</p></div>        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m1-python">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m1-bilgisayar-temelleri.html"><span>← Önceki</span><b>Bilgisayarlar Veriyi Nasıl İşler?</b></a>
+          <a class="next" href="m1-veri-yapilari-algoritmalar.html"><span>Sonraki →</span><b>Veri Yapıları ve Algoritmalar</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

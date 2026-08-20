@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolyo Projeleri — Veri Atlası</title>
+<meta name="description" content="İşe alımda sertifika değil çalışan sistem konuşur: iyi portfolyo projesinin 5 özelliği, seviyene göre proje fikirleri, README anatomisi, veri kaynakları ve mülakatta projeni anlatma taktikleri.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m9" data-slug="m9-portfolyo">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m9">9. Kariyer ve Yol Haritası</a><span class="sep">/</span>
+        <span>Portfolyo Projeleri</span>
+      </nav>
+      <span class="mod-badge">Modül 9 · Kariyer ve Yol Haritası</span>
+      <h1>Portfolyo Projeleri</h1>
+      <p class="en-title">Portfolio Projects</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-baslangic">Başlangıç</span>
+        <span class="chip">⏱️ ~15 dk okuma</span>
+        <span class="chip">🔤 10 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Sertifika değil, kanıt</h2>
+        <p>Sekiz modül boyunca bit'ten <a href="m6-transformer.html">Transformer'a</a>, <a href="m2-sql.html">SQL'den</a> <a href="m8-deployment.html">deployment'a</a> uzun bir yol yürüdün. Şimdi kritik soru şu: bu bilgiyi bir işverene nasıl <strong>kanıtlarsın</strong>? CV'ye yazılan "Python biliyorum" cümlesi ile GitHub'da duran, tek tıkla açılan, çalışan bir sistem arasındaki fark; "yüzme kursu bitirdim" demek ile havuza atlayıp yüzmek arasındaki fark kadar büyüktür.</p>
+        <p>İşe alım tarafında acı bir gerçek var: junior başvurularının çoğu birbirinin aynısıdır — aynı kurslar, aynı sertifikalar, aynı Titanic notebook'u. Seni ayrıştıran şey <strong>"kurs bitirdim"</strong> değil, <strong>"çalışan bir sistem kurdum, işte linki"</strong> cümlesidir. Bir işveren GitHub profiline ortalama 30 saniye bakar ve şunları arar:</p>
+        <ul>
+          <li><strong>Sabitlenmiş (pinned) 2–3 proje</strong> — 40 tane dağınık repo değil, seçilmiş vitrin.</li>
+          <li><strong>Açıklayıcı bir README</strong> — kod okumadan projenin ne yaptığını 20 saniyede anlamak ister.</li>
+          <li><strong>Canlı demo linki veya ekran görüntüsü</strong> — "çalışıyor mu?" sorusunun anında cevabı.</li>
+          <li><strong>Yakın tarihli commit'ler</strong> — profil yaşıyor mu, yoksa iki yıl önce mi terk edilmiş?</li>
+        </ul>
+        <p>Bu sayfa, o 30 saniyede "bu adayla konuşmalıyız" dedirtecek projeleri nasıl seçeceğini, kuracağını ve anlatacağını gösteriyor.</p>
+
+        <h2>İyi portfolyo projesinin 5 özelliği</h2>
+        <p>Her proje eşit değildir. İşverene sinyal veren projelerin ortak beş özelliği var:</p>
+        <ul>
+          <li><strong>1. Gerçek ve ilginç veri.</strong> Titanic, Iris ve ev fiyatları veri setleri öğrenmek için harikadır ama portfolyoda "binlerce kopyadan biri" sinyali verir. Kendi şehrinin ulaşım verisi, ilgilendiğin bir oyunun API'si, takip ettiğin ligin istatistikleri — özgün veri, özgün düşünce kanıtıdır.</li>
+          <li><strong>2. Uçtan uca akış.</strong> Ham veriden sonuca giden tam zincir: veri çekme → temizleme → dönüştürme → analiz/model → sunum. Hazır temizlenmiş CSV ile başlayan proje, işin en zor (ve en gerçek) kısmını atlamış demektir — <a href="m4-eda.html">EDA konusunda</a> gördüğün gibi, gerçek veri hep kirlidir.</li>
+          <li><strong>3. Yayında olması.</strong> Sadece repo değil, çalışan bir şey: Streamlit uygulaması, canlı dashboard, API endpoint'i. "Kurup çalıştırabiliyor" ile "kod yazmış" arasındaki fark budur.</li>
+          <li><strong>4. Belgelenmiş olması.</strong> İyi bir README, mimari şeması ve kurulum talimatı. Belgesiz proje, kapısı kilitli dükkân gibidir.</li>
+          <li><strong>5. Dürüst bir sınırlar bölümü.</strong> "Bu proje şunları yapmıyor, şu durumda yanılıyor, veri şu açıdan eksik" diyebilmek olgunluk sinyalidir — <a href="m8-sorumlu-ai.html">Sorumlu AI konusundaki</a> model card fikrinin portfolyo versiyonu.</li>
+        </ul>
+
+        <div class="tip"><b>MVP zihniyetiyle başla.</b> Projenin ilk sürümü küçük ama bitmiş olsun: tek veri kaynağı, tek model, tek sayfa dashboard. Çalışan MVP'yi (minimum viable product) yayınla, sonra üzerine katman ekle. "Devasa ama yarım" proje, "küçük ama bitmiş" projenin yanında hep kaybeder.</div>
+
+        <h2>Seviyene göre proje fikirleri</h2>
+        <p>Portfolyo bir merdivendir: her basamak, bir önceki modüllerde öğrendiklerini kanıta çevirir. Üç seviyede dokuz somut fikir:</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 310" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Üç basamaklı portfolyo proje merdiveni">
+            <g font-family="inherit">
+              <text x="360" y="22" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Portfolyo merdiveni — her basamak bir üst rol için kanıt üretir</text>
+              <defs>
+                <marker id="pfArr1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              </defs>
+              <line x1="20" y1="292" x2="700" y2="292" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <!-- basamak 1 -->
+              <rect x="25" y="205" width="215" height="87" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="132" y="228" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">1 · Başlangıç</text>
+              <text x="132" y="247" text-anchor="middle" fill="var(--muted)" font-size="11">Açık veri EDA raporu</text>
+              <text x="132" y="262" text-anchor="middle" fill="var(--muted)" font-size="11">API dashboard'u · SQL analizi</text>
+              <text x="132" y="281" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="600">Kanıt: pandas · SQL · görselleştirme</text>
+              <!-- basamak 2 -->
+              <rect x="252" y="145" width="215" height="147" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="359" y="168" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">2 · Orta</text>
+              <text x="359" y="187" text-anchor="middle" fill="var(--muted)" font-size="11">Uçtan uca ELT + BI</text>
+              <text x="359" y="202" text-anchor="middle" fill="var(--muted)" font-size="11">Churn modeli · streaming panel</text>
+              <text x="359" y="221" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="600">Kanıt: Airflow · dbt · Kafka · ML</text>
+              <!-- basamak 3 -->
+              <rect x="479" y="85" width="215" height="207" rx="10" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="586" y="108" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">3 · İleri</text>
+              <text x="586" y="127" text-anchor="middle" fill="var(--muted)" font-size="11">RAG chatbot + eval seti</text>
+              <text x="586" y="142" text-anchor="middle" fill="var(--muted)" font-size="11">MLOps döngüsü · LLM veri aracı</text>
+              <text x="586" y="161" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="600">Kanıt: LLM · MLflow · Docker · izleme</text>
+              <!-- yükselen ok -->
+              <path d="M132 196 L359 136 L560 78" fill="none" stroke="var(--acc)" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#pfArr1)"/>
+              <text x="240" y="120" text-anchor="middle" fill="var(--muted)" font-size="10.5">her basamak bir öncekinin</text>
+              <text x="240" y="134" text-anchor="middle" fill="var(--muted)" font-size="10.5">becerilerini de içerir</text>
+            </g>
+          </svg>
+          <figcaption>Basamak atladıkça proje karmaşıklığı ve kanıtladığın beceri seti büyür. Alt basamağı bitirmeden üsttekine atlama.</figcaption>
+        </figure>
+
+        <p><strong>Başlangıç basamağı</strong> — hedef: veriyle konuşabildiğini göstermek.</p>
+        <ul>
+          <li><strong>Şehrinin açık verisiyle EDA raporu.</strong> Belediyenin açık veri portalından ulaşım, hava kalitesi veya park verisi çek; temizle, keşfet, 5–6 net grafikle bir hikâye anlat. Kanıtladığın modüller: <a href="m4-eda.html">EDA ve pandas</a>, <a href="m4-gorsellestirme.html">veri görselleştirme</a>.</li>
+          <li><strong>API'den beslenen, günlük güncellenen dashboard.</strong> Hava durumu, döviz kuru veya spor API'sinden veri çek, küçük bir zamanlanmış görevle her gün yenile, Streamlit'te yayınla. Kanıt: <a href="m1-python.html">Python</a>, <a href="m1-linux-git.html">Git ve zamanlama</a>, API kullanımı.</li>
+          <li><strong>SQL ile e-ticaret analizi.</strong> Örnek bir sipariş veritabanı üzerinde kohort analizi, en kârlı ürünler, tekrar satın alma oranı gibi iş sorularını SQL'le yanıtla. Kanıt: <a href="m2-sql.html">SQL</a>, <a href="m2-veri-modelleme.html">veri modelleme</a> sezgisi.</li>
+        </ul>
+        <p><strong>Orta basamak</strong> — hedef: sistem kurabildiğini göstermek.</p>
+        <ul>
+          <li><strong>Airflow'lu uçtan uca ELT pipeline'ı.</strong> API'den günlük veri çek, S3/BigQuery'ye yaz, dbt ile dönüştür, üstüne BI panosu kur. Kanıt: <a href="m3-etl-elt.html">ETL/ELT</a>, <a href="m3-orkestrasyon.html">orkestrasyon</a>, <a href="m3-warehouse-lake.html">warehouse</a>.</li>
+          <li><strong>Churn tahmini — uçtan uca ML.</strong> Ham müşteri verisinden <a href="m5-feature-engineering.html">feature engineering</a>, model karşılaştırma, <a href="m5-model-degerlendirme.html">doğru metriklerle değerlendirme</a> ve <a href="m8-deployment.html">FastAPI ile deploy</a>. Kanıt: ML döngüsünün tamamı.</li>
+          <li><strong>Streaming pipeline.</strong> Bir olay kaynağını (ör. Wikipedia düzenleme akışı) Kafka'ya bas, işle, canlı bir panele akıt. Kanıt: <a href="m3-streaming.html">streaming mimarisi</a>, event-driven düşünce.</li>
+        </ul>
+        <p><strong>İleri basamak</strong> — hedef: üretim olgunluğu göstermek.</p>
+        <ul>
+          <li><strong>Kendi dokümanlarınla RAG chatbot + değerlendirme seti.</strong> Ders notlarını ya da bir dokümantasyonu indeksle, <a href="m7-rag.html">RAG</a> kur ve en önemlisi: 30–50 soruluk bir eval setiyle cevap kalitesini ölç. Kanıt: <a href="m7-llm-temelleri.html">LLM temelleri</a>, RAG, değerlendirme disiplini.</li>
+          <li><strong>MLOps'lu tam döngü.</strong> Orta seviyedeki churn projesine <a href="m8-cicd-tracking.html">MLflow tracking + model registry</a>, CI/CD ve <a href="m8-monitoring.html">drift izleme</a> ekle. Kanıt: modelin sadece eğitilmediği, yaşatıldığı.</li>
+          <li><strong>LLM destekli veri kalitesi aracı.</strong> Bir tabloyu tarayıp anomalileri bulan, şüpheli kolonları LLM'le açıklayan küçük bir araç. Kanıt: <a href="m3-veri-kalitesi.html">veri kalitesi</a> + <a href="m7-prompt-engineering.html">prompt engineering</a> birleşimi — az rastlanan, dikkat çeken bir kombinasyon.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 760 175" width="760" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Uçtan uca proje mimarisi: API'den dashboard'a">
+            <g font-family="inherit">
+              <text x="380" y="22" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Orta seviye uçtan uca proje mimarisi — bu şemanın benzerini README'ne koy</text>
+              <defs>
+                <marker id="pfArr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              </defs>
+              <rect x="15" y="55" width="105" height="52" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="67" y="85" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Hava API'si</text>
+              <text x="67" y="130" text-anchor="middle" fill="var(--muted)" font-size="10.5">ham JSON</text>
+              <path d="M120 81 L135 81" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#pfArr2)"/>
+              <rect x="140" y="55" width="105" height="52" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="192" y="85" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Airflow</text>
+              <text x="192" y="130" text-anchor="middle" fill="var(--muted)" font-size="10.5">günlük DAG</text>
+              <path d="M245 81 L260 81" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#pfArr2)"/>
+              <rect x="265" y="55" width="105" height="52" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="317" y="85" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Warehouse</text>
+              <text x="317" y="130" text-anchor="middle" fill="var(--muted)" font-size="10.5">BigQuery + dbt</text>
+              <path d="M370 81 L385 81" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#pfArr2)"/>
+              <rect x="390" y="55" width="105" height="52" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="442" y="85" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Model</text>
+              <text x="442" y="130" text-anchor="middle" fill="var(--muted)" font-size="10.5">scikit-learn</text>
+              <path d="M495 81 L510 81" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#pfArr2)"/>
+              <rect x="515" y="55" width="105" height="52" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="567" y="85" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">FastAPI</text>
+              <text x="567" y="130" text-anchor="middle" fill="var(--muted)" font-size="10.5">tahmin servisi</text>
+              <path d="M620 81 L635 81" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#pfArr2)"/>
+              <rect x="640" y="55" width="105" height="52" rx="10" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="692" y="85" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Dashboard</text>
+              <text x="692" y="130" text-anchor="middle" fill="var(--muted)" font-size="10.5">canlı demo linki</text>
+              <text x="380" y="162" text-anchor="middle" fill="var(--muted)" font-size="10.5">tek proje, altı modülün kanıtı: API · orkestrasyon · warehouse · ML · serving · BI</text>
+            </g>
+          </svg>
+          <figcaption>Uçtan uca akış: her kutu, müfredatın bir modülüne karşılık gelir. İşveren bu şemayı görünce ne bildiğini sormasına gerek kalmaz.</figcaption>
+        </figure>
+
+        <h2>README anatomisi</h2>
+        <p>README, projenin vitrin camıdır: çoğu işveren koduna hiç bakmadan sadece README'yi okur. İyi bir README belirli bir sırayla akar — problem, veri, mimari, kurulum, sonuç, sınırlar. En kritik iki öge: <strong>mimari şeması</strong> (yukarıdaki gibi bir kutu-ok akışı) ve <strong>ekran görüntüsü ya da kısa GIF</strong>. İnsan beyni görseli metinden önce işler; dashboard'unun bir GIF'i, üç paragraf açıklamadan daha ikna edicidir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 640 405" width="640" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="README belge iskeleti: bölümlerin dikey sıralaması">
+            <g font-family="inherit">
+              <text x="320" y="20" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">README iskeleti — yukarıdan aşağı okunma sırası</text>
+              <rect x="45" y="34" width="310" height="42" rx="8" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="200" y="60" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Başlık + tek cümle özet + rozetler</text>
+              <text x="385" y="60" fill="var(--muted)" font-size="10.5">← ilk 5 saniye burada geçer</text>
+              <rect x="45" y="86" width="310" height="42" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="200" y="112" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Problem — neden önemli?</text>
+              <text x="385" y="112" fill="var(--muted)" font-size="10.5">← iş bağlamı kurabildiğini gösterir</text>
+              <rect x="45" y="138" width="310" height="42" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="200" y="164" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Veri — kaynak, boyut, lisans</text>
+              <text x="385" y="164" fill="var(--muted)" font-size="10.5">← veri okuryazarlığı sinyali</text>
+              <rect x="45" y="190" width="310" height="42" rx="8" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="200" y="216" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Mimari şeması (görsel!)</text>
+              <text x="385" y="216" fill="var(--muted)" font-size="10.5">← işverenin en uzun baktığı yer</text>
+              <rect x="45" y="242" width="310" height="42" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="200" y="268" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Kurulum — 3 komutta çalıştır</text>
+              <text x="385" y="268" fill="var(--muted)" font-size="10.5">← reprodüksiyon testi</text>
+              <rect x="45" y="294" width="310" height="42" rx="8" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="200" y="320" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Sonuçlar — metrik + ekran görüntüsü/GIF</text>
+              <text x="385" y="320" fill="var(--muted)" font-size="10.5">← görsel kanıt, en ikna edici kısım</text>
+              <rect x="45" y="346" width="310" height="42" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="200" y="372" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Sınırlar ve sonraki adımlar</text>
+              <text x="385" y="372" fill="var(--muted)" font-size="10.5">← dürüstlük, olgunluk sinyali</text>
+            </g>
+          </svg>
+          <figcaption>Vurgulu iki bölüm — mimari şeması ve görsel sonuçlar — README'nin "işe alım gücü" en yüksek kısımlarıdır.</figcaption>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Metin — kopyalayıp uyarlayabileceğin README iskeleti</figcaption>
+          <pre><code data-lang="text"># İstanbul Hava Kalitesi Tahmini          ← başlık: ne yaptığı tek bakışta belli
+&gt; Saatlik açık veriden 24 saat sonrası PM2.5 tahmini — canlı demo: [link]
+
+## Problem                                 ← neden önemli, kim kullanır?
+Hava kirliliği uyarıları genelde "şu an" içindir; bu proje yarını tahmin eder.
+
+## Veri                                    ← kaynak + boyut + lisans
+Ulusal Hava Kalitesi İzleme Ağı, 3 yıl / ~1,2M satır, açık lisans (atıf gerekli).
+
+## Mimari                                  ← kutu-ok şeması buraya (resim olarak)
+API → Airflow (günlük DAG) → BigQuery → dbt → XGBoost → FastAPI → Streamlit
+
+## Kurulum                                 ← 3 komutta çalışır olmalı
+docker compose up  →  make seed  →  make run
+
+## Sonuçlar                                ← metrik + ekran görüntüsü/GIF
+MAE 8,4 µg/m³ (baseline 14,1). Dashboard GIF'i aşağıda.
+
+## Sınırlar ve sonraki adımlar             ← dürüst ol, artı puandır
+İstasyon arızalarında boşluk var; sonraki adım: drift izleme eklemek.</code></pre>
+        </figure>
+
+        <h2>Veri nereden bulunur?</h2>
+        <p>"Proje fikrim var ama verim yok" derdinin ilacı üç kaynak grubudur:</p>
+        <ul>
+          <li><strong>Kaggle.</strong> Binlerce hazır veri seti + başkalarının notebook'larından öğrenme imkânı. Yarışmalara katılmak, <a href="m5-model-degerlendirme.html">model değerlendirme</a> disiplinini pratiğe dökmenin en hızlı yolu.</li>
+          <li><strong>Açık veri portalları.</strong> data.gov.tr, İstanbul (İBB) ve Ankara büyükşehir açık veri portalları, Eurostat, Dünya Bankası… Yerel veri kullanan proje hem özgündür hem de mülakatta anlatması keyiflidir.</li>
+          <li><strong>Herkese açık API'ler.</strong> Hava durumu (Open-Meteo), finans (borsa/kripto API'leri), spor istatistikleri, Wikipedia. API'den veri çekmek, <a href="m3-etl-elt.html">ingestion</a> becerisinin doğal kanıtıdır.</li>
+        </ul>
+
+        <div class="warn"><b>Lisansa bak, sonra indir.</b> Her açık görünen veri serbestçe kullanılamaz: kimi lisanslar atıf ister, kimi ticari kullanımı yasaklar, kimi API'ler günlük istek sınırı koyar. README'nin "Veri" bölümünde lisansı belirtmek hem yasal zorunluluk hem de profesyonellik sinyalidir. Kişisel veri içeren setlerde <a href="m3-veri-kalitesi.html">KVKK/GDPR duyarlılığını</a> unutma.</div>
+
+        <h2>Yaygın hatalar</h2>
+        <p>Portfolyoları en çok zayıflatan üç alışkanlık:</p>
+        <ul>
+          <li><strong>20 yarım proje &lt; 3 bitmiş proje.</strong> Yarım projeler "başlıyor ama bitiremiyor" mesajı verir — işverenin en korktuğu profil. Az sayıda, bitmiş, yayında ve belgeli proje her zaman kazanır.</li>
+          <li><strong>Kopya notebook sendromu.</strong> Bir eğitim videosundaki notebook'u birebir yeniden yazıp repo'ya koymak. Mülakatta iki soruda anlaşılır ("neden bu encoding'i seçtin?") ve güveni geri getirmek zordur. Esinlen ama veriyi, soruyu ve en az bir bileşeni kendin seç.</li>
+          <li><strong>"Sadece accuracy" sunumu.</strong> "%94 accuracy aldım" cümlesi, <a href="m5-model-degerlendirme.html">dengesiz veri setlerinde</a> hiçbir şey söylemez. Baseline ile karşılaştır, doğru metriği seç (F1, MAE, AUC…), iş etkisini söyle: "modelin yakaladığı her churn eden müşteri X TL değerinde".</li>
+        </ul>
+
+        <div class="note"><b>Reprodüksiyon çıtası.</b> İyi test: projeni hiç bilmeyen bir arkadaşın, README'deki adımlarla 10 dakikada çalıştırabiliyor mu? <code>requirements.txt</code> ya da <code>Dockerfile</code>, sabit random seed ve örnek <code>.env.example</code> dosyası bu çıtayı geçmenin standart araçlarıdır — <a href="m8-cicd-tracking.html">reproducibility konusunda</a> derinleşmiştik.</div>
+
+        <figure class="codebox">
+          <figcaption>Bash — projeyi GitHub'a taşı, anlamlı commit'lerle</figcaption>
+          <pre><code data-lang="bash"># 1) Repo'yu başlat ve ilk yapıyı gönder
+git init
+git add README.md requirements.txt src/
+git commit -m "feat: proje iskeleti ve README eklendi"
+git remote add origin git@github.com:kullanici/hava-kalitesi.git
+git push -u origin main
+
+# 2) Anlamlı, küçük commit'ler at — "update", "final2" YOK
+git commit -m "feat: Open-Meteo API'den saatlik veri çekme betiği"
+git commit -m "fix: eksik istasyon verisinde forward-fill uygulandı"
+git commit -m "docs: mimari şeması ve kurulum adımları README'ye eklendi"
+
+# 3) Commit geçmişin de portfolyonun parçasıdır:
+# işveren, düşünce sürecini bu mesajlardan okur.
+git log --oneline</code></pre>
+        </figure>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Portfolyonun asıl sınavı mülakat masasıdır: "Bize bir projenden bahseder misin?" sorusu neredeyse garantidir. Cevabın dağınık olmasın diye <strong>STAR yöntemi</strong>ni kullan:</p>
+        <ul>
+          <li><strong>S — Situation (durum):</strong> "Şehrimin hava kalitesi verisi açıktı ama kimse tahmin üretmiyordu."</li>
+          <li><strong>T — Task (görev):</strong> "24 saat sonrasını tahmin eden, kendi kendine güncellenen bir sistem kurmak istedim."</li>
+          <li><strong>A — Action (eylem):</strong> "Airflow'la günlük ingestion kurdum, dbt ile modelledim, XGBoost'u baseline'la karşılaştırdım, FastAPI ile servis ettim." — her fiil, bir modül kanıtı.</li>
+          <li><strong>R — Result (sonuç):</strong> "MAE'yi baseline'a göre %40 düşürdüm; dashboard 6 aydır her gün otomatik güncelleniyor."</li>
+        </ul>
+        <p>Mülakatçılar en çok <em>kararlarını</em> merak eder: neden Airflow, neden bu metrik, veri kirliyken ne yaptın? Projeyi kendin kurduysan bu soruların hepsi kolaydır — kopya notebook'taysa hiçbiri. Bir sonraki konuda bu projelerde kullanacağın <a href="m9-ekosistem.html">araç ekosisteminin haritasını</a> çıkarıyoruz; kariyer planının bütünü için <a href="m9-yol-haritasi.html">yol haritası</a> sayfası seni bekliyor.</p>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Bir işveren GitHub profiline 30 saniye bakıyor. Bu sürede neye bakar, sen neyi hazır etmelisin?</summary>
+            <div class="answer"><b>Sabitlenmiş 2–3 seçkin proje, açıklayıcı README, canlı demo/ekran görüntüsü ve yakın tarihli commit'ler.</b> Kod kalitesine o 30 saniyede kimse bakamaz; vitrin (pinned repolar + README) her şeydir. 40 dağınık repo yerine 3 bitmiş projeyi öne çıkar.</div>
+          </details>
+          <details class="quiz">
+            <summary>Titanic veri setiyle yapılmış bir sınıflandırma projesi portfolyoda neden zayıf sinyal verir?</summary>
+            <div class="answer">Çünkü binlerce kopyası vardır ve verinin toplanması–temizlenmesi gibi işin en zor kısımları hazır gelir. İşveren <b>özgün veri seçimini, kirli veriyle boğuşmayı ve kendi kararlarını</b> görmek ister. Öğrenmek için Titanic harika, vitrine koymak için değil.</div>
+          </details>
+          <details class="quiz">
+            <summary>"%94 accuracy aldım" sunumunun üç eksiği nedir?</summary>
+            <div class="answer">1) <b>Baseline yok</b> — %94, sürekli "hayır" diyen bir modelin %95 tuttuğu dengesiz bir sette anlamsız olabilir. 2) <b>Metrik seçimi savunulmamış</b> — probleme göre F1, recall ya da MAE gerekebilir. 3) <b>İş etkisi yok</b> — model neyi kazandırıyor? Doğru kalıp: "baseline X iken, seçtiğim Y metriğinde Z'ye ulaştım; bu iş için şu anlama geliyor."</div>
+          </details>
+          <details class="quiz">
+            <summary>STAR yöntemi nedir ve mülakatta proje anlatırken hangi kısmı en çok önemsenir?</summary>
+            <div class="answer"><b>Situation–Task–Action–Result:</b> durumu kur, görevi tanımla, yaptıklarını anlat, sonucu ölçülebilir biçimde ver. Mülakatçılar en çok <b>Action'daki kararlarını</b> kurcalar: "neden bu aracı/metriği seçtin?" Projeyi gerçekten sen kurduysan bu sorular fırsata dönüşür.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Portfolyo</span><span class="term-en">Portfolio</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Becerilerini kanıtlayan seçilmiş proje vitrini; junior işe alımda CV'den daha güçlü sinyal verir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Uçtan Uca Proje</span><span class="term-en">End-to-End Project</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Ham veriden sunuma tüm zinciri (çekme→temizleme→model→yayın) kapsayan proje; sistem kurabildiğinin kanıtı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">README</span><span class="term-en">README</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Projenin vitrin belgesi: problem, veri, mimari, kurulum, sonuçlar ve sınırlar. Çoğu işveren sadece bunu okur.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Demo</span><span class="term-en">Live Demo</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Projenin tarayıcıda çalışan hâli (Streamlit, dashboard, API). "Çalışıyor mu?" sorusunu tek tıkla cevaplar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Açık Veri</span><span class="term-en">Open Data</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Kamuya açık, serbestçe kullanılabilir veri setleri; data.gov.tr ve belediye portalları özgün proje hammaddesidir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Kaggle</span><span class="term-en">Kaggle</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Veri bilimi yarışmaları ve veri seti platformu; başkalarının çözümlerinden öğrenmek için dev bir okul.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Lisans</span><span class="term-en">License</span><span class="lvl lvl-orta">Orta</span></div><p>Verinin/kodun hangi koşullarla kullanılabileceğini belirleyen hukuki çerçeve; atıf ve ticari kullanım kuralları burada yazar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">MVP</span><span class="term-en">Minimum Viable Product</span><span class="lvl lvl-orta">Orta</span></div><p>Çalışan en küçük sürüm: tek kaynak, tek model, tek sayfa. Önce bitir-yayınla, sonra büyüt yaklaşımının temeli.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Reprodüksiyon</span><span class="term-en">Reproducible Project</span><span class="lvl lvl-orta">Orta</span></div><p>Projenin başka bir makinede aynı sonuçla çalıştırılabilmesi; requirements/Docker, sabit seed ve net kurulum adımları gerektirir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">STAR Yöntemi</span><span class="term-en">STAR Method</span><span class="lvl lvl-orta">Orta</span></div><p>Situation–Task–Action–Result: mülakatta projeni dağılmadan, sonuç odaklı anlatmanın standart çerçevesi.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m9-portfolyo">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m8-sorumlu-ai.html"><span>← Önceki</span><b>Sorumlu AI: Etik, Bias ve Açıklanabilirlik</b></a>
+          <a class="next" href="m9-ekosistem.html"><span>Sonraki →</span><b>Araç Ekosistemi Haritası</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

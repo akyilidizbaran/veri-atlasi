@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web Scraping ve Veri Toplama — Veri Atlası</title>
+<meta name="description" content="Kendi verini toplamanın yolu: API öncelikli düşünme, HTML/DOM ve CSS seçiciler, requests + BeautifulSoup, dinamik siteler, robots.txt ve etik sınırlar.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m2" data-slug="m2-scraping">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular" class="active">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m2">2. Veri Dünyası</a><span class="sep">/</span>
+        <span>Web Scraping ve Veri Toplama</span>
+      </nav>
+      <span class="mod-badge">Modül 2 · Veri Dünyası</span>
+      <h1>Web Scraping ve Veri Toplama</h1>
+      <p class="en-title">Web Scraping &amp; Data Collection</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~16 dk okuma</span>
+        <span class="chip">🔤 12 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Hazır veri bittiğinde</h2>
+        <p>Buraya kadarki konularda veriyi hep "elimizde" varsaydık: bir CSV, bir tablo, bir Parquet dosyası. Gerçek hayatta ise en sık sorulan soru şudur: <strong>bu veriyi nereden bulacağım?</strong> Kaggle'daki hazır setler öğrenmek için harikadır ama herkes aynı setleri kullanır — <a href="m9-portfolyo.html">portfolyonu</a> ayıran şey çoğu zaman <em>kendi topladığın</em> veridir.</p>
+        <p><strong>Web scraping (web kazıma)</strong>, insanlar için tasarlanmış web sayfalarından programatik olarak veri çıkarma işidir. Kulağa hackerca gelse de aslında sıkıcı ve disiplinli bir iştir: sayfayı indir, içindeki yapıyı bul, istediğin alanları çek, düzgün kaydet. Zor kısmı teknik değil; <strong>nazik, dayanıklı ve yasal</strong> olmasını sağlamaktır. Bu sayfa üçünü birden öğretiyor.</p>
+
+        <h2>Önce kapıyı çal: API öncelikli düşünme</h2>
+        <p>Yeni başlayanların en pahalı hatası, doğrudan HTML kazımaya girişmektir. Oysa aynı verinin çoğu zaman daha temiz bir yolu vardır. Şu sırayı takip et:</p>
+        <ul>
+          <li><strong>Resmî API</strong> — varsa tartışmasız birinci tercih. Yapılandırılmış JSON döner, sayfa tasarımı değişince kırılmaz, kullanım şartları nettir. (<a href="m1-bilgisayar-temelleri.html">API kavramını</a> hatırla.)</li>
+          <li><strong>Hazır veri dumpları</strong> — birçok kurum verisini CSV/Parquet olarak yayımlar: açık veri portalları, Wikipedia dumpları, kurumsal "veri indir" sayfaları.</li>
+          <li><strong>RSS/sitemap</strong> — haber ve blog içeriği için makine dostu, kazımadan çok daha ucuz kanallar.</li>
+          <li><strong>Scraping</strong> — yalnızca yukarıdakiler yoksa, ve ancak izin sınırları içindeyse.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 372" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Veri toplama yöntemi seçme karar ağacı">
+            <defs>
+              <marker id="scArr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+              <marker id="scArrOk" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--ok)"/></marker>
+              <marker id="scArrBad" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--bad)"/></marker>
+            </defs>
+            <g>
+              <rect x="232" y="14" width="190" height="36" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="327" y="37" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Bu veriye ihtiyacım var</text>
+
+              <rect x="222" y="82" width="210" height="44" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="327" y="103" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Resmî bir API var mı?</text>
+              <text x="327" y="118" text-anchor="middle" fill="var(--muted)" font-size="10.5">dokümantasyona bak</text>
+
+              <rect x="222" y="158" width="210" height="44" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="327" y="179" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Hazır veri dosyası?</text>
+              <text x="327" y="194" text-anchor="middle" fill="var(--muted)" font-size="10.5">açık veri portalı, dump, RSS</text>
+
+              <rect x="212" y="234" width="230" height="44" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="327" y="255" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">robots.txt + şartlar izin veriyor mu?</text>
+              <text x="327" y="270" text-anchor="middle" fill="var(--muted)" font-size="10.5">kişisel veri var mı?</text>
+
+              <rect x="217" y="316" width="220" height="42" rx="10" fill="rgba(var(--acc-rgb),.14)" stroke="var(--acc)" stroke-width="1.8"/>
+              <text x="327" y="336" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Scraping — nazik ve dayanıklı</text>
+              <text x="327" y="351" text-anchor="middle" fill="var(--muted)" font-size="10.5">yavaş git, ham veriyi sakla</text>
+
+              <rect x="500" y="84" width="200" height="40" rx="10" fill="var(--dg-box)" stroke="var(--ok)" stroke-width="1.5"/>
+              <text x="600" y="102" text-anchor="middle" fill="var(--ok)" font-size="12" font-weight="700">API'yi kullan</text>
+              <text x="600" y="117" text-anchor="middle" fill="var(--muted)" font-size="10.5">en temiz, en dayanıklı yol</text>
+
+              <rect x="500" y="160" width="200" height="40" rx="10" fill="var(--dg-box)" stroke="var(--ok)" stroke-width="1.5"/>
+              <text x="600" y="178" text-anchor="middle" fill="var(--ok)" font-size="12" font-weight="700">Dosyayı indir</text>
+              <text x="600" y="193" text-anchor="middle" fill="var(--muted)" font-size="10.5">tek seferde tüm veri</text>
+
+              <rect x="500" y="236" width="200" height="40" rx="10" fill="var(--dg-box)" stroke="var(--bad)" stroke-width="1.5"/>
+              <text x="600" y="254" text-anchor="middle" fill="var(--bad)" font-size="12" font-weight="700">Dur: izin iste ya da vazgeç</text>
+              <text x="600" y="269" text-anchor="middle" fill="var(--muted)" font-size="10.5">veri, dava riskine değmez</text>
+
+              <path d="M327 50 L327 78" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#scArr)"/>
+              <path d="M327 126 L327 154" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#scArr)"/>
+              <path d="M327 202 L327 230" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#scArr)"/>
+              <path d="M327 278 L327 312" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#scArr)"/>
+              <text x="340" y="145" fill="var(--muted)" font-size="10.5" font-weight="700">hayır</text>
+              <text x="340" y="221" fill="var(--muted)" font-size="10.5" font-weight="700">hayır</text>
+              <text x="340" y="299" fill="var(--ok)" font-size="10.5" font-weight="700">evet</text>
+
+              <path d="M432 104 L496 104" stroke="var(--ok)" stroke-width="1.6" marker-end="url(#scArrOk)"/>
+              <path d="M432 180 L496 180" stroke="var(--ok)" stroke-width="1.6" marker-end="url(#scArrOk)"/>
+              <path d="M442 256 L496 256" stroke="var(--bad)" stroke-width="1.6" marker-end="url(#scArrBad)"/>
+              <text x="464" y="97" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="700">evet</text>
+              <text x="464" y="173" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="700">evet</text>
+              <text x="469" y="249" text-anchor="middle" fill="var(--bad)" font-size="10.5" font-weight="700">hayır</text>
+            </g>
+          </svg>
+          <figcaption>Scraping listenin en altındadır — en son çare, ilk refleks değil.</figcaption>
+        </figure>
+
+        <h2>HTML, DOM ve CSS seçiciler</h2>
+        <p>Bir web sayfası aslında iç içe geçmiş etiketlerden (tag) oluşan bir ağaçtır. Tarayıcı bu ağacı belleğe kurar; buna <strong>DOM (Document Object Model)</strong> denir. Her etiketin adı (<code>div</code>, <code>h3</code>, <code>span</code>), özellikleri (<code>class</code>, <code>id</code>, <code>href</code>) ve çocukları vardır — yani <a href="m1-veri-yapilari-algoritmalar.html">ağaç veri yapısının</a> gündelik hayattaki en yaygın örneğiyle karşı karşıyasın.</p>
+        <p>Scraping'in tamamı tek bir beceriye indirgenir: <strong>istediğin düğümü tarif edebilmek</strong>. Bunun dili <strong>CSS seçicileridir</strong>:</p>
+        <ul>
+          <li><code>div.urun</code> — sınıfı <code>urun</code> olan tüm <code>div</code>'ler</li>
+          <li><code>#fiyat</code> — <code>id</code>'si <code>fiyat</code> olan tek öğe</li>
+          <li><code>div.urun span.fiyat</code> — ürün kutusunun <em>içindeki</em> fiyat alanı (soyundan gelen)</li>
+          <li><code>a[href^="/kitap/"]</code> — adresi <code>/kitap/</code> ile başlayan bağlantılar</li>
+        </ul>
+        <p>Seçiciyi bulmanın pratik yolu: tarayıcıda hedef alana sağ tıkla → "İncele" (Inspect). Açılan panelde etiketi ve sınıflarını görürsün.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 330" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="HTML DOM ağacı ve CSS seçici eşleşmeleri">
+            <defs>
+              <marker id="scArrT" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+            </defs>
+            <g>
+              <text x="20" y="20" fill="var(--faint)" font-size="11.5" font-weight="700">DOM ağacı</text>
+              <rect x="255" y="32" width="180" height="32" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="345" y="53" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">div.urun-listesi</text>
+
+              <rect x="45" y="104" width="140" height="30" rx="8" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="115" y="124" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">div.urun</text>
+              <rect x="275" y="104" width="140" height="30" rx="8" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="345" y="124" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">div.urun</text>
+              <rect x="505" y="104" width="140" height="30" rx="8" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="575" y="124" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">div.urun</text>
+
+              <path d="M345 64 L115 100" stroke="var(--dg-line)" stroke-width="1.3" marker-end="url(#scArrT)"/>
+              <path d="M345 64 L345 100" stroke="var(--dg-line)" stroke-width="1.3" marker-end="url(#scArrT)"/>
+              <path d="M345 64 L575 100" stroke="var(--dg-line)" stroke-width="1.3" marker-end="url(#scArrT)"/>
+
+              <rect x="20" y="176" width="126" height="30" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="83" y="196" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">h3.baslik</text>
+              <rect x="158" y="176" width="126" height="30" rx="8" fill="rgba(var(--acc-rgb),.20)" stroke="var(--acc)" stroke-width="1.8"/>
+              <text x="221" y="196" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">span.fiyat</text>
+              <path d="M115 134 L83 172" stroke="var(--dg-line)" stroke-width="1.3" marker-end="url(#scArrT)"/>
+              <path d="M115 134 L221 172" stroke="var(--dg-line)" stroke-width="1.3" marker-end="url(#scArrT)"/>
+              <text x="83" y="222" text-anchor="middle" fill="var(--muted)" font-size="10">"Veri Mühendisliği"</text>
+              <text x="221" y="222" text-anchor="middle" fill="var(--muted)" font-size="10">"249,90 TL"</text>
+
+              <text x="470" y="176" fill="var(--faint)" font-size="11.5" font-weight="700">Seçici → ne eşleşir?</text>
+              <rect x="440" y="188" width="260" height="118" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="456" y="211" fill="var(--acc)" font-size="11.5" font-weight="700">div.urun</text>
+              <text x="456" y="227" fill="var(--muted)" font-size="10.5">→ 3 ürün kutusunun tamamı</text>
+              <text x="456" y="252" fill="var(--acc)" font-size="11.5" font-weight="700">div.urun span.fiyat</text>
+              <text x="456" y="268" fill="var(--muted)" font-size="10.5">→ her kutunun içindeki fiyat</text>
+              <text x="456" y="293" fill="var(--acc)" font-size="11.5" font-weight="700">h3.baslik</text>
+              <text x="456" y="309" fill="var(--muted)" font-size="10.5">→ başlık metinleri</text>
+            </g>
+          </svg>
+          <figcaption>Kazıma yazmak, aslında "hangi düğümü istiyorum" sorusunu CSS seçicisiyle cevaplamaktır.</figcaption>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Python — requests + BeautifulSoup ile ilk kazıma</figcaption>
+          <pre><code data-lang="python">import requests
+from bs4 import BeautifulSoup
+
+URL = "https://kitaplar.ornek.com/liste?sayfa=1"
+# Kendini dürüstçe tanıt: kim olduğun ve iletişim adresin
+BASLIK = {"User-Agent": "VeriAtlasiBot/1.0 (ogrenci projesi; iletisim@ornek.com)"}
+
+yanit = requests.get(URL, headers=BASLIK, timeout=10)
+yanit.raise_for_status()                      # 4xx/5xx geldiyse burada patla
+
+corba = BeautifulSoup(yanit.text, "html.parser")
+
+kayitlar = []
+for kart in corba.select("div.urun"):         # CSS seçici ile ürün kutuları
+    baslik = kart.select_one("h3.baslik")
+    fiyat = kart.select_one("span.fiyat")
+    if not baslik or not fiyat:               # eksik kart olabilir — atla, çökme
+        continue
+    kayitlar.append({
+        "baslik": baslik.get_text(strip=True),
+        "fiyat": fiyat.get_text(strip=True),
+    })
+
+print(len(kayitlar), "kayıt")                 # 20 kayıt
+print(kayitlar[0])                            # {'baslik': 'Veri Mühendisliği', 'fiyat': '249,90 TL'}</code></pre>
+        </figure>
+
+        <h2>Dinamik siteler: HTML boş geliyorsa</h2>
+        <p>Bazen kodu çalıştırırsın ve <code>select</code> boş liste döner — oysa tarayıcıda veri gözünün önünde durmaktadır. Sebep şu: modern sitelerin çoğu sayfayı boş gönderir, içeriği sonradan <strong>JavaScript</strong> ile doldurur. <code>requests</code> ise bir tarayıcı değildir; JavaScript çalıştırmaz, sana ilk gelen boş iskeleti verir.</p>
+        <p>İki çözüm var ve <strong>sırası önemlidir</strong>:</p>
+        <ul>
+          <li><strong>Gizli API'yi yakala (tercih edilen).</strong> Sayfa veriyi bir yerden alıyor. Tarayıcıda <code>F12 → Network → Fetch/XHR</code> sekmesini açıp sayfayı yenile; sitenin kendi kullandığı JSON adresini görürsün. Doğrudan onu çağırmak hem 10 kat hızlıdır hem de tasarım değişikliklerinden etkilenmez.</li>
+          <li><strong>Gerçek tarayıcı çalıştır.</strong> Giriş yapmak, sonsuz kaydırma ya da tıklama gerekiyorsa <strong>headless browser</strong> (Playwright, Selenium) kullanırsın: arayüzsüz bir Chrome açılır, sayfa gerçekten render edilir. Güçlüdür ama yavaş ve kırılgandır.</li>
+        </ul>
+
+        <figure class="codebox">
+          <figcaption>Python — sitenin kendi JSON kanalını kullanmak</figcaption>
+          <pre><code data-lang="python"># F12 → Network → Fetch/XHR sekmesinde bulduğun adres:
+API = "https://kitaplar.ornek.com/api/urunler?sayfa=1&amp;limit=50"
+
+veri = requests.get(API, headers=BASLIK, timeout=10).json()
+for u in veri["sonuclar"]:
+    print(u["baslik"], u["fiyat"])
+
+# Neden bu yol daha iyi?
+#  - JSON zaten yapılandırılmış: HTML ayrıştırmaya gerek yok
+#  - Sayfa tasarımı değişince kırılmaz
+#  - Tek istekte 50 kayıt gelir; 50 sayfa gezmen gerekmez
+#
+# Gerçekten tarayıcı şartsa (giriş, sonsuz kaydırma):
+#   from playwright.sync_api import sync_playwright   → sayfayı render edip HTML'ini al</code></pre>
+        </figure>
+
+        <h2>Nazik olmak: robots.txt, hız ve hukuk</h2>
+        <p>Scraping'in teknik kısmı bir günde öğrenilir; sorumluluk kısmı meslek hayatı boyunca sürer. Dört kural:</p>
+        <ul>
+          <li><strong>robots.txt'e bak.</strong> Her sitenin kökünde (<code>site.com/robots.txt</code>) botlara hangi yolların açık olduğunu söyleyen bir dosya vardır. Teknik olarak bağlayıcı değildir ama <em>ahlaki ve çoğu zaman hukuki</em> pusuladır.</li>
+          <li><strong>Kullanım şartlarını (ToS) oku.</strong> Bazı siteler otomatik erişimi açıkça yasaklar. "Herkese açık sayfa" demek "her kullanım serbest" demek değildir.</li>
+          <li><strong>Yavaş git (rate limiting).</strong> Saniyede onlarca istek atmak sunucuya yük bindirir, bir tür saldırı gibi görünür ve IP'nin engellenmesiyle biter. İstekler arasında bekle, gece saatlerini tercih et, aynı sayfayı tekrar tekrar indirme.</li>
+          <li><strong>Kişisel veriye dokunma.</strong> İsim, e-posta, telefon, profil verisi topladığın anda <a href="m3-veri-kalitesi.html">KVKK/GDPR</a> kapsamına girersin. Öğrenci projesi bu riski taşımaz — kişisel olmayan veriyle çalış.</li>
+        </ul>
+
+        <div class="warn"><b>"Ama veri herkese açık" savunması zayıftır.</b> Kazıma davalarında belirleyici olan verinin görünür olması değil; sözleşmenin ihlali, sunucuya bindirilen yük, kişisel veri işlenmesi ve verinin sonradan nasıl kullanıldığıdır. Öğrenme amaçlı, düşük hızlı, kişisel veri içermeyen kazıma pratikte sorunsuzdur; ticari yeniden yayın bambaşka bir hikâyedir.</div>
+
+        <h2>Dayanıklı scraper yazmak</h2>
+        <p>Bir kazıyıcı, <a href="m3-etl-elt.html">veri boru hattının</a> en kırılgan halkasıdır: internet üzerinden, kontrol etmediğin bir sisteme bağlıdır. Sağlam olanı şu alışkanlıklarla ayrılır:</p>
+        <ul>
+          <li><strong>Ham HTML'i sakla.</strong> Önce indirdiğini olduğu gibi diske yaz, ayrıştırmayı ayrı adımda yap. Seçicin yanlışsa siteyi tekrar rahatsız etmeden yeniden ayrıştırabilirsin — bu, <a href="m3-warehouse-lake.html">medallion mimarisindeki</a> "bronze katman" fikrinin ta kendisidir.</li>
+          <li><strong>Geçici hataları affet, kalıcıları affetme.</strong> <code>429 Too Many Requests</code> ve <code>503</code> geçicidir: <strong>exponential backoff</strong> ile (1s, 2s, 4s…) tekrar dene. <code>404</code> kalıcıdır: kaydet, geç.</li>
+          <li><strong>Sayfalamayı (pagination) doğru kur.</strong> Boş sayfa geldiğinde dur; "sonsuza kadar sayfa çevir" döngüleri sabaha kadar çalışır.</li>
+          <li><strong>İdempotent ol.</strong> İki kez çalıştırınca aynı kaydı iki kez yazma; benzersiz bir anahtarla (ör. ürün URL'i) üzerine yaz.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 264" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dayanıklı scraper döngüsü ve hata yönetimi">
+            <defs>
+              <marker id="scArrF" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+              <marker id="scArrW" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--warn)"/></marker>
+            </defs>
+            <g>
+              <rect x="16" y="86" width="120" height="46" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="76" y="107" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">İstek at</text>
+              <text x="76" y="122" text-anchor="middle" fill="var(--muted)" font-size="10">+ User-Agent</text>
+
+              <rect x="172" y="86" width="130" height="46" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="237" y="107" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Yanıt kodu?</text>
+              <text x="237" y="122" text-anchor="middle" fill="var(--muted)" font-size="10">200 / 429 / 404</text>
+
+              <rect x="340" y="86" width="140" height="46" rx="10" fill="var(--dg-box)" stroke="var(--ok)" stroke-width="1.5"/>
+              <text x="410" y="107" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Ham HTML'i kaydet</text>
+              <text x="410" y="122" text-anchor="middle" fill="var(--muted)" font-size="10">bronze katman</text>
+
+              <rect x="518" y="86" width="120" height="46" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="578" y="107" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Ayrıştır ve yaz</text>
+              <text x="578" y="122" text-anchor="middle" fill="var(--muted)" font-size="10">ayrı adım</text>
+
+              <path d="M136 109 L168 109" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#scArrF)"/>
+              <path d="M302 109 L336 109" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#scArrF)"/>
+              <path d="M480 109 L514 109" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#scArrF)"/>
+              <text x="319" y="101" text-anchor="middle" fill="var(--ok)" font-size="10" font-weight="700">200</text>
+
+              <rect x="160" y="184" width="180" height="44" rx="10" fill="var(--dg-box)" stroke="var(--warn)" stroke-width="1.5"/>
+              <text x="250" y="205" text-anchor="middle" fill="var(--warn)" font-size="12" font-weight="700">Bekle: 1s → 2s → 4s</text>
+              <text x="250" y="220" text-anchor="middle" fill="var(--muted)" font-size="10">exponential backoff</text>
+              <path d="M237 132 L237 180" stroke="var(--warn)" stroke-width="1.5" marker-end="url(#scArrW)"/>
+              <text x="284" y="160" text-anchor="middle" fill="var(--warn)" font-size="10" font-weight="700">429 / 503</text>
+              <path d="M160 206 L76 206 L76 136" stroke="var(--warn)" stroke-width="1.5" fill="none" marker-end="url(#scArrW)"/>
+              <text x="112" y="199" text-anchor="middle" fill="var(--muted)" font-size="10" font-weight="700">tekrar dene</text>
+
+              <rect x="400" y="184" width="180" height="44" rx="10" fill="var(--dg-box)" stroke="var(--bad)" stroke-width="1.4"/>
+              <text x="490" y="205" text-anchor="middle" fill="var(--bad)" font-size="12" font-weight="700">Logla ve atla</text>
+              <text x="490" y="220" text-anchor="middle" fill="var(--muted)" font-size="10">kalıcı hata, ısrar etme</text>
+              <path d="M280 128 L420 182" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#scArrF)"/>
+              <text x="372" y="150" text-anchor="middle" fill="var(--bad)" font-size="10" font-weight="700">404</text>
+
+              <text x="360" y="30" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Her istek arasında nefes al: time.sleep(1–2 sn) — hızlı bot, engellenen bottur</text>
+              <text x="360" y="52" text-anchor="middle" fill="var(--muted)" font-size="11">İndirme ile ayrıştırmayı ayır: seçicin bozulunca siteyi değil, diskteki kopyayı tekrar okursun</text>
+            </g>
+          </svg>
+          <figcaption>Dayanıklılık, hata olmamasından değil; her hata türüne doğru tepki vermekten gelir.</figcaption>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Python — robots.txt kontrolü, hız sınırı ve backoff</figcaption>
+          <pre><code data-lang="python">import time, random, urllib.robotparser as robotparser
+
+robot = robotparser.RobotFileParser()
+robot.set_url("https://kitaplar.ornek.com/robots.txt")
+robot.read()
+
+def nazik_get(url, deneme=4):
+    if not robot.can_fetch("VeriAtlasiBot", url):
+        raise PermissionError("robots.txt bu yolu botlara kapatmış")
+
+    for i in range(deneme):
+        y = requests.get(url, headers=BASLIK, timeout=10)
+        if y.status_code == 200:
+            return y
+        if y.status_code in (429, 500, 502, 503):     # geçici: bekle ve tekrar dene
+            time.sleep(2 ** i + random.random())      # 1s, 2s, 4s + rastgele sapma
+            continue
+        y.raise_for_status()                          # kalıcı hata: ısrar etme
+    raise RuntimeError(f"{deneme} denemede alınamadı: {url}")
+
+for sayfa in range(1, 6):
+    y = nazik_get(f"https://kitaplar.ornek.com/liste?sayfa={sayfa}")
+    open(f"ham/sayfa_{sayfa}.html", "w", encoding="utf-8").write(y.text)  # önce ham kayıt
+    time.sleep(1.5)                                   # sayfalar arası nefes</code></pre>
+        </figure>
+
+        <div class="tip"><b>Kazıdığın veriyi bir kere kazı.</b> Ham HTML'leri tarih damgalı klasörlere yaz (<code>ham/2026-08-20/</code>). Böylece hem siteyi ikinci kez yormazsın hem de "geçen ay fiyat neydi?" sorusuna cevap verebilen bir zaman serisi arşivin olur — bu arşiv çoğu zaman projenin en değerli parçasıdır.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <ul>
+          <li><strong>Portfolyo projesi:</strong> bir konuda 6 ay boyunca günlük kazınmış özgün veri, Kaggle setiyle yapılmış on projeden daha çok dikkat çeker.</li>
+          <li><strong>Fiyat/rekabet takibi:</strong> e-ticarette en yaygın ticari scraping kullanımı; hukuk ekibiyle birlikte yürütülür.</li>
+          <li><strong>LLM çağında:</strong> <a href="m7-rag.html">RAG sistemlerinin</a> doküman kaynağı çoğu zaman kazıyarak toplanır; ayrıca modellerin eğitim verisinin büyük kısmı web crawl'dır.</li>
+          <li><strong>Veri mühendisliği bakışı:</strong> kazıyıcı da bir pipeline task'ıdır — <a href="m3-orkestrasyon.html">Airflow</a> ile zamanlanır, izlenir, hata alınca yeniden denenir.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Bir siteden veri lazım. İlk yapman gereken kontrol nedir, neden?</summary>
+            <div class="answer"><b>Resmî bir API (ya da hazır veri dosyası) var mı diye bakmak.</b> API yapılandırılmış veri verir, kullanım şartları nettir ve sayfa tasarımı değiştiğinde kırılmaz. Scraping her zaman <b>son çaredir</b>: en kırılgan, en riskli ve en yavaş yol odur.</div>
+          </details>
+          <details class="quiz">
+            <summary>Kod boş liste döndürüyor ama tarayıcıda veri görünüyor. Ne oldu?</summary>
+            <div class="answer">Sayfa büyük olasılıkla içeriği <b>JavaScript ile sonradan</b> yüklüyor; <code>requests</code> tarayıcı olmadığı için sana boş iskeleti veriyor. Önce <code>F12 → Network → Fetch/XHR</code> sekmesinden sitenin kendi <b>JSON adresini</b> bulmayı dene (en iyi çözüm); olmuyorsa Playwright gibi bir <b>headless browser</b> kullan.</div>
+          </details>
+          <details class="quiz">
+            <summary>429 ile 404 yanıtına verilecek tepkiler neden farklıdır?</summary>
+            <div class="answer"><b>429 (Too Many Requests) geçicidir:</b> çok hızlı gittiğin için sunucu seni frenliyor — artan sürelerle bekleyip (exponential backoff) tekrar denemelisin. <b>404 kalıcıdır:</b> sayfa yok; tekrar denemek hem işe yaramaz hem de boşuna yük bindirir. Doğrusu loglayıp geçmektir.</div>
+          </details>
+          <details class="quiz">
+            <summary>İndirme ile ayrıştırmayı neden iki ayrı adıma bölüyoruz?</summary>
+            <div class="answer">Çünkü ayrıştırma kodu (seçiciler) sık sık yanlış çıkar. Ham HTML diskte duruyorsa seçiciyi düzeltip <b>siteyi tekrar rahatsız etmeden</b> yeniden çalışabilirsin — hem daha hızlı hem daha nazik. Bu, veri gölündeki "önce ham hâlini sakla, sonra işle" (bronze katman) ilkesinin küçük ölçekli hâlidir.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Web Scraping</span><span class="term-en">Web Scraping</span><span class="lvl lvl-orta">Orta</span></div><p>İnsanlar için tasarlanmış web sayfalarından programatik olarak yapılandırılmış veri çıkarma işi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Crawler (Örümcek)</span><span class="term-en">Crawler / Spider</span><span class="lvl lvl-orta">Orta</span></div><p>Bağlantıları takip ederek sayfadan sayfaya gezen otomatik program; scraping "veriyi çıkarma", crawling "sayfaları bulma" işidir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">DOM</span><span class="term-en">Document Object Model</span><span class="lvl lvl-orta">Orta</span></div><p>Tarayıcının HTML'den kurduğu ağaç yapısı; her etiket bir düğüm, her düğümün özellikleri ve çocukları vardır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">CSS Seçici</span><span class="term-en">CSS Selector</span><span class="lvl lvl-orta">Orta</span></div><p>DOM'daki düğümleri tarif etme dili (<code>div.urun span.fiyat</code>); scraping'in temel becerisi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">requests</span><span class="term-en">requests</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Python'da HTTP istekleri atmanın standart kütüphanesi; sayfa indirmenin ve API çağırmanın aracı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">BeautifulSoup</span><span class="term-en">BeautifulSoup</span><span class="lvl lvl-orta">Orta</span></div><p>HTML metnini gezilebilir bir ağaca çeviren Python kütüphanesi; CSS seçicilerle düğüm bulmayı sağlar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">robots.txt</span><span class="term-en">robots.txt</span><span class="lvl lvl-orta">Orta</span></div><p>Sitenin kökünde duran, botlara hangi yolların açık olduğunu bildiren dosya; kazımanın ilk etik kontrolü.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Rate Limiting (Hız Sınırlama)</span><span class="term-en">Rate Limiting</span><span class="lvl lvl-orta">Orta</span></div><p>İstek hızını bilinçli olarak kısmak; sunucuyu yormamak ve engellenmemek için istekler arasında beklemek.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">User-Agent</span><span class="term-en">User-Agent</span><span class="lvl lvl-orta">Orta</span></div><p>İsteği kimin attığını bildiren HTTP başlığı; botunu dürüstçe tanıtmak hem nezaket hem güvenlik pratiğidir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Headless Browser</span><span class="term-en">Headless Browser</span><span class="lvl lvl-ileri">İleri</span></div><p>Arayüzsüz çalışan gerçek tarayıcı (Playwright, Selenium); JavaScript ile üretilen içeriği kazımak için kullanılır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Sayfalama</span><span class="term-en">Pagination</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Verinin sayfa sayfa sunulması; kazıyıcının sayfa çevirme ve "ne zaman duracağını bilme" mantığı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Exponential Backoff</span><span class="term-en">Exponential Backoff</span><span class="lvl lvl-orta">Orta</span></div><p>Başarısız istekte bekleme süresini katlayarak artırma (1s, 2s, 4s…); geçici hatalarda standart yeniden deneme stratejisi.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m2-scraping">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m2-veri-modelleme.html"><span>← Önceki</span><b>Veri Modelleme</b></a>
+          <a class="next" href="m3-etl-elt.html"><span>Sonraki →</span><b>ETL, ELT ve Data Pipeline Kavramı</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

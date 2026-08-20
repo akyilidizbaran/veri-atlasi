@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transformer ve Attention — Veri Atlası</title>
+<meta name="description" content="Attention mekanizması, Query-Key-Value, multi-head, positional encoding ve BERT/GPT/T5 aileleri: modern LLM'lerin temelindeki Transformer mimarisi.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m6" data-slug="m6-transformer">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m6">6. Derin Öğrenme</a><span class="sep">/</span>
+        <span>Transformer ve Attention</span>
+      </nav>
+      <span class="mod-badge">Modül 6 · Derin Öğrenme</span>
+      <h1>Transformer ve Attention</h1>
+      <p class="en-title">Transformers &amp; Attention</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-ileri">İleri</span>
+        <span class="chip">⏱️ ~18 dk okuma</span>
+        <span class="chip">🔤 12 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>2017: zinciri kıran makale</h2>
+        <p>2017'de Google'dan bir grup araştırmacı, başlığı iddiasının ta kendisi olan bir makale yayımladı: <em>"Attention Is All You Need"</em>. Önerdikleri <strong>Transformer</strong> mimarisi, <a href="m6-rnn.html">RNN sayfasında</a> gördüğümüz temel varsayımı çöpe attı: diziyi işlemek için adım adım ilerlemek <em>zorunda değilsin</em>. Transformer'da her kelime, cümledeki <strong>her kelimeye aynı anda</strong> bakar.</p>
+            <p>Bu tek kararın domino etkisi bugünü şekillendirdi. RNN'de 100. adım 99.'u beklemek zorundadır — eğitim özünde sıralıdır ve GPU'nun binlerce çekirdeği boş bekler. Transformer'da ise tüm kelimeler tek seferde, dev bir matris işlemi olarak hesaplanır: <strong>paralelleştirme</strong> tam gaz çalışır, GPU dolar, eğitim ölçeklenir. "Daha çok veri + daha çok GPU = daha iyi model" denklemini pratikte mümkün kılan bu ölçeklenebilirlik, bugünkü LLM patlamasının teknik köküdür.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 222" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="RNN sıralı işleme ile Transformer paralel işleme karşılaştırması">
+            <defs>
+              <marker id="cmpAcc" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="360" y="26" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Aynı cümle, iki işleme biçimi</text>
+              <rect x="15" y="48" width="335" height="160" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="182" y="72" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">RNN: sıralı işler</text>
+              <rect x="35" y="120" width="64" height="34" rx="8" fill="rgba(var(--acc-rgb),.10)" stroke="var(--dg-line)"/>
+              <text x="67" y="141" text-anchor="middle" fill="var(--ink)" font-size="11">Bu</text>
+              <rect x="117" y="120" width="64" height="34" rx="8" fill="rgba(var(--acc-rgb),.10)" stroke="var(--dg-line)"/>
+              <text x="149" y="141" text-anchor="middle" fill="var(--ink)" font-size="11">film</text>
+              <rect x="199" y="120" width="64" height="34" rx="8" fill="rgba(var(--acc-rgb),.10)" stroke="var(--dg-line)"/>
+              <text x="231" y="141" text-anchor="middle" fill="var(--ink)" font-size="11">çok</text>
+              <rect x="281" y="120" width="64" height="34" rx="8" fill="rgba(var(--acc-rgb),.10)" stroke="var(--dg-line)"/>
+              <text x="313" y="141" text-anchor="middle" fill="var(--ink)" font-size="11">iyi</text>
+              <path d="M99 137 L113 137" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#cmpAcc)"/>
+              <path d="M181 137 L195 137" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#cmpAcc)"/>
+              <path d="M263 137 L277 137" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#cmpAcc)"/>
+              <text x="182" y="190" text-anchor="middle" fill="var(--muted)" font-size="10.5">t1 → t2 → t3 → t4 · her adım öncekini bekler</text>
+              <rect x="370" y="48" width="335" height="160" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="537" y="72" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Transformer: hepsi aynı anda</text>
+              <path d="M422 118 Q463 92 504 118" fill="none" stroke="var(--acc)" stroke-opacity=".55" stroke-width="1.4"/>
+              <path d="M504 118 Q545 92 586 118" fill="none" stroke="var(--acc)" stroke-opacity=".55" stroke-width="1.4"/>
+              <path d="M586 118 Q627 92 668 118" fill="none" stroke="var(--acc)" stroke-opacity=".55" stroke-width="1.4"/>
+              <path d="M422 118 Q504 76 586 118" fill="none" stroke="var(--acc)" stroke-opacity=".55" stroke-width="1.4"/>
+              <path d="M504 118 Q586 76 668 118" fill="none" stroke="var(--acc)" stroke-opacity=".55" stroke-width="1.4"/>
+              <path d="M422 118 Q545 60 668 118" fill="none" stroke="var(--acc)" stroke-opacity=".55" stroke-width="1.4"/>
+              <rect x="390" y="120" width="64" height="34" rx="8" fill="rgba(var(--acc-rgb),.10)" stroke="var(--dg-line)"/>
+              <text x="422" y="141" text-anchor="middle" fill="var(--ink)" font-size="11">Bu</text>
+              <rect x="472" y="120" width="64" height="34" rx="8" fill="rgba(var(--acc-rgb),.10)" stroke="var(--dg-line)"/>
+              <text x="504" y="141" text-anchor="middle" fill="var(--ink)" font-size="11">film</text>
+              <rect x="554" y="120" width="64" height="34" rx="8" fill="rgba(var(--acc-rgb),.10)" stroke="var(--dg-line)"/>
+              <text x="586" y="141" text-anchor="middle" fill="var(--ink)" font-size="11">çok</text>
+              <rect x="636" y="120" width="64" height="34" rx="8" fill="rgba(var(--acc-rgb),.10)" stroke="var(--dg-line)"/>
+              <text x="668" y="141" text-anchor="middle" fill="var(--ink)" font-size="11">iyi</text>
+              <text x="537" y="190" text-anchor="middle" fill="var(--muted)" font-size="10.5">her kelime her kelimeye bakar · GPU'da paralel</text>
+            </g>
+          </svg>
+          <figcaption>Solda zincir: her adım öncekinin bitmesini bekler. Sağda ağ: tüm kelime çiftleri arası ilişki tek matris işlemiyle, aynı anda hesaplanır.</figcaption>
+        </figure>
+
+        <h2>Attention sezgisi: anlam komşulardan toplanır</h2>
+        <p>"Dün <strong>bankada</strong> hesap açtım." Buradaki "banka"nın para kurumu olduğunu (parktaki oturma bankı değil) nereden biliyorsun? Kelimenin kendisinden değil — <strong>komşularından</strong>: "hesap" ve "açtım" anlamı sabitliyor. Attention (dikkat) mekanizması tam bu işlemi matematikleştirir: her kelime, cümledeki diğer kelimelere "sen benim anlamım için ne kadar önemlisin?" diye sorar ve önem derecesine göre onlardan <em>bağlam toplar</em>.</p>
+        <p>Sonuçta her kelimenin vektörü, komşularının ağırlıklı katkısıyla güncellenir: "banka" vektörü, "hesap"tan bolca, "dün"den azıcık bilgi alarak <em>finans kurumu anlamına kaymış</em> yeni bir vektöre dönüşür. Cümle kendi kendine baktığı için — sorgulayan da cevaplayan da aynı cümlenin kelimeleri — buna <strong>self-attention (öz-dikkat)</strong> denir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 680 228" width="680" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="bankada kelimesinin diğer kelimelere farklı ağırlıklarla dikkat etmesi">
+            <defs>
+              <marker id="attAcc" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto"><path d="M0 0L5 2.5L0 5Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="340" y="24" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">"bankada" kelimesi bağlamı nereden topluyor?</text>
+              <path d="M240 146 Q182 100 112 146" fill="none" stroke="var(--acc)" stroke-width="1" marker-end="url(#attAcc)"/>
+              <path d="M280 146 Q338 88 408 146" fill="none" stroke="var(--acc)" stroke-width="4.5" marker-end="url(#attAcc)"/>
+              <path d="M285 143 Q415 52 563 146" fill="none" stroke="var(--acc)" stroke-width="3" marker-end="url(#attAcc)"/>
+              <text x="182" y="108" text-anchor="middle" fill="var(--acc)" font-size="11" font-weight="700">0.06</text>
+              <text x="338" y="98" text-anchor="middle" fill="var(--acc)" font-size="11" font-weight="700">0.58</text>
+              <text x="424" y="72" text-anchor="middle" fill="var(--acc)" font-size="11" font-weight="700">0.36</text>
+              <rect x="45" y="150" width="120" height="40" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="105" y="175" text-anchor="middle" fill="var(--ink)" font-size="12">Dün</text>
+              <rect x="200" y="150" width="120" height="40" rx="9" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="2"/>
+              <text x="260" y="175" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">bankada</text>
+              <rect x="355" y="150" width="120" height="40" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="415" y="175" text-anchor="middle" fill="var(--ink)" font-size="12">hesap</text>
+              <rect x="510" y="150" width="120" height="40" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="570" y="175" text-anchor="middle" fill="var(--ink)" font-size="12">açtım</text>
+              <text x="340" y="216" text-anchor="middle" fill="var(--muted)" font-size="10.5">ok kalınlığı = attention ağırlığı · ağırlıklar softmax'ten çıkar, toplamları 1'dir</text>
+            </g>
+          </svg>
+          <figcaption>"bankada", anlamını sabitleyen "hesap"a en yüksek dikkati verir. (Kendine verdiği pay sadelik için çizilmedi.)</figcaption>
+        </figure>
+
+        <div class="note"><b>"Self" ne demek?</b> Attention'ın ilk sürümleri (2015, Bahdanau) seq2seq'te decoder'ın <em>başka</em> bir diziye (kaynak cümleye) bakması içindi. Self-attention'da ise cümle <em>kendi kendine</em> bakar: Q, K ve V'nin üçü de aynı cümleden üretilir. Transformer'ın yapı taşı budur.</div>
+
+        <h2>Q-K-V: kütüphanede kitap aramak</h2>
+        <p>Peki "ne kadar önemlisin?" sorusu nasıl hesaplanır? Her kelime, öğrenilmiş üç ayrı matrisle üç farklı vektöre yansıtılır. Bir kütüphane düşün:</p>
+        <ul>
+          <li><strong>Query (sorgu, Q)</strong> — senin elindeki arama fişi: "vanishing gradient hakkında kaynak arıyorum".</li>
+          <li><strong>Key (anahtar, K)</strong> — her kitabın sırtındaki etiket: konusunu özetleyen başlık.</li>
+          <li><strong>Value (değer, V)</strong> — kitabın asıl içeriği: alıp okuyacağın bilgi.</li>
+        </ul>
+        <p>Arama şöyle işler: senin Q fişin, raftaki her kitabın K etiketiyle karşılaştırılır (vektörlerde bu, iç çarpımla ölçülen benzerliktir). Çıkan benzerlik skorları <strong>softmax</strong>'ten geçirilip toplamı 1 olan yüzdelere çevrilir. Sonuç, kitap içeriklerinin (V) bu yüzdelerle <strong>ağırlıklı toplamıdır</strong>: en alakalı kitaptan çok, alakasızdan az. Skorlar softmax'ten önce anahtar boyutunun kareköküne (√d) bölünür — büyük boyutlarda skorların şişip softmax'i uç değerlere savurmasını önleyen bu detay, mekanizmaya <strong>scaled dot-product attention</strong> adını verir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 740 168" width="740" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Q çarpı K transpoz, ölçekleme, softmax ve V ile ağırlıklı toplam akışı">
+            <defs>
+              <marker id="qkvAcc" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="370" y="20" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Scaled dot-product attention, adım adım</text>
+              <rect x="25" y="70" width="58" height="56" rx="9" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="54" y="103" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="700">Q</text>
+              <text x="54" y="145" text-anchor="middle" fill="var(--muted)" font-size="9.5">[n×d]</text>
+              <text x="98" y="103" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="700">·</text>
+              <rect x="112" y="70" width="58" height="56" rx="9" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="141" y="103" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="700">Kᵀ</text>
+              <text x="141" y="145" text-anchor="middle" fill="var(--muted)" font-size="9.5">[d×n]</text>
+              <path d="M174 98 L196 98" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#qkvAcc)"/>
+              <rect x="200" y="70" width="80" height="56" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="240" y="93" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">skorlar</text>
+              <text x="240" y="112" text-anchor="middle" fill="var(--muted)" font-size="9.5">benzerlik</text>
+              <text x="240" y="145" text-anchor="middle" fill="var(--muted)" font-size="9.5">[n×n]</text>
+              <path d="M282 98 L306 98" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#qkvAcc)"/>
+              <text x="295" y="62" text-anchor="middle" fill="var(--acc)" font-size="10" font-weight="700">÷ √d</text>
+              <rect x="310" y="70" width="96" height="56" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="358" y="93" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">softmax</text>
+              <text x="358" y="112" text-anchor="middle" fill="var(--muted)" font-size="9.5">satır toplamı 1</text>
+              <path d="M408 98 L432 98" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#qkvAcc)"/>
+              <text x="421" y="62" text-anchor="middle" fill="var(--acc)" font-size="10" font-weight="700">ağırlıklar</text>
+              <text x="445" y="103" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="700">·</text>
+              <rect x="458" y="70" width="58" height="56" rx="9" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="487" y="103" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="700">V</text>
+              <text x="487" y="145" text-anchor="middle" fill="var(--muted)" font-size="9.5">[n×d]</text>
+              <path d="M518 98 L542 98" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#qkvAcc)"/>
+              <rect x="546" y="70" width="170" height="56" rx="9" fill="rgba(var(--acc-rgb),.16)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="631" y="93" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">bağlamlı temsiller</text>
+              <text x="631" y="112" text-anchor="middle" fill="var(--muted)" font-size="9.5">her kelime güncellendi</text>
+              <text x="631" y="145" text-anchor="middle" fill="var(--muted)" font-size="9.5">[n×d]</text>
+            </g>
+          </svg>
+          <figcaption>n kelimelik cümlede her sorgu her anahtarla karşılaştırılır ([n×n] skor matrisi), softmax yüzdeleri V'leri tartarak yeni temsilleri üretir.</figcaption>
+        </figure>
+
+        <p>Bu akışın tamamı birkaç matris çarpımından ibarettir — kod olarak da şaşırtıcı derecede kısadır:</p>
+
+        <figure class="codebox">
+          <figcaption>Python — NumPy ile scaled dot-product attention (mekanizmanın tamamı)</figcaption>
+          <pre><code data-lang="python">import numpy as np
+
+def softmax(x):
+    e = np.exp(x - x.max(axis=-1, keepdims=True))  # sayısal kararlılık
+    return e / e.sum(axis=-1, keepdims=True)
+
+def attention(Q, K, V):
+    """Attention(Q, K, V) = softmax(Q Kᵀ / √d) V"""
+    d = K.shape[-1]                    # anahtar vektör boyutu
+    skor = Q @ K.T / np.sqrt(d)        # her sorgu × her anahtar → [n, n]
+    agirlik = softmax(skor)            # satırlar toplamı 1 → yüzde dağılım
+    return agirlik @ V                 # değerlerin ağırlıklı toplamı → [n, d]
+
+n, d = 4, 8                  # 4 kelimelik cümle, 8 boyutlu temsiller
+X = np.random.randn(n, d)    # kelime vektörleri (embedding)
+cikti = attention(X, X, X)   # self-attention: Q = K = V = aynı cümle
+print(cikti.shape)           # (4, 8) → her kelime bağlamla zenginleşti</code></pre>
+        </figure>
+
+        <h2>Multi-head: aynı cümleye farklı gözlükler</h2>
+        <p>Tek attention hesabı, kelimeler arası <em>tek tür</em> ilişkiyi yakalar. Ama dilde ilişki çoktur: "kim ne yaptı" (sözdizimi), "hangi kelimeler anlamca akraba", "bu zamir hangi isme işaret ediyor" (uzak bağıntı)… <strong>Multi-head attention (çok başlı dikkat)</strong>, aynı cümle üzerinde attention'ı farklı öğrenilmiş Q-K-V projeksiyonlarıyla <strong>paralel olarak birden çok kez</strong> çalıştırır — orijinal makalede 8 baş kullanılmıştı.</p>
+        <p>Her "baş" cümleye kendi gözlüğüyle bakar: biri özne-yüklem uyumunu izlemeyi öğrenir, öteki anlam benzerliğini, bir başkası noktalamayı. Sonra tüm başların çıktıları yan yana eklenip tek vektöre indirgenir. Aynı fotoğrafa hem renk, hem kompozisyon, hem ışık gözüyle bakan üç editörün notlarını birleştirmek gibi: her bakış tek başına eksik, toplamı zengin.</p>
+
+        <h2>Positional encoding: sıranın geri eklenmesi</h2>
+        <p>Dikkatli okuyucu bir tuhaflığı yakalamıştır: attention her kelimeyi her kelimeyle karşılaştırıyorsa ve işlem sırayla yapılmıyorsa, model "bankada"nın cümlenin 2. kelimesi olduğunu nereden bilecek? Bilemez! Self-attention <strong>sıraya kördür</strong>: kelimeleri karıştırıp versen skorlar aynı çıkar. RNN'in bedavaya getirdiği sıra bilgisi, Transformer'da kaybolmuştur.</p>
+        <p>Çözüm, sırayı veriye geri enjekte etmek: her kelimenin embedding'ine, pozisyonunu kodlayan bir <strong>positional encoding (konum kodlama)</strong> vektörü eklenir. Orijinal makale bunun için farklı frekanslarda sinüs/kosinüs dalgaları kullandı; sonraki modeller öğrenilen konum vektörleri ya da RoPE gibi varyantlar tercih etti. Fikir hep aynı: "1. kelime" ile "7. kelime" aynı kelime bile olsa, modele giren vektörleri konumlarından ötürü farklılaşsın.</p>
+
+        <div class="warn"><b>Ölçeğin bedeli: n² maliyet.</b> Her kelime her kelimeyle karşılaştırıldığı için attention'ın bellek ve işlem maliyeti dizi uzunluğunun karesiyle büyür: 10 kat uzun metin ≈ 100 kat maliyet. LLM'lerin "context window" sınırının ve bu sınırı büyütmeye çalışan onca araştırmanın kökünde bu n² vardır.</div>
+
+        <h2>Üç aile: BERT, GPT ve T5</h2>
+        <p>Orijinal Transformer, seq2seq geleneğine uygun olarak encoder + decoder'dan oluşuyordu. Sonraki yıllarda mimari üçe bölündü; hangi yarıyı kullandığına göre modelin karakteri değişir:</p>
+        <ul>
+          <li><strong>Encoder-only — BERT (2018):</strong> Her kelime hem soluna hem sağına bakar; amaç <em>anlamak</em>tır. Metin sınıflandırma, arama, varlık tanıma (NER) gibi "oku ve karar ver" işlerinin ailesi.</li>
+          <li><strong>Decoder-only — GPT:</strong> Her kelime yalnız solundakilere bakar ve model hep <em>sıradaki kelimeyi</em> üretmeye çalışır. Metin üretimi, sohbet, kod yazımı — bugünün büyük dil modellerinin (GPT, Claude, Llama…) neredeyse tamamı bu ailedendir.</li>
+          <li><strong>Encoder-decoder — T5 (2019):</strong> Girdiyi okuyup çıktıyı üreten tam takım; çeviri ve özetleme gibi "metni al, başka metne dönüştür" işlerinin doğal evi.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 240" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Encoder-only BERT, decoder-only GPT ve encoder-decoder T5 aileleri">
+            <defs>
+              <marker id="famAcc" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto"><path d="M0 0L5 2.5L0 5Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="360" y="24" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Üç Transformer ailesi — hangisi ne iş yapar?</text>
+              <rect x="25" y="44" width="210" height="180" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="130" y="70" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">BERT</text>
+              <text x="130" y="87" text-anchor="middle" fill="var(--muted)" font-size="10.5">encoder-only</text>
+              <rect x="63" y="110" width="34" height="26" rx="6" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)"/>
+              <text x="80" y="127" text-anchor="middle" fill="var(--ink)" font-size="10">t₁</text>
+              <rect x="113" y="110" width="34" height="26" rx="6" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)"/>
+              <text x="130" y="127" text-anchor="middle" fill="var(--ink)" font-size="10">t₂</text>
+              <rect x="163" y="110" width="34" height="26" rx="6" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)"/>
+              <text x="180" y="127" text-anchor="middle" fill="var(--ink)" font-size="10">t₃</text>
+              <path d="M99 119 L111 119" stroke="var(--acc)" stroke-width="1.3" marker-end="url(#famAcc)"/>
+              <path d="M111 128 L99 128" stroke="var(--acc)" stroke-width="1.3" marker-end="url(#famAcc)"/>
+              <path d="M149 119 L161 119" stroke="var(--acc)" stroke-width="1.3" marker-end="url(#famAcc)"/>
+              <path d="M161 128 L149 128" stroke="var(--acc)" stroke-width="1.3" marker-end="url(#famAcc)"/>
+              <text x="130" y="166" text-anchor="middle" fill="var(--muted)" font-size="9.5">her token her tokene bakar (çift yön)</text>
+              <text x="130" y="194" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="600">anlama işleri</text>
+              <text x="130" y="210" text-anchor="middle" fill="var(--muted)" font-size="10">sınıflandırma · arama · NER</text>
+              <rect x="255" y="44" width="210" height="180" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="360" y="70" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">GPT</text>
+              <text x="360" y="87" text-anchor="middle" fill="var(--muted)" font-size="10.5">decoder-only</text>
+              <rect x="283" y="110" width="34" height="26" rx="6" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)"/>
+              <text x="300" y="127" text-anchor="middle" fill="var(--ink)" font-size="10">t₁</text>
+              <rect x="333" y="110" width="34" height="26" rx="6" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)"/>
+              <text x="350" y="127" text-anchor="middle" fill="var(--ink)" font-size="10">t₂</text>
+              <rect x="383" y="110" width="34" height="26" rx="6" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)"/>
+              <text x="400" y="127" text-anchor="middle" fill="var(--ink)" font-size="10">t₃</text>
+              <rect x="433" y="110" width="34" height="26" rx="6" fill="none" stroke="var(--muted)" stroke-dasharray="3 3"/>
+              <text x="450" y="127" text-anchor="middle" fill="var(--muted)" font-size="10">?</text>
+              <path d="M317 123 L331 123" stroke="var(--acc)" stroke-width="1.3" marker-end="url(#famAcc)"/>
+              <path d="M367 123 L381 123" stroke="var(--acc)" stroke-width="1.3" marker-end="url(#famAcc)"/>
+              <path d="M417 123 L431 123" stroke="var(--acc)" stroke-width="1.3" marker-end="url(#famAcc)"/>
+              <text x="360" y="166" text-anchor="middle" fill="var(--muted)" font-size="9.5">soldan sağa, sıradaki tokeni üretir</text>
+              <text x="360" y="194" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="600">üretme işleri</text>
+              <text x="360" y="210" text-anchor="middle" fill="var(--muted)" font-size="10">sohbet · kod · bugünün LLM'leri</text>
+              <rect x="485" y="44" width="210" height="180" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="590" y="70" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">T5</text>
+              <text x="590" y="87" text-anchor="middle" fill="var(--muted)" font-size="10.5">encoder-decoder</text>
+              <rect x="513" y="104" width="70" height="38" rx="8" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)"/>
+              <text x="548" y="127" text-anchor="middle" fill="var(--ink)" font-size="10.5">encoder</text>
+              <path d="M585 123 L603 123" stroke="var(--acc)" stroke-width="1.5" marker-end="url(#famAcc)"/>
+              <rect x="607" y="104" width="70" height="38" rx="8" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)"/>
+              <text x="642" y="127" text-anchor="middle" fill="var(--ink)" font-size="10.5">decoder</text>
+              <text x="590" y="166" text-anchor="middle" fill="var(--muted)" font-size="9.5">oku → dönüştür → yaz</text>
+              <text x="590" y="194" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="600">dönüştürme işleri</text>
+              <text x="590" y="210" text-anchor="middle" fill="var(--muted)" font-size="10">çeviri · özetleme</text>
+            </g>
+          </svg>
+          <figcaption>Aynı yapı taşı, üç farklı kullanım. Günümüz LLM'leri ezici çoğunlukla decoder-only ailesindendir.</figcaption>
+        </figure>
+
+        <p>Sıradaki kelimeyi tahmin etmenin sohbet eden, kod yazan modellere nasıl dönüştüğünü <a href="m7-llm-temelleri.html">LLM'lerin Temelleri</a> sayfasında ele alacağız — bu sayfadaki her kavram orada karşına yeniden çıkacak.</p>
+        <p>Pratikte bu modelleri sıfırdan eğitmezsin; <strong>Hugging Face</strong> ekosisteminden hazır alır, gerekirse kendi verinle ince ayar yaparsın:</p>
+
+        <figure class="codebox">
+          <figcaption>Python — Hugging Face transformers ile 3 satırda model + tokenizer'ın içine bakış</figcaption>
+          <pre><code data-lang="python">from transformers import pipeline, AutoTokenizer
+
+# 1) Hazır model: Türkçe duygu analizi (Hub'dan otomatik indirilir)
+model_adi = "savasy/bert-base-turkish-sentiment-cased"
+duygu = pipeline("sentiment-analysis", model=model_adi)
+print(duygu("Bu kurs beklediğimden çok daha iyiydi!"))
+# [{'label': 'positive', 'score': 0.99}]  → örnek çıktı
+
+# 2) Kaputun altı: tokenizer, metni modelin dilindeki sayılara çevirir
+tok = AutoTokenizer.from_pretrained(model_adi)
+print(tok.tokenize("Transformer öğreniyorum"))
+# ['transform', '##er', 'öğren', '##iyor', '##um']  → alt-kelime parçaları
+print(tok.encode("Transformer öğreniyorum"))
+# [2, 11824, 1997, 5312, 3067, 1943, 3]  → modele giden gerçek girdi: id'ler
+# (parçalar ve id'ler modelin sözlüğüne göre değişir; ## = kelime devamı)</code></pre>
+        </figure>
+
+        <div class="tip"><b>Hub'ı keşfet.</b> huggingface.co üzerinde görev ("text-classification") ve dil ("tr") filtresiyle arama yap; model kartlarında eğitim verisi, lisans ve kullanım örnekleri yazar. Sıfırdan model eğitmeden önce Hub'da hazırı var mı diye bakmak, sahada birinci refleks olmalı.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <ul>
+          <li><strong>Hazır model + ince ayar:</strong> Şirket verisiyle destek taleplerini sınıflandırmak için Hub'dan BERT tabanlı model alıp fine-tune etmek, en yaygın ilk NLP projesidir.</li>
+          <li><strong>Embedding tabanlı arama:</strong> Encoder modellerin ürettiği vektörlerle anlamsal arama ve öneri kurulur; Modül 7'deki RAG mimarilerinin temelidir.</li>
+          <li><strong>LLM API'leriyle ürün geliştirme:</strong> Decoder-only modellerin token token üretmesi, "streaming yanıt", maliyet hesabı ve context window sınırı olarak günlük işine yansır (<a href="m7-llm-temelleri.html">Modül 7</a>).</li>
+          <li><strong>Maliyet mühendisliği:</strong> n² attention maliyeti, "prompt'u neden kısaltmalıyım?" ve "uzun belge nasıl parçalanır?" sorularının teknik arka planıdır.</li>
+          <li><strong>Mülakat klasiği:</strong> "Q-K-V'yi kendi cümlelerinle anlat" ve "positional encoding neden gerekli?" — ikisinin de cevabı bu sayfada.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Transformer, RNN'den neden çok daha hızlı eğitilir?</summary>
+            <div class="answer">RNN'de her adım bir öncekinin çıktısını beklemek zorundadır — hesap özünde <b>sıralıdır</b>. Transformer'da tüm kelimeler arası ilişkiler tek matris çarpımı olarak <b>aynı anda</b> hesaplanır; GPU'nun binlerce çekirdeği tam kapasite çalışır. Bu paralellik, büyük modellerin eğitilebilmesinin önkoşuludur.</div>
+          </details>
+          <details class="quiz">
+            <summary>Kütüphane benzetmesiyle Q, K ve V neye karşılık gelir?</summary>
+            <div class="answer"><b>Q</b> = elindeki arama fişi (ne arıyorsun), <b>K</b> = kitap sırtlarındaki etiketler (her kelime kendini nasıl tanıtıyor), <b>V</b> = kitapların içeriği (alınacak asıl bilgi). Q her K ile karşılaştırılır, benzerlik skorları softmax ile yüzdeye çevrilir ve çıktı V'lerin bu yüzdelerle ağırlıklı toplamı olur.</div>
+          </details>
+          <details class="quiz">
+            <summary>Positional encoding olmasa ne bozulurdu?</summary>
+            <div class="answer">Self-attention <b>sıraya kör</b> bir işlemdir: kelimeleri karıştırsan aynı skorlar çıkar. Konum bilgisi eklenmezse "Adam köpeği ısırdı" ile "Köpek adamı ısırdı" model için ayırt edilemez olurdu. Positional encoding, her embedding'e konumunu kodlayan bir vektör ekleyerek sırayı veriye geri enjekte eder.</div>
+          </details>
+          <details class="quiz">
+            <summary>BERT ile GPT'nin temel farkı nedir; bugünün LLM'leri hangi ailedendir?</summary>
+            <div class="answer">BERT <b>encoder-only</b>'dir: her token iki yöne de bakar, amaç metni <b>anlamaktır</b> (sınıflandırma, arama). GPT <b>decoder-only</b>'dir: yalnız sola bakar ve <b>sıradaki tokeni üretir</b>. Bugünün büyük dil modelleri — GPT, Claude, Llama — neredeyse tamamen decoder-only ailesindendir.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Transformer</span><span class="term-en">Transformer</span><span class="lvl lvl-ileri">İleri</span></div><p>Tekrarlama yerine tümüyle attention'a dayanan, paralel eğitilebilen mimari (2017); modern LLM'lerin temeli.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Attention (Dikkat)</span><span class="term-en">Attention</span><span class="lvl lvl-ileri">İleri</span></div><p>Her öğenin diğer öğelerden önem ağırlıklarıyla bağlam toplaması; ağırlıklar veriden öğrenilir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Self-Attention (Öz-Dikkat)</span><span class="term-en">Self-Attention</span><span class="lvl lvl-ileri">İleri</span></div><p>Dizinin kendi kendine attention uygulaması: Q, K ve V aynı cümleden üretilir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Query-Key-Value</span><span class="term-en">Query-Key-Value</span><span class="lvl lvl-ileri">İleri</span></div><p>Attention'ın üçlüsü: arama fişi (Q), etiket (K) ve içerik (V); benzerlik Q·K ile ölçülür, çıktı V'lerden toplanır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Scaled Dot-Product</span><span class="term-en">Scaled Dot-Product Attention</span><span class="lvl lvl-ileri">İleri</span></div><p>Q·Kᵀ skorlarını √d'ye bölüp softmax'ten geçirerek V'leri tartan standart attention formülü.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Multi-Head Attention (Çok Başlı Dikkat)</span><span class="term-en">Multi-Head Attention</span><span class="lvl lvl-ileri">İleri</span></div><p>Attention'ı farklı projeksiyonlarla paralel çalıştırıp çıktıları birleştirme; her baş farklı bir ilişki türü öğrenir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Positional Encoding (Konum Kodlama)</span><span class="term-en">Positional Encoding</span><span class="lvl lvl-ileri">İleri</span></div><p>Sıraya kör olan attention'a kelime konumunu embedding'e ekleyerek geri veren teknik.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">BERT</span><span class="term-en">BERT</span><span class="lvl lvl-ileri">İleri</span></div><p>Encoder-only Transformer (2018): iki yönlü bağlamla metni anlar; sınıflandırma ve arama işlerinin klasiği.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">GPT</span><span class="term-en">GPT</span><span class="lvl lvl-orta">Orta</span></div><p>Decoder-only Transformer: soldan sağa sıradaki tokeni üretir; günümüz LLM'lerinin atası ve ailesi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Encoder-only &amp; Decoder-only</span><span class="term-en">Encoder-only &amp; Decoder-only</span><span class="lvl lvl-ileri">İleri</span></div><p>Transformer'ın iki yarısından birini kullanan mimari aileleri: anlama (encoder) ve üretme (decoder) uzmanlıkları.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Hugging Face</span><span class="term-en">Hugging Face</span><span class="lvl lvl-orta">Orta</span></div><p>Hazır model, tokenizer ve veri kümesi ekosistemi; transformers kütüphanesiyle fiilî endüstri standardı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Paralelleştirme</span><span class="term-en">Parallelization</span><span class="lvl lvl-orta">Orta</span></div><p>Hesabı aynı anda yürüyen parçalara bölme. Transformer'ın GPU'yu doldurup ölçeklenmesinin anahtarı.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m6-transformer">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m6-rnn.html"><span>← Önceki</span><b>Diziler: RNN, LSTM ve GRU</b></a>
+          <a class="next" href="m6-egitim-pratikleri.html"><span>Sonraki →</span><b>Derin Öğrenme Eğitim Pratikleri</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

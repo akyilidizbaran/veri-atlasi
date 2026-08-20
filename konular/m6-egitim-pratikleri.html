@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Derin Öğrenme Eğitim Pratikleri — Veri Atlası</title>
+<meta name="description" content="Dropout, weight decay, early stopping, learning rate schedule, mixed precision ve gradient accumulation: derin öğrenme modelini gerçekten eğitmenin saha rehberi.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m6" data-slug="m6-egitim-pratikleri">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m6">6. Derin Öğrenme</a><span class="sep">/</span>
+        <span>Derin Öğrenme Eğitim Pratikleri</span>
+      </nav>
+      <span class="mod-badge">Modül 6 · Derin Öğrenme</span>
+      <h1>Derin Öğrenme Eğitim Pratikleri</h1>
+      <p class="en-title">Deep Learning Training Practices</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-ileri">İleri</span>
+        <span class="chip">⏱️ ~17 dk okuma</span>
+        <span class="chip">🔤 13 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Model kurmak 1 saat, eğitmeyi öğrenmek 1 yıl</h2>
+        <p>Modül boyunca mimarileri konuştuk: <a href="m6-sinir-aglari.html">katmanlar</a>, <a href="m6-cnn.html">konvolüsyonlar</a>, <a href="m6-transformer.html">attention</a>. Kötü haber: mimariyi kurmak işin kolay kısmıydı. Gerçek dünyada seni bekleyenler şunlar: model eğitim verisini ezberliyor ama yenisinde çuvallıyor; loss bir gece ansızın <code>NaN</code> oluyor; "CUDA out of memory" ekranı beliriyor; eğitim yakınsamıyor ve neden, hiç belli değil.</p>
+        <p>Bu sayfa, o dertlerin saha rehberi. Üç cephede savaşacağız: <strong>genelleme</strong> (overfitting'i dizginlemek), <strong>stabilite</strong> (eğitimin çökmemesi) ve <strong>hız/donanım</strong> (sınırlı GPU'dan azamiyi almak). Buradaki tekniklerin her biri, on yıllarca deneme-yanılmayla damıtılmış birer saha hilesidir — ve mülakatlarda en sık kurcalanan konulardır.</p>
+
+        <h2>Overfitting'e karşı cephanelik</h2>
+        <p>Milyonlarca parametreli bir ağ, küçük veri kümesini düpedüz <em>ezberleyebilir</em> — <a href="m5-model-degerlendirme.html">Modül 5'te</a> tanıştığın overfitting, derin öğrenmede varsayılan tehlikedir. Buna karşı kullanılan tekniklerin ortak adı <strong>regularization (düzenlileştirme)</strong>: modelin kapasitesini bilinçli kısıtlayarak ezber yerine genellemeye zorlamak. Üç ana silah:</p>
+        <p><strong>1) Weight decay (L2 cezası).</strong> Loss'a, ağırlıkların karelerinin toplamıyla orantılı bir ceza eklenir: büyük ağırlık = pahalı ağırlık. Model, tek bir özelliğe aşırı yüklenen keskin çözümler yerine küçük ağırlıklı, yumuşak çözümlere itilir. PyTorch'ta <code>AdamW(..., weight_decay=0.01)</code> demek kadar basittir.</p>
+        <p><strong>2) Dropout.</strong> Her eğitim adımında nöronların rastgele bir kısmı (örn. p=0.3) geçici olarak susturulur. Ağ hiçbir nörona "bel bağlayamaz"; bilgiyi yedekli dağıtmak zorunda kalır. Daha güzel bir bakış: her adımda farklı bir alt-ağ eğitilir, test anında (hepsi açıkken) bu binlerce alt-ağın adeta ortalaması alınır — bedavaya bir <em>topluluk (ensemble) etkisi</em>. Test/çıkarım anında dropout kapatılır.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 262" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dropout: solda tüm nöronlar açık, sağda bazı nöronlar susturulmuş">
+            <g font-family="inherit">
+              <text x="360" y="24" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Aynı ağ, iki an: dropout eğitimde rastgele nöron susturur</text>
+              <rect x="20" y="44" width="330" height="190" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="185" y="66" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">Test anı — tüm nöronlar açık</text>
+              <g stroke="var(--dg-line)" stroke-width="1">
+                <path d="M80 100 L185 88"/><path d="M80 100 L185 124"/><path d="M80 100 L185 160"/><path d="M80 100 L185 196"/>
+                <path d="M80 140 L185 88"/><path d="M80 140 L185 124"/><path d="M80 140 L185 160"/><path d="M80 140 L185 196"/>
+                <path d="M80 180 L185 88"/><path d="M80 180 L185 124"/><path d="M80 180 L185 160"/><path d="M80 180 L185 196"/>
+                <path d="M185 88 L290 118"/><path d="M185 88 L290 162"/>
+                <path d="M185 124 L290 118"/><path d="M185 124 L290 162"/>
+                <path d="M185 160 L290 118"/><path d="M185 160 L290 162"/>
+                <path d="M185 196 L290 118"/><path d="M185 196 L290 162"/>
+              </g>
+              <g fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.4">
+                <circle cx="80" cy="100" r="10"/><circle cx="80" cy="140" r="10"/><circle cx="80" cy="180" r="10"/>
+                <circle cx="185" cy="88" r="10"/><circle cx="185" cy="124" r="10"/><circle cx="185" cy="160" r="10"/><circle cx="185" cy="196" r="10"/>
+                <circle cx="290" cy="118" r="10"/><circle cx="290" cy="162" r="10"/>
+              </g>
+              <text x="185" y="252" text-anchor="middle" fill="var(--muted)" font-size="10.5">çıkarımda (inference) dropout kapalıdır</text>
+              <rect x="370" y="44" width="330" height="190" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="535" y="66" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">Eğitim adımı — p=0.5 ile susturuldu</text>
+              <g stroke="var(--dg-line)" stroke-width="1">
+                <path d="M430 100 L535 88"/><path d="M430 100 L535 160"/>
+                <path d="M430 140 L535 88"/><path d="M430 140 L535 160"/>
+                <path d="M430 180 L535 88"/><path d="M430 180 L535 160"/>
+                <path d="M535 88 L640 118"/><path d="M535 88 L640 162"/>
+                <path d="M535 160 L640 118"/><path d="M535 160 L640 162"/>
+              </g>
+              <g fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.4">
+                <circle cx="430" cy="100" r="10"/><circle cx="430" cy="140" r="10"/><circle cx="430" cy="180" r="10"/>
+                <circle cx="535" cy="88" r="10"/><circle cx="535" cy="160" r="10"/>
+                <circle cx="640" cy="118" r="10"/><circle cx="640" cy="162" r="10"/>
+              </g>
+              <circle cx="535" cy="124" r="10" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="3 3"/>
+              <text x="535" y="128" text-anchor="middle" fill="var(--bad)" font-size="12" font-weight="700">×</text>
+              <circle cx="535" cy="196" r="10" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="3 3"/>
+              <text x="535" y="200" text-anchor="middle" fill="var(--bad)" font-size="12" font-weight="700">×</text>
+              <text x="535" y="252" text-anchor="middle" fill="var(--muted)" font-size="10.5">her adımda FARKLI bir alt-ağ eğitilir → topluluk etkisi</text>
+            </g>
+          </svg>
+          <figcaption>Susturulan nöronlar o adımda ne ileri sinyal verir ne gradyan alır. Bir sonraki adımda kura yeniden çekilir.</figcaption>
+        </figure>
+
+        <p><strong>3) Early stopping (erken durdurma).</strong> Eğitim ilerledikçe train loss neredeyse hep düşer — ama asıl önemli olan, modelin hiç görmediği validation kümesindeki loss'tur. O eğri bir noktada dipten dönüp yükselmeye başlar: ezber başlamıştır. Yapılacak şey basit: validation loss birkaç epoch boyunca (buna "patience/sabır" denir) iyileşmiyorsa dur ve en iyi epoch'un ağırlıklarına geri dön.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 680 268" width="680" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Early stopping: train loss düşerken validation loss dipten sonra yükseliyor">
+            <defs>
+              <marker id="esMut" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--muted)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="340" y="24" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Early stopping: validation dipten dönünce dur</text>
+              <rect x="370" y="45" width="270" height="190" fill="var(--warn)" fill-opacity=".07"/>
+              <text x="505" y="66" text-anchor="middle" fill="var(--warn)" font-size="10.5" font-weight="600">overfitting bölgesi</text>
+              <path d="M70 45 L70 235 L636 235" fill="none" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <path d="M636 235 L640 235" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#esMut)"/>
+              <path d="M70 49 L70 45" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#esMut)"/>
+              <text x="40" y="140" text-anchor="middle" fill="var(--muted)" font-size="11" transform="rotate(-90 40 140)">loss</text>
+              <text x="600" y="258" text-anchor="middle" fill="var(--muted)" font-size="11">epoch →</text>
+              <path d="M370 45 L370 235" stroke="var(--ok)" stroke-width="1.8" stroke-dasharray="5 4"/>
+              <text x="362" y="86" text-anchor="end" fill="var(--ok)" font-size="11" font-weight="700">burada dur</text>
+              <text x="362" y="101" text-anchor="end" fill="var(--ok)" font-size="10">(en iyi model)</text>
+              <path d="M85 105 C 200 170, 330 195, 630 212" fill="none" stroke="var(--acc)" stroke-width="2.5"/>
+              <path d="M85 120 C 200 185, 290 205, 370 202 C 450 199, 550 165, 630 128" fill="none" stroke="var(--bad)" stroke-width="2.5"/>
+              <circle cx="370" cy="202" r="5" fill="var(--ok)"/>
+              <path d="M95 62 L125 62" stroke="var(--acc)" stroke-width="2.5"/>
+              <text x="132" y="66" fill="var(--ink)" font-size="11">train loss</text>
+              <path d="M95 82 L125 82" stroke="var(--bad)" stroke-width="2.5"/>
+              <text x="132" y="86" fill="var(--ink)" font-size="11">validation loss</text>
+            </g>
+          </svg>
+          <figcaption>Train loss düşmeye devam eder — o eğriye bakarak asla duramazsın. Karar mercii her zaman validation eğrisidir.</figcaption>
+        </figure>
+
+        <h2>Eğitimi stabilize etmek</h2>
+        <p>Derin ağlarda katmanlar birbirinin üstüne biner: bir katmanın çıktısındaki savrulma, sonrakilerde çığa dönüşür. Eğitimi rayında tutan üç teknik:</p>
+        <p><strong>Batch normalization</strong>, her katmanın girdisini mini-batch'in ortalama ve varyansıyla normalize eder. Katmanlar sürekli kayan bir hedef yerine dengeli dağılımlar görür; daha yüksek learning rate'e izin verir, eğitimi hızlandırır. CNN dünyasının standardıdır. <strong>Layer normalization</strong> ise aynı normalizasyonu batch üzerinden değil, <em>tek örneğin kendi özellikleri</em> üzerinden yapar.</p>
+
+        <div class="note"><b>Neden LLM'lerde layer norm?</b> Batch norm'un istatistikleri batch'ten gelir: batch küçükse istatistik gürültülü olur, değişken uzunluklu dizilerde ise hesap iyice karışır. Layer norm her örneği kendi içinde normalize ettiği için batch boyutundan ve dizi uzunluğundan bağımsızdır — Transformer ve LLM'lerde standart olmasının sebebi budur.</div>
+
+        <p><strong>Gradient clipping</strong>, <a href="m6-rnn.html">RNN sayfasından</a> tanıdığın patlayan gradyana sigortadır: gradyanın normu bir eşiği (örn. 1.0) aşarsa vektör o eşiğe ölçeklenir. Yönü korur, şiddeti kırpar. Tek satırlık maliyeti vardır, RNN ve Transformer eğitimlerinde neredeyse refleks olarak eklenir.</p>
+        <p><strong>Weight initialization (ağırlık başlatma)</strong> tek paragrafı hak eder: tüm ağırlıkları 0'dan başlatırsan her nöron aynı gradyanı alır ve ağ simetriye hapsolur; çok büyük başlatırsan ilk adımda aktivasyonlar taşar. Xavier ve He gibi reçeteler, başlangıç değerlerini katman boyutuna göre ölçekleyerek sinyalin ne sönmesini ne patlamasını sağlar. Modern framework'ler makul varsayılanlar kullanır; ama "daha ilk epoch'ta loss patladı" vakalarının bazılarında suçlu hâlâ budur.</p>
+
+        <figure class="codebox">
+          <figcaption>Python — dört savunma tek eğitim döngüsünde: dropout + weight decay + clipping + early stopping</figcaption>
+          <pre><code data-lang="python">model = nn.Sequential(
+    nn.Linear(64, 128), nn.ReLU(),
+    nn.Dropout(p=0.3),               # savunma 1: dropout katmanı
+    nn.Linear(128, 2),
+)
+# savunma 2: weight decay (L2) cezası optimizer'a eklenir
+opt = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=0.01)
+
+en_iyi_val, sabir, kotu_tur = float("inf"), 5, 0
+for epoch in range(100):
+    model.train()                    # dropout AÇIK
+    for xb, yb in train_dl:
+        opt.zero_grad()
+        loss = F.cross_entropy(model(xb), yb)
+        loss.backward()
+        # savunma 3: gradyan normunu kırp → patlama sigortası
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        opt.step()
+
+    model.eval()                     # dropout KAPALI
+    val = dogrula(model, val_dl)     # validation loss'u ölç
+    if val &lt; en_iyi_val:             # savunma 4: early stopping takibi
+        en_iyi_val, kotu_tur = val, 0
+        torch.save(model.state_dict(), "en_iyi.pt")  # en iyiyi sakla
+    else:
+        kotu_tur += 1
+        if kotu_tur &gt;= sabir:        # 5 epoch iyileşme yoksa dur
+            break</code></pre>
+        </figure>
+
+        <h2>Learning rate sanatı</h2>
+        <p>Tek bir hiperparametrenin krallığı vardır: <strong>learning rate</strong>. Çok yüksekse loss zıplar, hatta ıraksar; çok düşükse eğitim haftalarca sürünür ve kötü bir çukurda takılır. Üstelik "doğru" LR eğitim boyunca sabit de değildir: başta cesur, sonda temkinli adımlar istersin. Bu ihtiyacı <strong>LR schedule (öğrenme oranı takvimi)</strong> karşılar:</p>
+        <ul>
+          <li><strong>Step decay</strong> — belirli epoch'larda LR'ı 10'a böl: kaba ama etkili bir merdiven.</li>
+          <li><strong>Cosine decay</strong> — LR'ı kosinüs eğrisiyle yumuşakça sıfıra doğru süz: keskin geçiş yok, bugün en yaygın tercih.</li>
+          <li><strong>Warmup (ısınma)</strong> — ilk yüzlerce adımda LR'ı sıfırdan hedefe <em>yükselt</em>. Eğitimin başında ağırlıklar rastgele, Adam'ın moment istatistikleri boştur; o kaosta büyük adım atmak eğitimi daha başlamadan raydan çıkarabilir. Warmup özellikle <a href="m6-transformer.html">Transformer</a> eğitimlerinde standarttır — çoğu tarif "warmup + cosine" ikilisini kullanır.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 680 252" width="680" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Warmup artı cosine learning rate takvimi ve sabit LR kıyası">
+            <defs>
+              <marker id="lrMut" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--muted)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="340" y="24" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Warmup + cosine: önce ısın, sonra yumuşak inişe geç</text>
+              <rect x="70" y="45" width="110" height="175" fill="rgba(var(--acc-rgb),.08)"/>
+              <text x="125" y="62" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="600">warmup</text>
+              <path d="M70 45 L70 220 L636 220" fill="none" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <path d="M636 220 L640 220" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#lrMut)"/>
+              <path d="M70 49 L70 45" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#lrMut)"/>
+              <text x="38" y="132" text-anchor="middle" fill="var(--muted)" font-size="11" transform="rotate(-90 38 132)">learning rate</text>
+              <text x="575" y="244" text-anchor="middle" fill="var(--muted)" font-size="11">eğitim adımı →</text>
+              <path d="M80 120 L630 120" stroke="var(--muted)" stroke-width="1.8" stroke-dasharray="6 4"/>
+              <text x="555" y="110" text-anchor="middle" fill="var(--muted)" font-size="10.5">sabit LR (kıyas)</text>
+              <path d="M80 205 L180 78 C 300 80, 480 150, 630 200" fill="none" stroke="var(--acc)" stroke-width="2.5"/>
+              <text x="196" y="72" fill="var(--muted)" font-size="10">max LR</text>
+              <text x="480" y="175" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="600">cosine iniş</text>
+            </g>
+          </svg>
+          <figcaption>Mavi eğri: kısa doğrusal ısınma, ardından kosinüsle süzülen iniş. Kesikli çizgi: aynı ortalama seviyede sabit LR — başta fazla cesur, sonda fazla kaba.</figcaption>
+        </figure>
+
+        <div class="tip"><b>Önce LR'ı tune et.</b> Hiperparametre bütçen kısıtlıysa sırayla değil önemle git: learning rate, diğer tüm ayarların toplamından daha çok fark yaratır. Kaba tarama için 1e-2, 1e-3, 1e-4 gibi 10'ar katlık adımlarla başla; en iyisinin komşuluğunu incelt.</div>
+
+        <h2>Donanım ve hız: VRAM ekonomisi</h2>
+        <p>GPU belleği (VRAM) eğitimin nakit parasıdır ve dört kaleme harcanır: model ağırlıkları, gradyanlar, optimizer durumları (Adam her parametre için 2 ek değer tutar) ve <strong>aktivasyonlar</strong> — geri yayılım için saklanan ara çıktılar. Batch size'ı büyüttükçe aktivasyon kalemi yaklaşık doğrusal şişer; "CUDA out of memory" hatasının bir numaralı kaynağı budur.</p>
+        <p>İki teknik, aynı karttan çok daha fazlasını çıkarır:</p>
+        <ul>
+          <li><strong>Mixed precision (karma hassasiyet):</strong> Hesapların çoğunu 32 bit yerine 16 bit kayan noktayla (fp16/bf16) yap. Bellek yarıya iner; modern GPU'ların tensor çekirdekleri 16 bit matris işlemlerinde çok daha hızlıdır — pratikte 2 kata varan hızlanma. fp16'nın dar sayı aralığında küçük gradyanlar sıfıra yuvarlanabilir; <code>GradScaler</code> loss'u ölçekleyerek bunu telafi eder. bf16 daha geniş aralığıyla bu derdi azaltır ve yeni kartlarda tercih edilir.</li>
+          <li><strong>Gradient accumulation (gradyan biriktirme):</strong> VRAM'e yalnız 8'lik batch sığıyor ama 32'lik lazımsa: 4 küçük batch'in gradyanını üst üste biriktir, güncellemeyi 4'te bir yap. Matematiksel olarak 32'lik batch'e denktir — küçük kartta büyük batch taklidi.</li>
+        </ul>
+
+        <div class="warn"><b>OOM refleks sırası.</b> "CUDA out of memory" görünce sırayla dene: batch size'ı yarıya indir → mixed precision aç → gradient accumulation ile etkili batch'i geri kazan → dizi/görüntü boyutunu kısalt. Ve unutma: <code>nvidia-smi</code> ile kimin ne kadar VRAM yediğine bakmak, tahmin yürütmekten hızlıdır (bkz. <a href="m1-bilgisayar-temelleri.html">donanım temelleri</a>).</div>
+
+        <figure class="codebox">
+          <figcaption>Python — mixed precision (autocast + GradScaler), warmup'lı scheduler ve gradyan biriktirme</figcaption>
+          <pre><code data-lang="python">opt = torch.optim.AdamW(model.parameters(), lr=3e-4, weight_decay=0.01)
+scaler = torch.amp.GradScaler("cuda")   # fp16'nın küçük gradyanlarını korur
+
+# warmup + cosine tek pakette: adımların ilk %5'i ısınma, sonrası iniş
+sch = torch.optim.lr_scheduler.OneCycleLR(
+    opt, max_lr=3e-4, total_steps=10_000, pct_start=0.05)
+
+birikim = 4                              # 4 mini-batch = 1 "büyük" batch
+for i, (xb, yb) in enumerate(train_dl):
+    with torch.amp.autocast("cuda"):     # ileri geçiş fp16/bf16 → ~2x hız
+        loss = F.cross_entropy(model(xb), yb) / birikim  # payı normalize et
+    scaler.scale(loss).backward()        # gradyanlar üst üste birikir
+    if (i + 1) % birikim == 0:           # her 4 adımda bir güncelle
+        scaler.step(opt)                 # ölçek geri alınıp adım atılır
+        scaler.update()
+        opt.zero_grad()
+        sch.step()                       # LR takvimini ilerlet</code></pre>
+        </figure>
+
+        <h2>Birden çok GPU ve izleme</h2>
+        <p>Tek GPU yetmediğinde ilk durak <strong>data parallelism (veri paralelliği)</strong>: modelin birer kopyası her GPU'ya konur, her batch GPU'lar arasında bölüşülür, hesaplanan gradyanlar her adımda ortalanıp tüm kopyalara aynı güncelleme uygulanır. 4 GPU ≈ 4 kat büyük etkili batch. (Model tek GPU'ya <em>sığmıyorsa</em> iş, katmanları kartlara bölen model paralelliğine uzanır — LLM eğitiminin dünyası.)</p>
+        <p>Ve gözünü eğitimden ayırma: <strong>TensorBoard</strong>, loss/LR/gradyan eğrilerini eğitim sürerken canlı çizen klasik araçtır. <strong>Weights &amp; Biases (W&amp;B)</strong> ise deneyleri hiperparametreleriyle birlikte bulutta kayıt altına alıp yan yana karşılaştırmanın endüstri standardıdır. "Geçen haftaki iyi sonucu hangi ayarla almıştım?" sorusunu hafızana bırakma.</p>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Eğitim ilk seferde nadiren düzgün çalışır. Sahada işine yarayacak hata ayıklama listesi:</p>
+        <ul>
+          <li><strong>Sağlık testi — önce küçükte ez:</strong> 50–100 örneklik alt kümede modeli bilerek %100 overfit etmeye çalış. <em>Edemiyorsan</em> sorun kapasite değil, boru hattındadır: yanlış etiket eşleşmesi, bozuk normalizasyon, ölü LR.</li>
+          <li><strong>Loss NaN ise:</strong> sırayla bak — LR'ı 10'a böl; gradient clipping ekle; veride NaN/inf ve log(0) ara; fp16 kullanıyorsan taşma ihtimaline karşı bf16 dene.</li>
+          <li><strong>Val loss hiç düşmüyorsa:</strong> veri karıştırma (shuffle) açık mı, etiketler kaymış mı, train/val ayrımında <a href="m5-feature-engineering.html">sızıntı</a> var mı?</li>
+          <li><strong>Hızla overfit oluyorsa:</strong> dropout ve weight decay'i artır, veri çoğaltmayı (augmentation, <a href="m6-cnn.html">CNN sayfası</a>) devreye al, daha küçük model dene.</li>
+          <li><strong>Mülakat klasikleri:</strong> "Dropout test anında ne olur?", "Warmup neden gerekli?", "OOM alınca ne yaparsın?" — üçünün de cevabı bu sayfada.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Dropout eğitimde açık, test anında neden kapalıdır?</summary>
+            <div class="answer">Eğitimde amaç <b>düzenlileştirmedir</b>: her adımda rastgele nöron susturarak ağı yedekli öğrenmeye zorlar ve her adımda farklı bir alt-ağ eğitilir. Test anında ise en iyi tahmini istersin: tüm nöronlar açılır ve (ölçekleme sayesinde) binlerce alt-ağın <b>ortalaması</b> gibi davranan tam ağ kullanılır — rastgelelik tahmine gürültü katmaktan başka işe yaramazdı.</div>
+          </details>
+          <details class="quiz">
+            <summary>Early stopping kararı hangi eğriye göre verilir, neden?</summary>
+            <div class="answer"><b>Validation loss</b> eğrisine göre. Train loss, model ezberledikçe bile düşmeye devam eder — ona bakarak durma noktası seçilemez. Validation eğrisi dipten dönüp yükselmeye başladığında genelleme bozuluyordur; sabır (patience) süresi dolunca durup en iyi epoch'un ağırlıklarına dönülür.</div>
+          </details>
+          <details class="quiz">
+            <summary>VRAM'e yalnız 8'lik batch sığıyor ama 32'lik batch ile eğitmek istiyorsun. İki çözüm?</summary>
+            <div class="answer"><b>1) Gradient accumulation:</b> 4 tane 8'lik mini-batch'in gradyanını biriktirip güncellemeyi 4'te bir yap — matematiksel olarak 32'lik batch'e denktir. <b>2) Mixed precision:</b> fp16/bf16 ile aktivasyon belleğini yaklaşık yarıya indir; boşalan yere daha büyük batch sığar. İkisi birlikte de kullanılabilir.</div>
+          </details>
+          <details class="quiz">
+            <summary>Loss bir anda NaN oldu. İlk üç şüphelin kim?</summary>
+            <div class="answer"><b>1) Learning rate çok yüksek</b> — ilk ve en olası suçlu; 10'a bölüp dene. <b>2) Patlayan gradyan</b> — clipping ekli mi kontrol et (özellikle RNN/Transformer'da). <b>3) Veri/sayısal sorunlar</b> — girdide NaN/inf, log(0), sıfıra bölme; fp16 kullanıyorsan taşma ihtimali (bf16'ya geç).</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Regularization (Düzenlileştirme)</span><span class="term-en">Regularization</span><span class="lvl lvl-ileri">İleri</span></div><p>Modeli ezber yerine genellemeye zorlayan tekniklerin şemsiye adı: L2, dropout, early stopping…</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Weight Decay (L2)</span><span class="term-en">Weight Decay</span><span class="lvl lvl-ileri">İleri</span></div><p>Büyük ağırlıklara loss üzerinden ceza kesme; modeli küçük ağırlıklı, yumuşak çözümlere iter.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Dropout</span><span class="term-en">Dropout</span><span class="lvl lvl-ileri">İleri</span></div><p>Her eğitim adımında nöronları rastgele susturma; bedava topluluk etkisi yaratan düzenlileştirici.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Early Stopping (Erken Durdurma)</span><span class="term-en">Early Stopping</span><span class="lvl lvl-orta">Orta</span></div><p>Validation loss iyileşmeyi bırakınca eğitimi durdurup en iyi epoch'un ağırlıklarına dönme.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Batch Normalization</span><span class="term-en">Batch Normalization</span><span class="lvl lvl-ileri">İleri</span></div><p>Katman girdilerini mini-batch istatistikleriyle normalize ederek eğitimi hızlandırıp stabilize etme.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Layer Normalization</span><span class="term-en">Layer Normalization</span><span class="lvl lvl-ileri">İleri</span></div><p>Normalizasyonu her örneğin kendi özellikleri üzerinden yapma; batch'ten bağımsızdır, Transformer standardı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Gradient Clipping</span><span class="term-en">Gradient Clipping</span><span class="lvl lvl-ileri">İleri</span></div><p>Gradyan normunu bir eşikte kırparak patlayan gradyanı dizginleyen tek satırlık sigorta.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Weight Initialization (Ağırlık Başlatma)</span><span class="term-en">Weight Initialization</span><span class="lvl lvl-ileri">İleri</span></div><p>Başlangıç ağırlıklarını katman boyutuna göre ölçekleme (Xavier/He); simetriyi ve taşmayı önler.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">LR Schedule</span><span class="term-en">Learning Rate Schedule</span><span class="lvl lvl-ileri">İleri</span></div><p>Learning rate'i eğitim boyunca planlı değiştirme: step decay, cosine, warmup kombinasyonları.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Warmup</span><span class="term-en">Warmup</span><span class="lvl lvl-ileri">İleri</span></div><p>İlk adımlarda LR'ı sıfırdan hedefe kademeli yükseltme; Transformer eğitiminin standart başlangıcı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Mixed Precision (Karma Hassasiyet)</span><span class="term-en">Mixed Precision</span><span class="lvl lvl-ileri">İleri</span></div><p>Hesapları fp16/bf16 ile yapma: yarı bellek, 2 kata varan hız; GradScaler küçük gradyanları korur.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Gradient Accumulation</span><span class="term-en">Gradient Accumulation</span><span class="lvl lvl-ileri">İleri</span></div><p>Küçük batch'lerin gradyanını biriktirip tek güncelleme yapma; az VRAM'de büyük batch taklidi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Data Parallelism (Veri Paralelliği)</span><span class="term-en">Data Parallelism</span><span class="lvl lvl-ileri">İleri</span></div><p>Model kopyalarını ayrı GPU'lara koyup batch'i bölüşme; gradyanlar her adımda ortalanır.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m6-egitim-pratikleri">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m6-transformer.html"><span>← Önceki</span><b>Transformer ve Attention</b></a>
+          <a class="next" href="m7-llm-temelleri.html"><span>Sonraki →</span><b>LLM'lerin Temelleri</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

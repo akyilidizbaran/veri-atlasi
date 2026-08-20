@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supervised Learning Algoritmaları — Veri Atlası</title>
+<meta name="description" content="Linear ve logistic regression'dan karar ağaçlarına, Random Forest ve XGBoost'a: klasik supervised learning algoritmaları, sigmoid ve karar eşiği, bagging ile boosting farkı ve hangi algoritmayla başlanacağına dair pratik rehber.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m5" data-slug="m5-supervised">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m5">5. Makine Öğrenmesi</a><span class="sep">/</span>
+        <span>Supervised Learning Algoritmaları</span>
+      </nav>
+      <span class="mod-badge">Modül 5 · Makine Öğrenmesi</span>
+      <h1>Supervised Learning Algoritmaları</h1>
+      <p class="en-title">Supervised Learning Algorithms</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~20 dk okuma</span>
+        <span class="chip">🔤 13 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Alet çantasını açıyoruz</h2>
+        <p><a href="m5-ml-giris.html">Bir önceki konuda</a> oyunun kurallarını öğrendin: feature, label, train/test ayrımı, overfitting. Şimdi sıra oyunculara geldi — etiketli veriden öğrenen <strong>algoritmaların</strong> kendisine. Bu sayfadaki modeller "klasik ML" diye anılır ama emeklilik yaşları gelmedi: şirket veritabanlarındaki tablo (tabular) verilerde bu klasikler, çoğu zaman derin öğrenmeyi hâlâ yenmektedir. Hepsini ezberlemen gerekmiyor; her birinin <em>hangi soruya cevap olduğunu</em> ve <em>ne zaman akla gelmesi gerektiğini</em> kavraman yeterli.</p>
+
+        <h2>Önce görevi tanı: regresyon mu, sınıflandırma mı?</h2>
+        <p>Algoritma seçiminden önce tek bir soruya cevap verirsin: <strong>tahmin edeceğin şey ne tür bir çıktı?</strong></p>
+        <ul>
+          <li><strong>Regresyon (regression)</strong> — çıktı bir <em>sayı</em>: evin fiyatı, yarınki satış adedi, teslimat süresi. "Ne kadar?" sorusu.</li>
+          <li><strong>Sınıflandırma (classification)</strong> — çıktı bir <em>kategori</em>: spam mı değil mi, müşteri ayrılır mı kalır mı, görüntüde kedi mi köpek mi. "Hangisi?" sorusu.</li>
+        </ul>
+        <p>Bu ayrım pratikte her şeyi belirler: hangi algoritmayı, hangi loss'u, hangi başarı metriğini kullanacağını. scikit-learn'ün adlandırması da bunu yansıtır — çoğu algoritmanın <code>...Regressor</code> ve <code>...Classifier</code> diye iki sürümü vardır.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 270" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Regresyon ve sınıflandırma görevlerinin karşılaştırması">
+            <g font-family="inherit">
+              <text x="182" y="28" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Regresyon — çıktı: sayı</text>
+              <rect x="15" y="40" width="335" height="185" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <g fill="var(--acc)" fill-opacity=".85">
+                <circle cx="50" cy="190" r="4.5"/><circle cx="85" cy="168" r="4.5"/><circle cx="120" cy="178" r="4.5"/><circle cx="155" cy="140" r="4.5"/><circle cx="190" cy="150" r="4.5"/><circle cx="225" cy="118" r="4.5"/><circle cx="260" cy="125" r="4.5"/><circle cx="295" cy="95" r="4.5"/><circle cx="322" cy="86" r="4.5"/>
+              </g>
+              <line x1="40" y1="200" x2="330" y2="80" stroke="var(--ok)" stroke-width="2.5"/>
+              <text x="182" y="248" text-anchor="middle" fill="var(--muted)" font-size="11">ev fiyatı, talep, teslimat süresi tahmini</text>
+
+              <text x="537" y="28" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Sınıflandırma — çıktı: kategori</text>
+              <rect x="370" y="40" width="335" height="185" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <g fill="var(--ok)" fill-opacity=".85">
+                <circle cx="420" cy="90" r="4.5"/><circle cx="445" cy="115" r="4.5"/><circle cx="470" cy="80" r="4.5"/><circle cx="495" cy="105" r="4.5"/><circle cx="430" cy="140" r="4.5"/><circle cx="465" cy="130" r="4.5"/>
+              </g>
+              <g fill="var(--bad)" fill-opacity=".85">
+                <circle cx="560" cy="160" r="4.5"/><circle cx="590" cy="140" r="4.5"/><circle cx="615" cy="170" r="4.5"/><circle cx="640" cy="150" r="4.5"/><circle cx="575" cy="185" r="4.5"/><circle cx="620" cy="190" r="4.5"/><circle cx="600" cy="115" r="4.5"/>
+              </g>
+              <line x1="455" y1="215" x2="655" y2="60" stroke="var(--acc)" stroke-width="2" stroke-dasharray="6 5"/>
+              <text x="537" y="248" text-anchor="middle" fill="var(--muted)" font-size="11">spam / churn / kedi-köpek: karar sınırı çizilir</text>
+            </g>
+          </svg>
+          <figcaption>Regresyonda amaç noktalara en iyi uyan eğriyi bulmak; sınıflandırmada iki sınıfı ayıran karar sınırını (kesikli çizgi) öğrenmek.</figcaption>
+        </figure>
+
+        <h2>Linear regression: doğruyu uydur</h2>
+        <p>En eski ve en öğretici model. <strong>Linear regression (doğrusal regresyon)</strong>, çıktıyı feature'ların ağırlıklı toplamı olarak yazar:</p>
+        <p><code>fiyat = w₁·metrekare + w₂·oda_sayısı + w₃·bina_yaşı + b</code></p>
+        <p>Eğitim, <code>w</code> katsayılarını ve <code>b</code> sabitini veriye en iyi uyacak şekilde bulmaktır. "En iyi uyum" ölçülebilir bir şeydir: her tahminin gerçekten ne kadar saptığına bakılır, sapmaların karesi alınıp ortalaması hesaplanır — buna <strong>MSE (mean squared error)</strong> denir. Model hatasını sayıya çeviren bu tür fonksiyonlara genel olarak <strong>loss (kayıp) fonksiyonu</strong> denir; eğitim, loss'u en küçük yapan katsayıları arama işidir.</p>
+        <p>Linear regression'ın asıl gücü <em>yorumlanabilirliğidir</em>: <code>w₁ = 950</code> ise "diğer her şey sabitken her ek metrekare fiyata ~950 birim ekliyor" diyebilirsin. Bu cümleyi kurabilmek, iş toplantısında çoğu zaman iki puanlık ekstra doğruluktan daha değerlidir.</p>
+
+        <div class="note"><b>Loss fikri seninle kalacak.</b> "Hatayı sayıya çevir, o sayıyı küçült" düzeni yalnız linear regression'ın değil, tüm modern ML'in omurgasıdır. <a href="m6-sinir-aglari.html">Modül 6'daki sinir ağları</a> da milyarlarca parametresini aynı fikirle ayarlar; değişen tek şey loss'un şekli ve arama yöntemidir.</div>
+
+        <h2>Logistic regression: adı regresyon, kendisi sınıflandırıcı</h2>
+        <p>İsim tarihsel bir tuzak: <strong>logistic regression (lojistik regresyon)</strong> bir <em>sınıflandırma</em> algoritmasıdır. Fikir zarif: linear regression'daki ağırlıklı toplamı al (<code>z = w·x + b</code>), ama ham sayıyı doğrudan çıktı yapma — onu <strong>sigmoid</strong> fonksiyonundan geçir. Sigmoid, eksi sonsuzdan artı sonsuza her sayıyı 0 ile 1 arasına sıkıştıran S şeklinde bir eğridir; çıktı böylece <em>olasılık</em> olarak okunur: "bu müşterinin ayrılma olasılığı 0.87".</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 680 300" width="680" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sigmoid eğrisi ve 0.5 karar eşiği">
+            <g font-family="inherit">
+              <defs>
+                <marker id="bAx2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--muted)"/></marker>
+              </defs>
+              <text x="345" y="28" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Sigmoid: her ham skoru 0–1 arası olasılığa çevirir</text>
+              <line x1="60" y1="250" x2="630" y2="250" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#bAx2)"/>
+              <line x1="60" y1="250" x2="60" y2="45" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#bAx2)"/>
+              <text x="345" y="285" text-anchor="middle" fill="var(--muted)" font-size="11.5">z = w·x + b (modelin ham skoru)</text>
+              <text x="26" y="150" text-anchor="middle" fill="var(--muted)" font-size="11.5" transform="rotate(-90 26 150)">P(sınıf = 1)</text>
+              <line x1="55" y1="72" x2="65" y2="72" stroke="var(--muted)" stroke-width="1.6"/>
+              <text x="44" y="76" text-anchor="end" fill="var(--muted)" font-size="10.5">1.0</text>
+              <line x1="55" y1="160" x2="65" y2="160" stroke="var(--muted)" stroke-width="1.6"/>
+              <text x="44" y="164" text-anchor="end" fill="var(--muted)" font-size="10.5">0.5</text>
+              <text x="44" y="254" text-anchor="end" fill="var(--muted)" font-size="10.5">0.0</text>
+              <line x1="60" y1="160" x2="630" y2="160" stroke="var(--warn)" stroke-width="1.6" stroke-dasharray="6 5"/>
+              <text x="622" y="148" text-anchor="end" fill="var(--warn)" font-size="11" font-weight="700">karar eşiği 0.5</text>
+              <path d="M80 246 C 190 244, 260 232, 315 180 C 355 140, 375 116, 415 92 C 460 78, 540 73, 610 72" fill="none" stroke="var(--acc)" stroke-width="3"/>
+              <text x="200" y="205" text-anchor="middle" fill="var(--muted)" font-size="11">olasılık &lt; 0.5 → sınıf 0 (kalır)</text>
+              <text x="490" y="120" text-anchor="middle" fill="var(--muted)" font-size="11">olasılık &gt; 0.5 → sınıf 1 (churn)</text>
+            </g>
+          </svg>
+          <figcaption>Sigmoid S eğrisi ham skoru olasılığa çevirir; kesikli çizgi 0.5 karar eşiğidir — ama eşik, işin maliyetine göre kaydırılabilir.</figcaption>
+        </figure>
+
+        <p>Olasılıktan karara geçmek için bir <strong>karar eşiği (threshold)</strong> seçilir; varsayılan 0.5'tir ama bu bir doğa kanunu değil, bir <em>iş kararıdır</em>. Müşteri kaybetmek kampanya SMS'inden çok daha pahalıysa eşiği 0.3'e çeker, "riskli" listesini bilerek genişletirsin:</p>
+
+        <figure class="codebox">
+          <figcaption>Python — LogisticRegression ile churn tahmini ve eşik yorumu</figcaption>
+          <pre><code data-lang="python">from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+
+# stratify=y → churn oranı train ve test'te aynı kalsın
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, stratify=y, random_state=42
+)
+
+model = LogisticRegression(max_iter=1000)
+model.fit(X_train, y_train)
+
+# predict(): 0/1 kararı — varsayılan 0.5 eşiğiyle
+print(model.predict(X_test[:3]))            # [0 1 0]
+
+# predict_proba(): asıl güç burada — her müşteri için olasılık
+olasilik = model.predict_proba(X_test)[:, 1]
+print(olasilik[:3])                         # [0.12 0.87 0.35]
+
+# Eşik bir İŞ kararıdır: müşteri kaybı pahalıysa eşiği düşür,
+# daha çok müşteriyi "riskli" say, kampanyayı geniş tut
+riskli = olasilik &gt;= 0.30
+print(riskli.sum(), "müşteri elde tutma listesine alındı")</code></pre>
+        </figure>
+
+        <h2>Karar ağaçları: soru-cevap zinciri</h2>
+        <p><strong>Karar ağacı (decision tree)</strong>, veriyi bir dizi evet/hayır sorusuyla bölerek öğrenir — tıpkı "20 soruda tahmin" oyunu gibi. Eğitim sırasında algoritma her adımda "veriyi en iyi ayrıştıran soru hangisi?" diye arar ve ağacı dallandırır. Tahmin ise kökten yaprağa soru cevaplaya cevaplaya inmektir:</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 320" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kredi kararı veren örnek karar ağacı">
+            <g font-family="inherit">
+              <defs>
+                <marker id="bTree" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--muted)"/></marker>
+              </defs>
+              <rect x="270" y="25" width="160" height="46" rx="10" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="350" y="53" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Gelir &gt; 50K?</text>
+              <path d="M320 71 L195 122" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#bTree)"/>
+              <text x="242" y="92" text-anchor="middle" fill="var(--ok)" font-size="11" font-weight="700">evet</text>
+              <path d="M380 71 L505 122" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#bTree)"/>
+              <text x="460" y="92" text-anchor="middle" fill="var(--bad)" font-size="11" font-weight="700">hayır</text>
+              <rect x="95" y="125" width="170" height="46" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="180" y="153" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Borç oranı &lt; %30?</text>
+              <rect x="445" y="125" width="150" height="46" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="520" y="153" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Kefil var mı?</text>
+              <path d="M150 171 L98 222" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#bTree)"/>
+              <text x="106" y="194" text-anchor="middle" fill="var(--ok)" font-size="11" font-weight="700">evet</text>
+              <path d="M210 171 L253 222" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#bTree)"/>
+              <text x="252" y="194" text-anchor="middle" fill="var(--bad)" font-size="11" font-weight="700">hayır</text>
+              <path d="M498 171 L478 222" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#bTree)"/>
+              <text x="466" y="194" text-anchor="middle" fill="var(--ok)" font-size="11" font-weight="700">evet</text>
+              <path d="M552 171 L620 222" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#bTree)"/>
+              <text x="606" y="194" text-anchor="middle" fill="var(--bad)" font-size="11" font-weight="700">hayır</text>
+              <rect x="25" y="226" width="130" height="44" rx="10" fill="var(--ok)" fill-opacity=".14" stroke="var(--ok)" stroke-width="1.6"/>
+              <text x="90" y="253" text-anchor="middle" fill="var(--ok)" font-size="12" font-weight="700">Kredi ver</text>
+              <rect x="190" y="226" width="145" height="44" rx="10" fill="var(--warn)" fill-opacity=".14" stroke="var(--warn)" stroke-width="1.6"/>
+              <text x="262" y="253" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">İncelemeye al</text>
+              <rect x="415" y="226" width="145" height="44" rx="10" fill="var(--warn)" fill-opacity=".14" stroke="var(--warn)" stroke-width="1.6"/>
+              <text x="487" y="253" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">İncelemeye al</text>
+              <rect x="580" y="226" width="130" height="44" rx="10" fill="var(--bad)" fill-opacity=".12" stroke="var(--bad)" stroke-width="1.6"/>
+              <text x="645" y="253" text-anchor="middle" fill="var(--bad)" font-size="12" font-weight="700">Kredi verme</text>
+              <text x="360" y="302" text-anchor="middle" fill="var(--muted)" font-size="11">kökten yaprağa her yol = okunabilir bir kural zinciri</text>
+            </g>
+          </svg>
+          <figcaption>İki seviyelik örnek bir kredi ağacı. Soruların hangi feature'dan geleceğini ve eşik değerleri algoritma veriden öğrenir.</figcaption>
+        </figure>
+
+        <p>Ağaçların iki büyük artısı var: <em>yorumlanabilirlik</em> ("bu müşteri neden reddedildi?" sorusuna yol gösterebilirsin) ve ölçekleme/normalizasyon derdi olmaması. Büyük eksisi ise ezberciliği: ağaç serbestçe büyürse her yaprakta bir-iki örnek kalana dek dallanır — yani train verisini <a href="m5-ml-giris.html">ezberler</a>.</p>
+
+        <div class="warn"><b>Tek ağaç overfit'e meyillidir.</b> Sınırsız derinlikte bir ağaç, train verisinde %100 doğruluk gösterip sahada çuvallayabilir. Tek ağaç kullanacaksan <code>max_depth</code>, <code>min_samples_leaf</code> gibi frenleri mutlaka sık. Ama sahadaki asıl çözüm başka: ağacı tek başına değil, ordu hâlinde kullanmak.</div>
+
+        <h2>Ensemble gücü: Random Forest ve XGBoost</h2>
+        <p>Tek modelin zayıflığını çözmenin en etkili yolu <strong>ensemble (topluluk)</strong> kurmaktır: birçok modelin kararını birleştirmek. Ağaç toplulukları iki farklı felsefeyle kurulur:</p>
+        <ul>
+          <li><strong>Bagging → Random Forest.</strong> Verinin rastgele örneklemleriyle (bootstrap) yüzlerce ağaç <em>birbirinden bağımsız ve paralel</em> eğitilir; tahminde ağaçlar <em>oylama</em> yapar (regresyonda ortalama alınır). Her ağaç tek başına ezberci olsa da hataları farklı yönlere savrulur; oylama bu savrulmaları törpüler — variance düşer.</li>
+          <li><strong>Boosting → XGBoost / LightGBM.</strong> Ağaçlar <em>sırayla</em> eğitilir: her yeni ağaç, kendinden öncekilerin <em>yaptığı hataları düzeltmeye</em> odaklanır. Zayıf modeller adım adım güçlü tek bir modele dönüşür. Gradient boosting bu fikrin genel adıdır; XGBoost ve LightGBM en yaygın, en hızlı gerçeklemeleridir.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 330" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bagging ve boosting yaklaşımlarının karşılaştırması">
+            <g font-family="inherit">
+              <defs>
+                <marker id="bEns" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--muted)"/></marker>
+                <marker id="bEnsA" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              </defs>
+              <text x="180" y="28" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Bagging — Random Forest</text>
+              <rect x="110" y="45" width="140" height="40" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="180" y="70" text-anchor="middle" fill="var(--ink)" font-size="12">Veri (bootstrap)</text>
+              <path d="M148 85 L82 136" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#bEns)"/>
+              <path d="M180 85 L180 136" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#bEns)"/>
+              <path d="M212 85 L278 136" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#bEns)"/>
+              <rect x="30" y="140" width="90" height="44" rx="8" fill="rgba(var(--acc-rgb),.14)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="75" y="167" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">Ağaç 1</text>
+              <rect x="135" y="140" width="90" height="44" rx="8" fill="rgba(var(--acc-rgb),.14)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="180" y="167" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">Ağaç 2</text>
+              <rect x="240" y="140" width="90" height="44" rx="8" fill="rgba(var(--acc-rgb),.14)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="285" y="167" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">Ağaç 3</text>
+              <path d="M75 184 L152 242" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#bEns)"/>
+              <path d="M180 184 L180 242" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#bEns)"/>
+              <path d="M285 184 L208 242" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#bEns)"/>
+              <rect x="105" y="246" width="150" height="44" rx="8" fill="var(--dg-box)" stroke="var(--ok)" stroke-width="1.6"/>
+              <text x="180" y="273" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Oylama / Ortalama</text>
+              <text x="180" y="315" text-anchor="middle" fill="var(--muted)" font-size="11">paralel ve bağımsız — hatalar birbirini götürür</text>
+
+              <line x1="365" y1="30" x2="365" y2="310" stroke="var(--dg-line)" stroke-width="1.2" stroke-dasharray="4 6"/>
+
+              <text x="540" y="28" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Boosting — XGBoost</text>
+              <rect x="465" y="42" width="150" height="38" rx="8" fill="rgba(var(--acc-rgb),.14)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="540" y="66" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">Ağaç 1</text>
+              <path d="M540 80 L540 102" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#bEnsA)"/>
+              <text x="556" y="96" fill="var(--muted)" font-size="10.5">kalan hatayı hedefle</text>
+              <rect x="465" y="106" width="150" height="38" rx="8" fill="rgba(var(--acc-rgb),.14)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="540" y="130" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">Ağaç 2</text>
+              <path d="M540 144 L540 166" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#bEnsA)"/>
+              <text x="556" y="160" fill="var(--muted)" font-size="10.5">kalan hatayı hedefle</text>
+              <rect x="465" y="170" width="150" height="38" rx="8" fill="rgba(var(--acc-rgb),.14)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="540" y="194" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">Ağaç 3</text>
+              <path d="M540 208 L540 230" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#bEnsA)"/>
+              <rect x="452" y="234" width="176" height="44" rx="8" fill="var(--dg-box)" stroke="var(--ok)" stroke-width="1.6"/>
+              <text x="540" y="261" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Ağırlıklı toplam</text>
+              <text x="540" y="315" text-anchor="middle" fill="var(--muted)" font-size="11">sıralı — her ağaç öncekilerin hatasını küçültür</text>
+            </g>
+          </svg>
+          <figcaption>Bagging bağımsız ağaçları oylatır (variance'ı düşürür); boosting ağaçları zincirleyip hatayı adım adım düzelttirir (bias'ı düşürür).</figcaption>
+        </figure>
+
+        <p>Bu ikili, tablo verilerinin tartışmasız şampiyonudur: Kaggle yarışmalarının tabular kategorilerinde ve şirketlerin churn/skorlama/fiyatlama modellerinde kazanan çoğunlukla bir gradient boosting modelidir. Random Forest ise "az ayarla çok iş" modelidir — hiperparametrelerine neredeyse dokunmadan güçlü bir sonuç verir:</p>
+
+        <figure class="codebox">
+          <figcaption>Python — Random Forest ve feature importance okuma</figcaption>
+          <pre><code data-lang="python">from sklearn.ensemble import RandomForestClassifier
+import pandas as pd
+
+orman = RandomForestClassifier(
+    n_estimators=300,    # 300 bağımsız ağaç
+    random_state=42,
+    n_jobs=-1            # ağaçlar bağımsız → tüm çekirdeklerde paralel eğit
+)
+orman.fit(X_train, y_train)
+print(orman.score(X_test, y_test))          # örn. 0.86
+
+# Hangi feature kararlarda ne kadar rol oynuyor?
+onem = pd.Series(orman.feature_importances_, index=X_train.columns)
+print(onem.sort_values(ascending=False).head())
+# aylik_fatura       0.31
+# sozlesme_suresi    0.24
+# destek_cagri_sayi  0.18  ...
+# → paydaşa "model neye bakıyor" anlatmanın en hızlı yolu</code></pre>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Python — XGBoost temel kullanım: early stopping ile overfit freni</figcaption>
+          <pre><code data-lang="python">from xgboost import XGBClassifier
+
+model = XGBClassifier(
+    n_estimators=2000,         # üst sınır — erken durdurma zaten keser
+    learning_rate=0.05,        # her ağacın katkısını küçük tut (temkinli adımlar)
+    max_depth=5,               # sığ ağaçlar: boosting'de derinlik değil sayı çalışır
+    early_stopping_rounds=50,  # 50 turda val skoru iyileşmezse DUR → overfit freni
+    eval_metric="logloss"
+)
+
+# Validation seti erken durdurmanın hakemidir: her ağaçtan sonra ölçülür
+model.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
+
+print(model.best_iteration)                 # örn. 412 — 2000'e gerek kalmadı
+print(model.score(X_test, y_test))</code></pre>
+        </figure>
+
+        <h2>Diğer klasikler: kNN, SVM, Naive Bayes</h2>
+        <p>Her gün kullanmayacağın ama tanıman gereken üç isim daha var — her birinin akla gelmesi gereken bir ânı vardır:</p>
+        <ul>
+          <li><strong>kNN (k-nearest neighbors)</strong> — "komşuna bak": yeni örneğin sınıfını, ona en çok benzeyen k örneğin çoğunluğuna göre belirler. Eğitim diye bir şeyi yoktur, tüm iş tahmin anında yapılır. Küçük veri setlerinde hızlı bir baseline olarak akla gelsin; feature'ları ölçeklemeden kullanma (uzaklık hesabı ölçeğe duyarlıdır) ve büyük veride yavaşladığını bil.</li>
+          <li><strong>SVM (support vector machine)</strong> — iki sınıfın arasından geçen <em>en geniş yolu</em> arar: karar sınırı ile en yakın örnekler (support vector'lar) arasındaki boşluğa <strong>margin</strong> denir ve SVM bunu maksimize eder. Kernel numarasıyla doğrusal ayrılamayan verilerde de çalışır. Orta boyutlu, feature sayısı yüksek problemlerde akla gelsin.</li>
+          <li><strong>Naive Bayes</strong> — Bayes teoremine dayanan olasılıkçı model; feature'ların birbirinden bağımsız olduğu gibi "saf" bir varsayım yapar. Bu varsayım nadiren doğrudur ama model yine de şaşırtıcı derecede iyi çalışır — özellikle <em>metin sınıflandırmada</em> (spam filtresi, konu etiketleme). Çok hızlı eğitilir; metin + hız gerektiğinde akla gelsin.</li>
+        </ul>
+
+        <h2>Hangi algoritmayla başlamalı?</h2>
+        <p>Gerçek projede sıralama neredeyse hep aynıdır:</p>
+        <ul>
+          <li><strong>1. Baseline: linear / logistic regression.</strong> Dakikalar içinde kurulur, yorumlanabilir, sonraki her modelin geçmesi gereken çıtayı koyar. <a href="m5-ml-giris.html">Önceki konudaki</a> "ilk modelin basit olsun" ilkesinin uygulamasıdır.</li>
+          <li><strong>2. Random Forest.</strong> Az ayarla güçlü sonuç; feature importance ile veriyi de tanırsın.</li>
+          <li><strong>3. Gradient boosting (XGBoost/LightGBM).</strong> Son puanları sıkıştırmak için; hiperparametre ayarıyla birlikte gelir — ayar disiplinini <a href="m5-model-degerlendirme.html">Model Değerlendirme ve Tuning</a> konusunda kuracağız.</li>
+          <li><strong>İstisnalar:</strong> model kararını regülatöre açıklamak zorundaysan yorumlanabilirlik önceliklidir (linear/logistic ya da sığ ağaç); ham metinle çalışıyorsan Naive Bayes ve logistic regression ilk duraktır.</li>
+        </ul>
+        <div class="tip"><b>Tablo verisinde önce klasikler.</b> "Her probleme derin öğrenme" refleksi pahalı bir acemiliktir: müşteri tablosu, işlem geçmişi gibi tabular verilerde gradient boosting çoğu zaman sinir ağını hem doğrulukta hem maliyette geçer. Sinir ağlarının ezici üstünlüğü görüntü, ses ve serbest metin gibi yapısız verilerdedir — o dünyaya Modül 6'da gireceğiz.</div>
+        <p>Hangi modeli seçersen seç, karşılaştırmayı hep aynı validation düzeniyle yap; skor farkı küçükse basit olanı tercih et. Modele girecek sütunların kalitesi çoğu zaman algoritma seçiminden daha belirleyicidir — bu da <a href="m5-feature-engineering.html">Feature Engineering</a> konusunun derdi.</p>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Bu sayfadaki algoritmalar, veri ekiplerinin günlük ekmeğidir:</p>
+        <ul>
+          <li><strong>Churn ve skorlama →</strong> telekom/banka/SaaS şirketlerinin "kim ayrılacak, kim temerrüde düşecek" modelleri neredeyse hep logistic regression baseline'ı + gradient boosting üretim modelidir.</li>
+          <li><strong>Kredi kararları →</strong> regülasyon "neden reddedildi?" cevabını zorunlu kılar; yorumlanabilir modeller (logistic, sığ ağaçlar) bu yüzden finansta hâlâ standarttır.</li>
+          <li><strong>Mülakatlar →</strong> "Random Forest ile XGBoost farkı nedir?" (bagging vs boosting) ve "logistic regression neden sınıflandırıcı?" en klasik ML mülakat sorularındandır — ikisinin de cevabı artık sende.</li>
+          <li><strong>Üretim boru hatları →</strong> eğitilen model bir <a href="m3-orkestrasyon.html">orkestrasyon</a> akışında periyodik yeniden eğitilir; feature tabloları da Modül 3'te gördüğün pipeline'lardan beslenir.</li>
+          <li><strong>Model raporları →</strong> feature importance grafiği, paydaş sunumlarının demirbaşıdır: "model en çok aylık faturaya ve destek çağrısı sayısına bakıyor" cümlesi toplantıyı kazanır.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Ev fiyatı tahmini ile spam tespiti hangi görev tipleridir ve ayrımı ne belirler?</summary>
+            <div class="answer">Ayrımı <b>çıktının türü</b> belirler. Ev fiyatı bir sayıdır → <b>regresyon</b>; spam/değil bir kategoridir → <b>sınıflandırma</b>. Bu seçim algoritmayı, loss fonksiyonunu ve başarı metriğini birlikte belirler.</div>
+          </details>
+          <details class="quiz">
+            <summary>Logistic regression'ın adında "regresyon" geçtiği hâlde neden sınıflandırıcıdır?</summary>
+            <div class="answer">Çünkü linear regression'daki ağırlıklı toplamı (z = w·x + b) hesaplar ama bu ham skoru <b>sigmoid</b>'den geçirerek 0–1 arası bir <b>olasılığa</b> çevirir; olasılık bir eşikle (varsayılan 0.5) sınıf kararına dönüşür. "Regresyon" adı, olasılığın altında yatan sürekli skoru modellemesinden kalma tarihsel bir mirastır.</div>
+          </details>
+          <details class="quiz">
+            <summary>Random Forest ile XGBoost ağaçları nasıl farklı kullanır?</summary>
+            <div class="answer">Random Forest <b>bagging</b> yapar: ağaçlar rastgele örneklemlerle <b>bağımsız ve paralel</b> eğitilir, tahminde oylama yapılır — variance düşer. XGBoost <b>boosting</b> yapar: ağaçlar <b>sırayla</b> eğitilir, her yeni ağaç öncekilerin kalan hatasını düzeltmeye odaklanır — zayıf modeller birleşip güçlü tek model olur.</div>
+          </details>
+          <details class="quiz">
+            <summary>Yeni bir tablo verisi projesine hangi modelle başlarsın, sonra nereye gidersin?</summary>
+            <div class="answer">Önce <b>baseline olarak linear/logistic regression</b>: hızlı, yorumlanabilir ve geçilmesi gereken çıtayı koyar. Sonra <b>Random Forest</b> (az ayarla güçlü sonuç + feature importance), en son puan sıkıştırmak için <b>XGBoost/LightGBM</b>. Karmaşık model, basit modeli anlamlı biçimde geçemiyorsa basit olan kazanır.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Regresyon</span><span class="term-en">Regression</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Sayısal bir değeri tahmin etme görevi: fiyat, talep, süre. "Ne kadar?" sorusunun modelidir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Sınıflandırma</span><span class="term-en">Classification</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Kategorik bir etiketi tahmin etme görevi: spam/değil, churn/kalır. "Hangisi?" sorusunun modelidir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Linear Regression (Doğrusal Regresyon)</span><span class="term-en">Linear Regression</span><span class="lvl lvl-orta">Orta</span></div><p>Çıktıyı feature'ların ağırlıklı toplamı olarak modelleyen temel algoritma; katsayıları yorumlanabilir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Logistic Regression (Lojistik Regresyon)</span><span class="term-en">Logistic Regression</span><span class="lvl lvl-orta">Orta</span></div><p>Ağırlıklı toplamı sigmoid'den geçirip olasılık üreten sınıflandırıcı; adına rağmen regresyon değildir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Loss Fonksiyonu (Kayıp)</span><span class="term-en">Loss Function</span><span class="lvl lvl-orta">Orta</span></div><p>Model hatasını tek sayıya çeviren fonksiyon (ör. MSE); eğitim, bu sayıyı en küçük yapma arayışıdır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Sigmoid</span><span class="term-en">Sigmoid</span><span class="lvl lvl-orta">Orta</span></div><p>Her gerçek sayıyı 0–1 aralığına sıkıştıran S şeklindeki fonksiyon; ham skoru olasılığa çevirir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Karar Ağacı</span><span class="term-en">Decision Tree</span><span class="lvl lvl-orta">Orta</span></div><p>Veriyi evet/hayır sorularıyla bölerek öğrenen, kökten yaprağa okunabilir model; tek başına ezberciliğe meyillidir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Ensemble (Topluluk)</span><span class="term-en">Ensemble Learning</span><span class="lvl lvl-orta">Orta</span></div><p>Birden çok modelin kararını birleştirerek tek modelden daha iyi sonuç alma stratejisi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Bagging</span><span class="term-en">Bagging</span><span class="lvl lvl-ileri">İleri</span></div><p>Rastgele örneklemlerle bağımsız modeller eğitip oylatma tekniği; variance'ı düşürür. Random Forest'ın temeli.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Boosting</span><span class="term-en">Boosting</span><span class="lvl lvl-ileri">İleri</span></div><p>Modelleri sırayla eğitip her birine öncekilerin hatasını düzelttirme tekniği; XGBoost ve LightGBM'in temeli.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Random Forest</span><span class="term-en">Random Forest</span><span class="lvl lvl-orta">Orta</span></div><p>Yüzlerce bağımsız karar ağacının oylamasıyla çalışan bagging modeli; az ayarla güçlü sonuç verir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">XGBoost</span><span class="term-en">XGBoost</span><span class="lvl lvl-ileri">İleri</span></div><p>Gradient boosting'in hızlı ve düzenlileştirilmiş gerçeklemesi; tablo verisi yarışmalarının ve üretim modellerinin şampiyonu.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">SVM &amp; Margin</span><span class="term-en">Support Vector Machine</span><span class="lvl lvl-ileri">İleri</span></div><p>Sınıflar arasından geçen en geniş yolu (margin) arayan sınıflandırıcı; kernel'la doğrusal olmayan sınırlar da çizer.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m5-supervised">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m5-ml-giris.html"><span>← Önceki</span><b>ML'e Giriş: Temel Kavramlar</b></a>
+          <a class="next" href="m5-unsupervised.html"><span>Sonraki →</span><b>Unsupervised Learning</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

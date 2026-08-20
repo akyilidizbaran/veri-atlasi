@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ETL, ELT ve Data Pipeline Kavramı — Veri Atlası</title>
+<meta name="description" content="Data pipeline nedir, ETL ile ELT arasındaki fark, full load vs incremental load, CDC, idempotency, backfill ve dbt: veri mühendisliğinin çekirdek kavramları.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m3" data-slug="m3-etl-elt">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m3">3. Veri Mühendisliği</a><span class="sep">/</span>
+        <span>ETL, ELT ve Data Pipeline Kavramı</span>
+      </nav>
+      <span class="mod-badge">Modül 3 · Veri Mühendisliği</span>
+      <h1>ETL, ELT ve Data Pipeline Kavramı</h1>
+      <p class="en-title">ETL, ELT &amp; Data Pipelines</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~16 dk okuma</span>
+        <span class="chip">🔤 13 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Veri kendi kendine akmaz</h2>
+        <p>Evindeki musluğu açtığında temiz su akar. Ama o su, musluğa gelene kadar uzun bir yol katetti: barajdan alındı, arıtma tesisinde temizlendi, depolara pompalandı, borularla evine taşındı. Sen bu sürecin hiçbirini görmezsin — sadece musluğu açarsın.</p>
+        <p><strong>Data pipeline (veri boru hattı)</strong> tam olarak bu su şebekesidir. Şirketteki analist bir dashboard açtığında ya da ML modeli tahmin ürettiğinde "musluğu açmış" olur; veri mühendisi ise barajdan musluğa uzanan hattı kuran ve işleten kişidir. Her pipeline üç parçadan oluşur:</p>
+        <ul>
+          <li><strong>Kaynak (source)</strong> — verinin doğduğu yer: uygulama veritabanları, API'ler, log dosyaları, SaaS araçları.</li>
+          <li><strong>İşleme (processing)</strong> — arıtma tesisi: temizleme, birleştirme, dönüştürme adımları.</li>
+          <li><strong>Hedef (destination)</strong> — verinin tüketileceği yer: çoğunlukla bir data warehouse, oradan da dashboard'lar ve modeller.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 780 300" width="780" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Genel data pipeline akışı: kaynaklardan tüketicilere">
+            <defs>
+              <marker id="arr1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="390" y="24" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Bir data pipeline'ın anatomisi — su şebekesi gibi: kaynak → arıtma → depo → musluk</text>
+              <!-- kaynaklar -->
+              <rect x="15" y="50" width="120" height="52" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="75" y="72" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">API'ler</text>
+              <text x="75" y="90" text-anchor="middle" fill="var(--muted)" font-size="10.5">SaaS, servisler</text>
+              <rect x="15" y="122" width="120" height="52" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="75" y="144" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Veritabanları</text>
+              <text x="75" y="162" text-anchor="middle" fill="var(--muted)" font-size="10.5">OLTP replikaları</text>
+              <rect x="15" y="194" width="120" height="52" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="75" y="216" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Dosyalar</text>
+              <text x="75" y="234" text-anchor="middle" fill="var(--muted)" font-size="10.5">CSV, log, Excel</text>
+              <text x="75" y="276" text-anchor="middle" fill="var(--muted)" font-size="10.5">kaynaklar</text>
+              <!-- kaynak okları -->
+              <path d="M135 76 C165 76 160 132 180 138" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#arr1)"/>
+              <path d="M135 148 L180 148" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#arr1)"/>
+              <path d="M135 220 C165 220 160 164 180 158" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#arr1)"/>
+              <!-- ingestion -->
+              <rect x="186" y="114" width="122" height="68" rx="10" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="247" y="142" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Ingestion</text>
+              <text x="247" y="160" text-anchor="middle" fill="var(--muted)" font-size="10.5">veri alımı (extract)</text>
+              <path d="M308 148 L348 148" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#arr1)"/>
+              <!-- işleme -->
+              <rect x="354" y="114" width="122" height="68" rx="10" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="415" y="142" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">İşleme</text>
+              <text x="415" y="160" text-anchor="middle" fill="var(--muted)" font-size="10.5">temizlik, dönüşüm</text>
+              <path d="M476 148 L516 148" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#arr1)"/>
+              <!-- warehouse -->
+              <rect x="522" y="114" width="118" height="68" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="581" y="142" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Warehouse</text>
+              <text x="581" y="160" text-anchor="middle" fill="var(--muted)" font-size="10.5">analitik depo</text>
+              <!-- tüketici okları -->
+              <path d="M640 134 C660 128 655 96 672 90" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#arr1)"/>
+              <path d="M640 162 C660 168 655 200 672 206" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#arr1)"/>
+              <!-- tüketiciler -->
+              <rect x="678" y="64" width="88" height="52" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="722" y="86" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">BI / Rapor</text>
+              <text x="722" y="103" text-anchor="middle" fill="var(--muted)" font-size="10.5">dashboard</text>
+              <rect x="678" y="180" width="88" height="52" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="722" y="202" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">ML / AI</text>
+              <text x="722" y="219" text-anchor="middle" fill="var(--muted)" font-size="10.5">model, tahmin</text>
+              <text x="722" y="276" text-anchor="middle" fill="var(--muted)" font-size="10.5">tüketiciler</text>
+            </g>
+          </svg>
+          <figcaption>Pipeline'ın sol ucu dağınık ve kirlidir, sağ ucu düzenli ve güvenilir. Aradaki tüm emek veri mühendisliğidir.</figcaption>
+        </figure>
+
+        <p>Bu sayfada hattın parçalarını tek tek söküp inceleyeceğiz: veri nasıl çekilir (extract), nasıl dönüştürülür (transform), nasıl yüklenir (load) ve — en önemlisi — bu hat nasıl <em>güvenilir</em> olur.</p>
+
+        <h2>ETL ve ELT: üç harfin sıra farkı</h2>
+        <p>Pipeline'ın üç temel işi vardır: <strong>Extract</strong> (kaynaktan çek), <strong>Transform</strong> (dönüştür), <strong>Load</strong> (hedefe yükle). Bu üç harfin <em>sırası</em>, veri mimarisinin son yirmi yıldaki en büyük değişimini anlatır.</p>
+        <p><strong>ETL (Extract → Transform → Load)</strong> klasik yaklaşımdır: veri kaynaktan çekilir, warehouse'a girmeden önce ayrı bir işleme sunucusunda temizlenip şekillendirilir, hedefe yalnızca "hazır" veri yazılır. Bu sıranın sebebi tarihseldi: eski warehouse'lar hem pahalı hem de güçsüzdü. Depolama alanı altın değerindeyken içeri ham veri sokmak israf, ağır dönüşümleri warehouse'a yaptırmak ise eziyetti.</p>
+        <p><strong>ELT (Extract → Load → Transform)</strong> ise modern bulut düzeninin çocuğu: veri kaynaktan çekilir çekilmez <em>ham hâliyle</em> warehouse'a yüklenir; dönüşüm, warehouse'un kendi SQL motoruyla içeride yapılır. İki gelişme bunu mümkün kıldı:</p>
+        <ul>
+          <li><strong>Depolama ucuzladı.</strong> Bulutta 1 TB saklamanın aylık maliyeti birkaç dolara indi; ham veriyi atmak yerine saklamak mantıklı hâle geldi.</li>
+          <li><strong>Warehouse'lar güçlendi.</strong> BigQuery, Snowflake gibi sistemler dev dönüşümleri dakikalar içinde çalıştırabiliyor — ayrı bir işleme sunucusuna gerek kalmadı.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 372" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ETL ve ELT akışlarının yan yana karşılaştırması">
+            <defs>
+              <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <!-- ETL paneli -->
+              <text x="175" y="28" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="700">ETL — önce dönüştür</text>
+              <rect x="25" y="44" width="300" height="46" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="175" y="63" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">1 · Extract</text>
+              <text x="175" y="80" text-anchor="middle" fill="var(--muted)" font-size="10.5">kaynaktan çek</text>
+              <path d="M175 90 L175 108" stroke="var(--dg-line)" stroke-width="1.8" marker-end="url(#arr2)"/>
+              <rect x="25" y="112" width="300" height="46" rx="9" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width="1.8"/>
+              <text x="175" y="131" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">2 · Transform</text>
+              <text x="175" y="148" text-anchor="middle" fill="var(--muted)" font-size="10.5">ayrı işleme sunucusunda</text>
+              <path d="M175 158 L175 176" stroke="var(--dg-line)" stroke-width="1.8" marker-end="url(#arr2)"/>
+              <rect x="25" y="180" width="300" height="46" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="175" y="199" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">3 · Load</text>
+              <text x="175" y="216" text-anchor="middle" fill="var(--muted)" font-size="10.5">hazır veriyi yükle</text>
+              <path d="M175 226 L175 244" stroke="var(--dg-line)" stroke-width="1.8" marker-end="url(#arr2)"/>
+              <rect x="25" y="248" width="300" height="50" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="175" y="269" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Warehouse</text>
+              <text x="175" y="287" text-anchor="middle" fill="var(--muted)" font-size="10.5">yalnızca temiz veri tutar</text>
+              <text x="175" y="330" text-anchor="middle" fill="var(--muted)" font-size="10.5">ham veri saklanmaz —</text>
+              <text x="175" y="346" text-anchor="middle" fill="var(--muted)" font-size="10.5">dönüşüm değişirse kaynağa geri dönmen gerekir</text>
+
+              <!-- ELT paneli -->
+              <text x="525" y="28" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="700">ELT — önce yükle</text>
+              <rect x="375" y="44" width="300" height="46" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="525" y="63" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">1 · Extract</text>
+              <text x="525" y="80" text-anchor="middle" fill="var(--muted)" font-size="10.5">kaynaktan çek</text>
+              <path d="M525 90 L525 108" stroke="var(--dg-line)" stroke-width="1.8" marker-end="url(#arr2)"/>
+              <!-- warehouse konteyneri -->
+              <rect x="363" y="104" width="324" height="204" rx="12" fill="none" stroke="var(--acc)" stroke-width="1.4" stroke-dasharray="6 5"/>
+              <text x="672" y="124" text-anchor="end" fill="var(--acc)" font-size="10.5" font-weight="700">Warehouse'un içi</text>
+              <rect x="375" y="132" width="300" height="46" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="525" y="151" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">2 · Load</text>
+              <text x="525" y="168" text-anchor="middle" fill="var(--muted)" font-size="10.5">ham veriyi hemen yükle</text>
+              <path d="M525 178 L525 196" stroke="var(--dg-line)" stroke-width="1.8" marker-end="url(#arr2)"/>
+              <rect x="375" y="200" width="300" height="46" rx="9" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width="1.8"/>
+              <text x="525" y="219" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">3 · Transform</text>
+              <text x="525" y="236" text-anchor="middle" fill="var(--muted)" font-size="10.5">warehouse'un SQL gücüyle</text>
+              <path d="M525 246 L525 260" stroke="var(--dg-line)" stroke-width="1.8" marker-end="url(#arr2)"/>
+              <rect x="375" y="264" width="300" height="36" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="525" y="287" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">ham + temiz katmanlar bir arada</text>
+              <text x="525" y="330" text-anchor="middle" fill="var(--muted)" font-size="10.5">ham veri elde —</text>
+              <text x="525" y="346" text-anchor="middle" fill="var(--muted)" font-size="10.5">dönüşümü değiştirip aynı ham veriden yeniden üretirsin</text>
+            </g>
+          </svg>
+          <figcaption>Aynı üç iş, farklı sıra: ETL'de Transform warehouse'un dışında, ELT'de içindedir. Vurgulu kutunun yer değiştirmesi bütün hikâyedir.</figcaption>
+        </figure>
+
+        <p>ELT'nin asıl kazancı esnekliktir: ham veri warehouse'ta durduğu için, iş kuralı değiştiğinde kaynağa tekrar gitmeden dönüşümü değiştirip yeniden çalıştırırsın. Analitik dünyada bugün varsayılan yaklaşım ELT'dir; ETL ise kişisel verinin hedefe girmeden maskelenmesi gerektiği durumlar gibi senaryolarda yaşamaya devam ediyor.</p>
+
+        <div class="note"><b>Keskin bir kamp savaşı değil.</b> Gerçek sistemler çoğu zaman melezdir: yüklemeden önce ufak bir düzeltme (örn. kişisel veriyi maskeleme), asıl dönüşüm warehouse içinde. Buna şaka yollu "EtLT" bile denir. Önemli olan harf sırası değil, dönüşümün <em>nerede</em> ve <em>neyle</em> yapıldığını bilinçli seçmektir.</div>
+
+        <h2>Extract: veri nereden ve nasıl çekilir?</h2>
+        <p>Hattın ilk adımı olan <strong>ingestion (veri alımı)</strong>, veriyi kaynağından çıkarma işidir. Üç tipik kaynak türü göreceksin:</p>
+        <ul>
+          <li><strong>API'ler</strong> — ödeme sağlayıcısı, CRM, reklam platformu gibi dış servisler veriyi HTTP üzerinden sayfa sayfa verir. <a href="m1-bilgisayar-temelleri.html">Bilgisayar temelleri konusundaki</a> HTTP bilgin burada işe koşulur.</li>
+          <li><strong>Veritabanı replikaları</strong> — şirketin kendi uygulama veritabanı. Canlı (production) veritabanını analitik sorgularla yormamak için genelde salt okunur bir kopyasından (read replica) çekilir.</li>
+          <li><strong>Dosyalar</strong> — bir SFTP klasörüne bırakılan CSV'ler, uygulama logları, üçüncü partiden gelen Excel'ler. En eski usul, ama hâlâ her yerde.</li>
+        </ul>
+        <p>Asıl stratejik soru şudur: her seferinde <em>ne kadarını</em> çekeceksin?</p>
+        <ul>
+          <li><strong>Full load (tam yükleme)</strong> — tablonun tamamını her seferinde baştan kopyalarsın. Kurulumu basittir, küçük tablolarda (ör. ülke listesi) gayet mantıklıdır; ama 100 milyon satırlık sipariş tablosunu her gece yeniden taşımak hem yavaş hem pahalıdır.</li>
+          <li><strong>Incremental load (artımlı yükleme)</strong> — yalnızca son çekimden beri <em>eklenen veya değişen</em> satırları alırsın. Bunun için tabloda güvenilir bir işaret sütunu gerekir: <code>updated_at</code> zaman damgası ya da artan bir <code>id</code>. Son çekilen değeri (watermark, filigran) bir kenara not eder, sonraki koşuda oradan devam edersin.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 316" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Full load ve incremental load karşılaştırması: beş günlük takvim şeridi">
+            <g font-family="inherit">
+              <text x="360" y="24" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Aynı hafta, iki strateji — taşınan veri miktarına bak</text>
+              <!-- gün başlıkları -->
+              <text x="185" y="52" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="700">Pzt</text>
+              <text x="295" y="52" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="700">Sal</text>
+              <text x="405" y="52" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="700">Çar</text>
+              <text x="515" y="52" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="700">Per</text>
+              <text x="625" y="52" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="700">Cum</text>
+              <!-- full load satırı -->
+              <text x="18" y="105" fill="var(--ink)" font-size="12.5" font-weight="700">Full load</text>
+              <text x="18" y="122" fill="var(--muted)" font-size="10.5">her gün her şey</text>
+              <g fill="rgba(var(--acc-rgb),.25)" stroke="var(--acc)" stroke-width="1.4">
+                <rect x="140" y="66" width="90" height="66" rx="8"/>
+                <rect x="250" y="66" width="90" height="66" rx="8"/>
+                <rect x="360" y="66" width="90" height="66" rx="8"/>
+                <rect x="470" y="66" width="90" height="66" rx="8"/>
+                <rect x="580" y="66" width="90" height="66" rx="8"/>
+              </g>
+              <text x="185" y="104" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">1,0M satır</text>
+              <text x="295" y="104" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">1,0M satır</text>
+              <text x="405" y="104" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">1,0M satır</text>
+              <text x="515" y="104" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">1,0M satır</text>
+              <text x="625" y="104" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">1,0M satır</text>
+              <text x="405" y="156" text-anchor="middle" fill="var(--muted)" font-size="10.5">haftalık taşınan: ~5,0M satır — basit ama ağır</text>
+              <!-- incremental satırı -->
+              <text x="18" y="230" fill="var(--ink)" font-size="12.5" font-weight="700">Incremental</text>
+              <text x="18" y="247" fill="var(--muted)" font-size="10.5">yalnız yeniler</text>
+              <rect x="140" y="186" width="90" height="66" rx="8" fill="rgba(var(--acc-rgb),.25)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="185" y="215" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">ilk yük</text>
+              <text x="185" y="232" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">1,0M satır</text>
+              <g fill="var(--dg-box)" stroke="var(--ok)" stroke-width="1.4">
+                <rect x="250" y="226" width="90" height="26" rx="8"/>
+                <rect x="360" y="226" width="90" height="26" rx="8"/>
+                <rect x="470" y="226" width="90" height="26" rx="8"/>
+                <rect x="580" y="226" width="90" height="26" rx="8"/>
+              </g>
+              <text x="295" y="243" text-anchor="middle" fill="var(--ok)" font-size="11" font-weight="700">+12K</text>
+              <text x="405" y="243" text-anchor="middle" fill="var(--ok)" font-size="11" font-weight="700">+9K</text>
+              <text x="515" y="243" text-anchor="middle" fill="var(--ok)" font-size="11" font-weight="700">+15K</text>
+              <text x="625" y="243" text-anchor="middle" fill="var(--ok)" font-size="11" font-weight="700">+11K</text>
+              <text x="405" y="286" text-anchor="middle" fill="var(--muted)" font-size="10.5">ilk yükten sonra günde yalnız değişen satırlar — hızlı ve ucuz, ama watermark takibi ister</text>
+            </g>
+          </svg>
+          <figcaption>Incremental load taşınan veriyi yüzde 99'a varan oranda azaltabilir; bedeli, "en son nereye kadar çektim?" muhasebesini doğru tutmaktır.</figcaption>
+        </figure>
+
+        <p>Artımlı çekimin en rafine biçimi <strong>CDC'dir (Change Data Capture — değişiklik yakalama)</strong>. CDC, tabloyu sorgulamak yerine veritabanının <em>işlem günlüğünü</em> (transaction log) dinler: her INSERT, UPDATE ve DELETE, gerçekleştiği anda bir olay olarak yakalanır. Böylece kaynak veritabanı ek sorgu yüküyle yorulmaz ve <code>updated_at</code> sütunuyla yakalanamayan <strong>silmeler</strong> bile görülür. Debezium gibi araçlar bu işi yapar; olayların aktığı yer ise genelde bir Kafka hattıdır — bu dünyaya <a href="m3-streaming.html">streaming konusunda</a> gireceğiz.</p>
+
+        <figure class="codebox">
+          <figcaption>Python — mini extract: API'den veri çekip Parquet'e yazmak</figcaption>
+          <pre><code data-lang="python">import requests
+import pandas as pd
+
+# 1) EXTRACT — API'den ham veriyi çek
+url = "https://api.ornek-magaza.com/v1/orders"
+params = {"updated_since": "2026-01-05T00:00:00Z"}   # artımlı çekim filtresi
+resp = requests.get(url, params=params, timeout=30)
+resp.raise_for_status()            # 4xx/5xx yanıtında hata fırlat
+
+orders = resp.json()["results"]    # sözlük listesi döner
+
+# 2) Sütunlu tabloya çevir, denetim kolonu ekle
+df = pd.DataFrame(orders)
+df["_extracted_at"] = pd.Timestamp.utcnow()   # "bu satırı ne zaman çektim?"
+
+# 3) Ham katmana Parquet olarak yaz (sıkıştırılmış, sütunsal, hızlı)
+df.to_parquet("raw/orders/2026-01-05.parquet", index=False)
+print(f"{len(df)} satır yazıldı")</code></pre>
+        </figure>
+
+        <h2>Transform: ham veriden anlamlı tabloya</h2>
+        <p>Ham veri, arıtılmamış su gibidir: içinde işe yarar her şey vardır ama bu hâliyle içilmez. Transform katmanının tipik işleri şunlardır:</p>
+        <ul>
+          <li><strong>Temizlik</strong> — tarih formatlarını birleştirmek, boş değerleri ele almak, mükerrer satırları ayıklamak, tutarsız kategorileri ("IST", "istanbul", "İstanbul") tekilleştirmek.</li>
+          <li><strong>Join (birleştirme)</strong> — siparişleri müşterilerle, tıklamaları kampanyalarla eşlemek; dağınık kaynakları tek bir anlam bütününe bağlamak.</li>
+          <li><strong>Aggregate (özetleme)</strong> — satır satır işlemden "günlük ciro", "aylık aktif kullanıcı" gibi analize hazır özet tablolara inmek.</li>
+        </ul>
+        <p>Sonuç genelde katmanlı bir yapıdır: ham tablolar → temizlenmiş ara tablolar → iş birimlerinin kullandığı son tablolar. Bu tabloların şeklini — hangi kolon nerede, hangi tablo neye bağlanır — <a href="m2-veri-modelleme.html">veri modelleme konusunda</a> gördüğün yıldız şeması gibi desenler belirler.</p>
+        <p>Bu dönüşüm zincirini yönetmenin modern standardı <strong>dbt</strong>'dir (data build tool). dbt'nin fikri sade ama güçlüdür: her dönüşüm bir <code>SELECT</code> sorgusudur; dbt bu sorguları warehouse'ta tabloya çevirir, aralarındaki bağımlılık sırasını kendisi çözer, üstüne test ve dokümantasyon ekler. En önemlisi: tüm dönüşümler <em>versiyon kontrolündedir</em> — kim, neyi, ne zaman değiştirmiş, <a href="m1-linux-git.html">Git konusundan</a> bildiğin gibi takip edilir. Dönüşüm mantığı artık birinin bilgisayarındaki gizemli script değil, ekipçe gözden geçirilen kod tabanıdır.</p>
+
+        <h2>Load ve güvenilirlik: pipeline'ı "işletmek"</h2>
+        <p>Pipeline yazmak işin yüzde yirmisi, onu her gün <em>sorunsuz çalıştırmak</em> yüzde sekseni. Çünkü gerçek dünyada API'ler zaman aşımına uğrar, ağ kopar, bir koşu yarıda kalır ve aynı iş ikinci kez tetiklenir. Üç kavram bu kaosun panzehiridir.</p>
+        <p><strong>İdempotency (eşgüçlülük)</strong>: bir işi bir kez ya da beş kez çalıştırmak <em>aynı sonucu</em> üretmelidir. Somut örnek: pazartesi satışlarını hedef tabloya sadece <code>INSERT</code> ile yazan bir task düşün. Task başarıyla yazdı ama başarı sinyali ağ hatasına takıldı; orkestratör "başarısız oldu" sanıp task'ı yeniden çalıştırdı. Sonuç: pazartesi satışları tabloda <em>iki kez</em> var ve o günün cirosu raporda ikiye katlandı. Idempotent tasarımda bunun panzehiri bellidir: yazmadan önce o dilimi silmek (<code>DELETE</code> + <code>INSERT</code>) ya da anahtar üzerinden <strong>upsert (MERGE)</strong> yapmak — varsa güncelle, yoksa ekle.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 330" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="İdempotent olmayan ve idempotent yüklemenin karşılaştırması">
+            <defs>
+              <marker id="arr3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--bad)"/></marker>
+              <marker id="arr4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--ok)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <!-- task kutusu -->
+              <rect x="235" y="20" width="230" height="58" rx="10" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="350" y="44" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">load_sales("5 Oca")</text>
+              <text x="350" y="62" text-anchor="middle" fill="var(--muted)" font-size="10.5">aynı task 2 kez çalıştı (retry)</text>
+              <!-- oklar -->
+              <path d="M290 78 C230 108 200 118 178 132" stroke="var(--bad)" stroke-width="1.8" fill="none" marker-end="url(#arr3)"/>
+              <text x="200" y="98" text-anchor="middle" fill="var(--bad)" font-size="10.5" font-weight="700">koşu 1 + koşu 2</text>
+              <path d="M410 78 C470 108 500 118 522 132" stroke="var(--ok)" stroke-width="1.8" fill="none" marker-end="url(#arr4)"/>
+              <text x="502" y="98" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="700">koşu 1 + koşu 2</text>
+              <!-- sol tablo: yalnız INSERT -->
+              <rect x="40" y="140" width="270" height="130" rx="10" fill="var(--dg-box)" stroke="var(--bad)" stroke-width="1.6"/>
+              <text x="175" y="164" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Yalnız INSERT</text>
+              <line x1="56" y1="176" x2="294" y2="176" stroke="var(--dg-line)" stroke-width="1"/>
+              <text x="175" y="196" text-anchor="middle" fill="var(--muted)" font-size="11">05 Oca · 120 sipariş · 84.000 TL</text>
+              <text x="175" y="218" text-anchor="middle" fill="var(--bad)" font-size="11" font-weight="600">05 Oca · 120 sipariş · 84.000 TL</text>
+              <text x="175" y="246" text-anchor="middle" fill="var(--bad)" font-size="11.5" font-weight="700">çift kayıt — ciro 2 katı görünür</text>
+              <text x="175" y="296" text-anchor="middle" fill="var(--muted)" font-size="10.5">her koşu üstüne ekler: idempotent DEĞİL</text>
+              <!-- sağ tablo: DELETE+INSERT / MERGE -->
+              <rect x="390" y="140" width="270" height="130" rx="10" fill="var(--dg-box)" stroke="var(--ok)" stroke-width="1.6"/>
+              <text x="525" y="164" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">DELETE+INSERT / MERGE</text>
+              <line x1="406" y1="176" x2="644" y2="176" stroke="var(--dg-line)" stroke-width="1"/>
+              <text x="525" y="196" text-anchor="middle" fill="var(--muted)" font-size="11">05 Oca · 120 sipariş · 84.000 TL</text>
+              <text x="525" y="246" text-anchor="middle" fill="var(--ok)" font-size="11.5" font-weight="700">tek sonuç — koşu sayısı fark etmez</text>
+              <text x="525" y="296" text-anchor="middle" fill="var(--muted)" font-size="10.5">önce o dilimi temizler ya da anahtarla günceller: idempotent</text>
+            </g>
+          </svg>
+          <figcaption>Retry'lar veri dünyasının doğal hâlidir. İdempotent pipeline retry'dan korkmaz; idempotent olmayan pipeline her retry'da veri bozar.</figcaption>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>SQL — incremental load deseni: yalnızca yeni ve değişen satırları çek</figcaption>
+          <pre><code data-lang="sql">-- Watermark (filigran): son başarılı yüklemede nereye kadar geldik?
+-- etl.watermarks tablosunda saklanır; örnekte '2026-01-05 03:00:00'
+
+INSERT INTO staging.orders
+SELECT id, customer_id, total, status, updated_at
+FROM src.orders
+WHERE updated_at &gt; '2026-01-05 03:00:00';   -- yalnız son çekimden sonrakiler
+
+-- Yükleme başarılıysa filigranı ilerlet (bir sonraki koşu buradan devam eder)
+UPDATE etl.watermarks
+SET last_loaded_at = '2026-01-06 03:00:00'
+WHERE table_name = 'orders';</code></pre>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>SQL — MERGE (upsert) ile idempotent yükleme: kaç kez çalışırsa çalışsın sonuç aynı</figcaption>
+          <pre><code data-lang="sql">-- staging'deki satırları hedefe işle:
+-- anahtar eşleşiyorsa GÜNCELLE, eşleşmiyorsa EKLE.
+MERGE INTO dwh.orders AS hedef
+USING staging.orders AS kaynak
+    ON hedef.id = kaynak.id            -- eşleştirme anahtarı
+WHEN MATCHED THEN
+    UPDATE SET
+        status     = kaynak.status,
+        total      = kaynak.total,
+        updated_at = kaynak.updated_at
+WHEN NOT MATCHED THEN
+    INSERT (id, customer_id, total, status, updated_at)
+    VALUES (kaynak.id, kaynak.customer_id, kaynak.total,
+            kaynak.status, kaynak.updated_at);
+-- Aynı staging verisiyle 2. kez çalışırsa: her şey MATCHED olur,
+-- aynı değerlerle günceller → tablo değişmez. İdempotent.</code></pre>
+        </figure>
+
+        <div class="warn"><b>En sık düşülen tuzak.</b> "Pipeline'ım zaten hiç hata vermiyor" diye idempotency'yi atlamak. Hata vermeyen pipeline yoktur, henüz hata vermemiş pipeline vardır. Retry, backfill ya da elle tekrar çalıştırma — hepsi aynı işin ikinci kez koşması demektir ve o gün tasarımının hesabı sorulur.</div>
+
+        <p><strong>Backfill (geçmişi doldurma)</strong>: pipeline'ı bugünden geriye, geçmiş tarihler için çalıştırmaktır. İki tipik sebep: yeni kurduğun pipeline'ın geçmiş 2 yılı da yüklemesi gerekir; ya da dönüşümde bir hata buldun ve son 3 ayın verisini düzeltilmiş mantıkla yeniden üretmen gerekir. Backfill'in sancısız olması, her günün koşusunun kendi dilimini idempotent biçimde yazmasına bağlıdır — yukarıdaki iki kavram birbirine kenetlidir.</p>
+        <p><strong>Data latency (veri gecikmesi)</strong>: olayın gerçekleşmesi ile verinin hedefte kullanılabilir olması arasındaki süredir. Gece 03:00'te çalışan günlük bir pipeline'da dünkü satış, raporda en erken bu sabah görünür — gecikme saatler mertebesindedir. "Bu rapor ne kadar taze olmalı?" sorusu, pipeline'ın maliyetini ve mimarisini belirleyen ilk sorudur; her sistemin bir tazelik sözü (freshness SLA) vardır.</p>
+
+        <div class="tip"><b>Pratik kural.</b> Bir pipeline tasarlarken kendine üç soru sor: "Bu iş yarıda kesilirse ne olur?", "İki kez çalışırsa ne olur?", "Geçmiş bir gün için çalıştırırsam ne olur?" Üçüne de gönül rahatlığıyla cevap verebiliyorsan güvenilir bir hat kurmuşsun demektir.</div>
+
+        <h2>Batch bitti, akış başlıyor: streaming'e kapı</h2>
+        <p>Bu sayfada anlattığımız her şey <strong>batch işleme</strong> dünyasına ait: veri birikir, pipeline belirli aralıklarla (saatte bir, günde bir) çalışır, yığını topluca işler. İşlerin büyük çoğunluğu — raporlama, model eğitim verisi, finansal mutabakat — batch ile gayet iyi yaşar ve batch her zaman daha ucuz, daha basit, daha kolay test edilebilirdir.</p>
+        <p>Ama bazı sorular beklemeye gelmez: "Bu kredi kartı işlemi şu <em>saniye</em> sahtekârlık mı?", "Kullanıcıya şu <em>an</em> ne önermeliyim?" Verinin olay olay, gerçek zamanlı aktığı bu dünyanın adı <strong>streaming</strong>'dir; Kafka, event, exactly-once gibi kavramlarıyla birlikte <a href="m3-streaming.html">Streaming ve Event-Driven Mimari</a> konusunda masaya yatıracağız. Şimdilik şu ayrım yeter: batch "her gece dünü işler", streaming "şu anda olanı işler".</p>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Bu sayfanın kavramları, veri mühendisliği günlük hayatının ta kendisidir:</p>
+        <ul>
+          <li><strong>İş ilanlarında →</strong> "ELT pipeline'ları kurmak, dbt ile transform geliştirmek" cümlesi neredeyse standart; bu sayfa o cümlenin sözlüğüdür.</li>
+          <li><strong>Modern data stack kurulumunda →</strong> Fivetran/Airbyte extract-load'u, dbt transform'u, Snowflake/BigQuery depoyu üstlenir — tipik ELT üçlüsü. Depo katmanını <a href="m3-warehouse-lake.html">warehouse ve lake konusunda</a> inceleyeceğiz.</li>
+          <li><strong>Nöbette (on-call) →</strong> "dün gece pipeline patladı" mesajının ilk cevabı retry'dır; retry'ın güvenli olması o pipeline'ın idempotent yazılmış olmasına bakar.</li>
+          <li><strong>Maliyet toplantısında →</strong> "bu tabloyu neden her gece full load alıyoruz?" sorusu, incremental/CDC'ye geçiş projelerinin fitilini ateşler.</li>
+          <li><strong>ML tarafında →</strong> feature'lar da pipeline ürünüdür: eğitim verisini üreten hat geç kalırsa (data latency) model bayat veriyle tahmin yapar.</li>
+          <li><strong>Bir sonraki konuda →</strong> bu hatların "saat kaçta, hangi sırayla, hata alırsa ne olacak" sorularını <a href="m3-orkestrasyon.html">orkestrasyon konusu</a> cevaplıyor.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>ETL ile ELT arasındaki temel fark nedir ve modern stack neden ELT'ye kaydı?</summary>
+            <div class="answer">Fark, <b>Transform'un nerede yapıldığıdır</b>: ETL'de veri warehouse'a girmeden ayrı bir işleme katmanında dönüştürülür; ELT'de ham veri önce yüklenir, dönüşüm warehouse'un kendi SQL motoruyla içeride yapılır. Depolamanın ucuzlaması ham veriyi saklamayı makul kıldı, bulut warehouse'larının güçlenmesi de dönüşümü içeride yapmayı mümkün kıldı — bu ikili modern stack'i ELT'ye taşıdı.</div>
+          </details>
+          <details class="quiz">
+            <summary>100 milyon satırlık bir sipariş tablosunu her gece kopyalıyorsun. Hangi yükleme stratejisine geçersin ve bunun için tabloda ne olmalı?</summary>
+            <div class="answer"><b>Incremental load'a</b> geçersin: yalnızca son çekimden beri eklenen/değişen satırları alırsın. Bunun için tabloda güvenilir bir işaret sütunu (ör. <code>updated_at</code> ya da artan <code>id</code>) ve son çekilen değeri saklayan bir <b>watermark</b> gerekir. Silinen satırları da yakalaman gerekiyorsa tablo sorgulamak yetmez; veritabanı işlem günlüğünü dinleyen <b>CDC</b> devreye girer.</div>
+          </details>
+          <details class="quiz">
+            <summary>Sadece INSERT kullanan bir günlük yükleme task'ı retry'a düşerse ne olur? Bunu nasıl düzeltirsin?</summary>
+            <div class="answer">Aynı günün satırları hedef tabloya <b>ikinci kez eklenir</b>; toplamlar (ciro, sipariş sayısı) o gün için ikiye katlanır ve raporlar sessizce yanlış olur. Çözüm, task'ı <b>idempotent</b> yapmaktır: yazmadan önce o günün dilimini silmek (DELETE+INSERT) ya da anahtar üzerinden <b>MERGE/upsert</b> kullanmak. Böylece koşu sayısı sonucu değiştirmez.</div>
+          </details>
+          <details class="quiz">
+            <summary>Backfill nedir? İdempotency ile ilişkisini bir örnekle açıkla.</summary>
+            <div class="answer">Backfill, pipeline'ı <b>geçmiş tarihler için yeniden çalıştırıp</b> hedefi doldurmak/düzeltmektir — örneğin dönüşümde bulunan bir hatayı gidermek için son 90 günü yeniden üretmek. Bu, aynı günlerin ikinci (belki üçüncü) kez işlenmesi demektir: her günün koşusu kendi dilimini idempotent yazmıyorsa backfill veriyi düzeltmek yerine çiftler ve çöp üretir.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Data Pipeline (Veri Boru Hattı)</span><span class="term-en">Data Pipeline</span><span class="lvl lvl-orta">Orta</span></div><p>Veriyi kaynaktan alıp işleyerek hedefe taşıyan otomatik adımlar zinciri; veri mühendisliğinin temel ürünü.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">ETL</span><span class="term-en">ETL</span><span class="lvl lvl-orta">Orta</span></div><p>Extract-Transform-Load: veriyi hedefe yüklemeden önce ayrı bir katmanda dönüştüren klasik akış.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">ELT</span><span class="term-en">ELT</span><span class="lvl lvl-orta">Orta</span></div><p>Extract-Load-Transform: ham veriyi önce warehouse'a yükleyip dönüşümü içeride SQL ile yapan modern akış.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Ingestion (Veri Alımı)</span><span class="term-en">Data Ingestion</span><span class="lvl lvl-orta">Orta</span></div><p>Verinin kaynaklardan (API, veritabanı, dosya) çekilip sisteme sokulması; pipeline'ın giriş kapısı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Batch İşleme</span><span class="term-en">Batch Processing</span><span class="lvl lvl-orta">Orta</span></div><p>Biriken veriyi belirli aralıklarla (saatlik, günlük) topluca işleme modeli; ucuz, basit ve yaygın varsayılan.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Tam Yükleme</span><span class="term-en">Full Load</span><span class="lvl lvl-orta">Orta</span></div><p>Her koşuda kaynak tablonun tamamını yeniden kopyalama. Küçük tablolarda pratik, büyüklerde yavaş ve pahalı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Artımlı Yükleme</span><span class="term-en">Incremental Load</span><span class="lvl lvl-orta">Orta</span></div><p>Yalnızca son çekimden beri eklenen/değişen satırları taşıma; watermark takibi ister, taşınan veriyi ciddi azaltır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">CDC</span><span class="term-en">Change Data Capture</span><span class="lvl lvl-ileri">İleri</span></div><p>Veritabanının işlem günlüğünü dinleyerek INSERT/UPDATE/DELETE olaylarını anında yakalama tekniği; silmeleri de görür.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">İdempotency (Eşgüçlülük)</span><span class="term-en">Idempotency</span><span class="lvl lvl-ileri">İleri</span></div><p>Aynı işin bir ya da beş kez çalışmasının aynı sonucu üretmesi özelliği; retry ve backfill güvenliğinin temeli.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Backfill</span><span class="term-en">Backfill</span><span class="lvl lvl-ileri">İleri</span></div><p>Pipeline'ı geçmiş tarihler için çalıştırarak hedefi doldurma ya da hatalı dönemi yeniden üretme işlemi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">dbt</span><span class="term-en">dbt</span><span class="lvl lvl-orta">Orta</span></div><p>Transform katmanının standardı: SQL SELECT'lerini versiyon kontrollü, test edilebilir dönüşüm zincirine çevirir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Upsert (MERGE)</span><span class="term-en">Upsert</span><span class="lvl lvl-orta">Orta</span></div><p>"Varsa güncelle, yoksa ekle" mantığıyla yazma; SQL'de MERGE komutu. İdempotent yüklemenin başlıca aracı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Veri Gecikmesi</span><span class="term-en">Data Latency</span><span class="lvl lvl-orta">Orta</span></div><p>Olayın gerçekleşmesi ile verinin hedefte kullanılabilir olması arasındaki süre; tazelik beklentisini ve mimariyi belirler.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m3-etl-elt">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m2-scraping.html"><span>← Önceki</span><b>Web Scraping ve Veri Toplama</b></a>
+          <a class="next" href="m3-orkestrasyon.html"><span>Sonraki →</span><b>Orkestrasyon: Airflow ve DAG'ler</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Veri Tipleri ve Formatları — Veri Atlası</title>
+<meta name="description" content="Structured, semi-structured ve unstructured veri; CSV, JSON, Parquet, Avro ve ORC formatları; schema, satır vs sütun saklama, sıkıştırma ve serialization kavramları.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m2" data-slug="m2-veri-kavramlari">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m2">2. Veri Dünyası</a><span class="sep">/</span>
+        <span>Veri Tipleri ve Formatları</span>
+      </nav>
+      <span class="mod-badge">Modül 2 · Veri Dünyası</span>
+      <h1>Veri Tipleri ve Formatları</h1>
+      <p class="en-title">Data Types &amp; File Formats</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-baslangic">Başlangıç</span>
+        <span class="chip">⏱️ ~15 dk okuma</span>
+        <span class="chip">🔤 12 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Format seçimi neden bir mühendislik kararı?</h2>
+        <p><a href="m1-bilgisayar-temelleri.html">Modül 1'de</a> her verinin en dipte bir 0/1 dizisi olduğunu gördün. Bu sayfada bir kat yukarı çıkıyoruz: o baytlar diskte <strong>hangi düzenle</strong> durur? Aynı satış tablosunu CSV olarak da saklayabilirsin, Parquet olarak da — içerik aynıdır ama sonuçlar bambaşkadır:</p>
+        <ul>
+          <li>Yanlış formatta aynı sorgu <strong>40 saniye</strong>, doğru formatta <strong>2 saniye</strong> sürebilir.</li>
+          <li>Bulut depolama GB başına ücretlendirilir; 5 kat şişkin dosya, 5 kat kabarık <strong>fatura</strong> demektir.</li>
+          <li>Tip bilgisi taşımayan bir dosyada <code>"00420"</code> ürün kodu sessizce <code>420</code> sayısına dönüşür ve <strong>pipeline kırılır</strong>.</li>
+        </ul>
+        <p>Yani "dosyayı hangi formatta yazayım?" sorusu bir ayrıntı değil, her gün vereceğin bir mühendislik kararıdır. Önce verinin hâllerini, sonra format ailelerini, en sonda da "ne zaman hangisi?" sorusunun cevabını kuracağız.</p>
+
+        <h2>Verinin üç hâli: structured, semi-structured, unstructured</h2>
+        <p>Elindeki veriyi ilk gördüğünde soracağın soru şu: <strong>ne kadar düzenli?</strong> Cevaba göre veri üç aileden birine girer:</p>
+        <ul>
+          <li><strong>Structured (yapılandırılmış) veri</strong> — satır ve sütunlardan oluşan, her kolonun adı ve tipi belli tablolar. SQL veritabanları, Excel sayfaları, sensör okumaları. Sorgulaması en kolay hâl budur; <a href="m2-sql.html">bir sonraki konunun</a> tamamı buna ayrılmıştır.</li>
+          <li><strong>Semi-structured (yarı yapılandırılmış) veri</strong> — bir yapısı vardır ama katı bir tablo şeması yoktur: alanlar kayıttan kayıta değişebilir, iç içe geçebilir. JSON, XML ve log kayıtları bu ailedendir. API'lerden gelen her yanıt buraya girer.</li>
+          <li><strong>Unstructured (yapılandırılmamış) veri</strong> — serbest metin, görsel, ses, video. Satırı sütunu yoktur; yaygın tahminlere göre dünyadaki verinin büyük çoğunluğu (%80 civarı) bu hâldedir.</li>
+        </ul>
+        <p>AI bağlantısı tam burada: klasik analitik araçlar on yıllarca yalnızca structured veriyle iyiydi. Derin öğrenme ve özellikle LLM'ler, <strong>unstructured yığını işlenebilir hâle getirdi</strong> — müşteri yorumundan duygu çıkarmak, ses kaydını metne çevirmek, görseli etiketlemek artık rutin işler. Ama o modellere veriyi taşıyan boru hatlarını veri mühendisleri kurar; yani üç hâlle de çalışacaksın.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 280" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Structured, semi-structured ve unstructured veri örnekleri">
+            <g font-family="inherit">
+              <text x="360" y="20" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Aynı dünyanın üç farklı veri hâli</text>
+
+              <!-- structured -->
+              <rect x="20" y="38" width="220" height="170" rx="12" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="130" y="62" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Structured</text>
+              <rect x="45" y="76" width="170" height="26" fill="rgba(var(--acc-rgb),.18)" stroke="var(--dg-line)"/>
+              <rect x="45" y="102" width="170" height="26" fill="none" stroke="var(--dg-line)"/>
+              <rect x="45" y="128" width="170" height="26" fill="none" stroke="var(--dg-line)"/>
+              <line x1="90" y1="76" x2="90" y2="154" stroke="var(--dg-line)"/>
+              <line x1="160" y1="76" x2="160" y2="154" stroke="var(--dg-line)"/>
+              <text x="67" y="93" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="600">id</text>
+              <text x="125" y="93" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="600">urun</text>
+              <text x="187" y="93" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="600">fiyat</text>
+              <text x="67" y="119" text-anchor="middle" fill="var(--muted)" font-size="10.5">1</text>
+              <text x="125" y="119" text-anchor="middle" fill="var(--muted)" font-size="10.5">kahve</text>
+              <text x="187" y="119" text-anchor="middle" fill="var(--muted)" font-size="10.5">95</text>
+              <text x="67" y="145" text-anchor="middle" fill="var(--muted)" font-size="10.5">2</text>
+              <text x="125" y="145" text-anchor="middle" fill="var(--muted)" font-size="10.5">çay</text>
+              <text x="187" y="145" text-anchor="middle" fill="var(--muted)" font-size="10.5">40</text>
+              <text x="130" y="196" text-anchor="middle" fill="var(--muted)" font-size="10.5">SQL tabloları · Excel · sensör verisi</text>
+
+              <!-- semi-structured -->
+              <rect x="250" y="38" width="220" height="170" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="360" y="62" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Semi-structured</text>
+              <text x="272" y="92" fill="var(--acc)" font-size="10.5" font-weight="600">{</text>
+              <text x="284" y="108" fill="var(--muted)" font-size="10.5">"id": 101,</text>
+              <text x="284" y="124" fill="var(--muted)" font-size="10.5">"musteri": "Ayşe",</text>
+              <text x="284" y="140" fill="var(--muted)" font-size="10.5">"etiketler": ["vip"]</text>
+              <text x="272" y="156" fill="var(--acc)" font-size="10.5" font-weight="600">}</text>
+              <text x="360" y="196" text-anchor="middle" fill="var(--muted)" font-size="10.5">JSON · XML · log kayıtları</text>
+
+              <!-- unstructured -->
+              <rect x="480" y="38" width="220" height="170" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="590" y="62" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Unstructured</text>
+              <rect x="502" y="82" width="60" height="52" rx="6" fill="none" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <circle cx="517" cy="97" r="5" fill="var(--warn)"/>
+              <path d="M506 130 L522 110 L532 122 L540 112 L556 132 Z" fill="rgba(var(--acc-rgb),.3)" stroke="var(--acc)" stroke-width="1"/>
+              <rect x="580" y="88" width="94" height="3" rx="1.5" fill="var(--muted)"/>
+              <rect x="580" y="97" width="72" height="3" rx="1.5" fill="var(--muted)"/>
+              <rect x="580" y="106" width="84" height="3" rx="1.5" fill="var(--muted)"/>
+              <g fill="rgba(var(--acc-rgb),.6)">
+                <rect x="580" y="142" width="5" height="10"/>
+                <rect x="589" y="134" width="5" height="18"/>
+                <rect x="598" y="126" width="5" height="26"/>
+                <rect x="607" y="138" width="5" height="14"/>
+                <rect x="616" y="130" width="5" height="22"/>
+                <rect x="625" y="140" width="5" height="12"/>
+                <rect x="634" y="134" width="5" height="18"/>
+              </g>
+              <text x="590" y="196" text-anchor="middle" fill="var(--muted)" font-size="10.5">metin · görsel · ses · video</text>
+
+              <!-- eksen -->
+              <line x1="40" y1="238" x2="672" y2="238" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrA1)"/>
+              <text x="360" y="230" text-anchor="middle" fill="var(--acc)" font-size="11" font-weight="700">şema gevşer, esneklik artar</text>
+              <text x="40" y="260" fill="var(--muted)" font-size="10.5">sorgulaması kolay</text>
+              <text x="672" y="260" text-anchor="end" fill="var(--muted)" font-size="10.5">işlemek için AI/NLP gerekir</text>
+              <defs>
+                <marker id="arrA1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              </defs>
+            </g>
+          </svg>
+          <figcaption>Solda katı şema ve kolay sorgu, sağda serbest içerik. LLM'lerin devrimi, sağ uçtaki yığını da işlenebilir hâle getirmesidir.</figcaption>
+        </figure>
+
+        <h2>Metin formatları: CSV ve JSON</h2>
+        <p>En yaygın iki dosya formatı, insan gözüyle okunabilen metin formatlarıdır. <strong>CSV (Comma-Separated Values)</strong> bir tabloyu düz metne döker: her satır bir kayıt, değerler virgülle ayrık, ilk satır genellikle kolon başlıkları. Her araç CSV açabildiği için veri alışverişinin ortak paydasıdır. Ama bu sadelik pahalıya gelir: CSV <strong>tip bilgisi taşımaz</strong> ("42" sayı mı, metin mi?), şeması yoktur ve ayraç/kaçış kuralları standardın en gevşek yeridir.</p>
+        <div class="warn"><b>CSV'nin klasik tuzakları.</b> Değerin içinde virgül varsa ("Kadıköy, İstanbul") tırnakla kaçırılması gerekir; Türkçe Excel CSV'yi virgülle değil <strong>noktalı virgülle</strong> kaydeder; başında sıfır olan kodlar (<code>"00420"</code>) sayıya çevrilip bozulur; yanlış encoding Türkçe karakterleri <a href="m1-bilgisayar-temelleri.html">mojibake'ye</a> döndürür. Bir CSV'yi körlemesine okuma — ayracını, kodlamasını ve tiplerini her zaman kontrol et.</div>
+        <p><strong>JSON (JavaScript Object Notation)</strong> ise anahtar–değer çiftleri, listeler ve iç içe nesnelerden oluşur. Modül 1'de <code>curl</code> ile çektiğin API yanıtını hatırla: web servislerinin ana dili JSON'dur. CSV'den farklı olarak değerlerin tipini (sayı, metin, boolean, null) taşır ve iç içe yapı kurabilir; ama yine de bir şema dayatmaz. Satır başına bir JSON nesnesi yazılan <strong>JSON Lines (JSONL)</strong> varyantı, log dosyalarında ve LLM eğitim veri setlerinde standarttır.</p>
+        <p>API'den gelen iç içe JSON'u tabloya çevirmek, sahada haftalık rutinindir:</p>
+
+        <figure class="codebox">
+          <figcaption>Python — iç içe API yanıtını pandas DataFrame'e düzleştirme</figcaption>
+          <pre><code data-lang="python">import pandas as pd
+
+# Bir sipariş API'sinden gelen tipik iç içe yanıt
+yanit = {
+    "sayfa": 1,
+    "sonuclar": [
+        {"id": 101, "musteri": {"ad": "Ayşe", "sehir": "İstanbul"},
+         "kalemler": [{"urun": "kahve", "adet": 2}]},
+        {"id": 102, "musteri": {"ad": "Mehmet", "sehir": "Ankara"},
+         "kalemler": [{"urun": "çay", "adet": 1},
+                      {"urun": "filtre", "adet": 3}]},
+    ],
+}
+
+# İç içe alanları düzleştir: musteri.ad → musteri_ad kolonu olur
+df = pd.json_normalize(yanit["sonuclar"], sep="_")
+print(df[["id", "musteri_ad", "musteri_sehir"]])
+#     id musteri_ad musteri_sehir
+# 0  101       Ayşe      İstanbul
+# 1  102     Mehmet        Ankara
+
+# Listeyi satırlara aç: her sipariş kalemi ayrı satır olsun
+kalemler = pd.json_normalize(yanit["sonuclar"],
+                             record_path="kalemler", meta=["id"])
+#      urun  adet   id
+# 0   kahve     2  101
+# 1     çay     1  102
+# 2  filtre     3  102</code></pre>
+        </figure>
+
+        <h2>Schema: verinin sözleşmesi</h2>
+        <p><strong>Schema (şema)</strong>, verinin yapısını tarif eden sözleşmedir: hangi kolonlar var, her birinin tipi ne, hangileri boş olabilir. Veriyi üreten ile tüketen arasındaki anlaşma metni gibi düşün — şema varsa <code>fiyat</code> kolonunun her zaman sayı geleceğine güvenebilirsin; yoksa her okuyuş bir sürpriz kutusudur.</p>
+        <p>Şemanın <em>ne zaman</em> dayatıldığına göre iki felsefe vardır:</p>
+        <ul>
+          <li><strong>Schema-on-write</strong> — klasik veritabanı yaklaşımı: veri yazılırken şemaya uymak zorundadır, uymayan kayıt kapıdan giremez. Temiz ve güvenli, ama katıdır.</li>
+          <li><strong>Schema-on-read</strong> — data lake yaklaşımı: ham dosyayı olduğu gibi depola, şemayı okuma anında uygula. Esnektir; ama disiplinsiz kullanılırsa göl, kimsenin ne olduğunu bilmediği bir bataklığa döner. Bu gerilimi <a href="m3-warehouse-lake.html">warehouse ve lake konusunda</a> derinleştireceğiz.</li>
+        </ul>
+        <div class="note"><b>Şema dosyanın içinde de yaşayabilir.</b> Birazdan göreceğin Parquet ve Avro, şemayı dosyanın kendi içinde taşır: kolon adları ve tipleri veriyle birlikte gelir. CSV'de ise şema yoktur — "tahmin et" vardır. pandas'ın her CSV okuyuşunda tip tahmini yapması bundandır.</div>
+
+        <h2>Satır mı, sütun mu? Saklama düzeninin sırrı</h2>
+        <p>Disk, tek boyutlu uzun bir bant gibidir; iki boyutlu bir tabloyu bu banta dizmenin iki yolu vardır ve bu seçim performansın kaderini belirler:</p>
+        <ul>
+          <li><strong>Row-based (satır bazlı) saklama:</strong> kayıtlar bütün hâlinde art arda yazılır: 1. satırın tüm kolonları, sonra 2. satırın tüm kolonları… Tek bir kaydı bütünüyle okumak/yazmak (bir siparişi getir, bir müşteri ekle) çok hızlıdır. Operasyonel sistemlerin (OLTP) düzenidir.</li>
+          <li><strong>Columnar (sütunsal) saklama:</strong> aynı kolonun tüm değerleri blok hâlinde art arda yazılır: önce tüm id'ler, sonra tüm ürünler, sonra tüm fiyatlar. Analitik sorguların düzenidir.</li>
+        </ul>
+        <p>Peki columnar neden analitikte kazanır? Çünkü analitik sorgular tipik olarak <strong>az kolon, çok satır</strong> okur: "10 milyon satırlık tabloda ortalama fiyat nedir?" sorusu yalnızca <code>fiyat</code> kolonuyla ilgilenir. Satır bazlı dosyada motor yine de her satırın tamamını taramak zorundadır; sütunsal dosyada sadece fiyat bloğunu okur ve diğer her şeyi atlar. Üstelik aynı tipteki değerler yan yana durduğu için sıkıştırma da çok daha iyi çalışır.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 760 300" width="760" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Satır bazlı ve sütunsal saklamada AVG(fiyat) sorgusunun okuduğu bölgeler">
+            <g font-family="inherit">
+              <rect x="250" y="10" width="260" height="30" rx="8" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="380" y="30" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">SELECT AVG(fiyat) FROM satis</text>
+              <line x1="320" y1="42" x2="215" y2="58" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#arrA2)"/>
+              <line x1="440" y1="42" x2="545" y2="58" stroke="var(--dg-line)" stroke-width="1.4" marker-end="url(#arrA2)"/>
+
+              <!-- satır bazlı panel -->
+              <rect x="25" y="62" width="340" height="218" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="195" y="86" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Satır bazlı (row-based)</text>
+              <text x="195" y="101" text-anchor="middle" fill="var(--muted)" font-size="10.5">CSV · Avro — diskte kayıt kayıt</text>
+              <g font-size="9.5">
+                <text x="98" y="127" text-anchor="end" fill="var(--muted)">satır 1</text>
+                <rect x="106" y="112" width="60" height="24" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="136" y="127" text-anchor="middle" fill="var(--muted)">id1</text>
+                <rect x="170" y="112" width="60" height="24" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="200" y="127" text-anchor="middle" fill="var(--muted)">urun1</text>
+                <rect x="234" y="112" width="60" height="24" fill="rgba(var(--acc-rgb),.3)" stroke="var(--acc)"/><text x="264" y="127" text-anchor="middle" fill="var(--ink)">fiyat1</text>
+                <text x="98" y="159" text-anchor="end" fill="var(--muted)">satır 2</text>
+                <rect x="106" y="144" width="60" height="24" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="136" y="159" text-anchor="middle" fill="var(--muted)">id2</text>
+                <rect x="170" y="144" width="60" height="24" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="200" y="159" text-anchor="middle" fill="var(--muted)">urun2</text>
+                <rect x="234" y="144" width="60" height="24" fill="rgba(var(--acc-rgb),.3)" stroke="var(--acc)"/><text x="264" y="159" text-anchor="middle" fill="var(--ink)">fiyat2</text>
+                <text x="98" y="191" text-anchor="end" fill="var(--muted)">satır 3</text>
+                <rect x="106" y="176" width="60" height="24" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="136" y="191" text-anchor="middle" fill="var(--muted)">id3</text>
+                <rect x="170" y="176" width="60" height="24" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="200" y="191" text-anchor="middle" fill="var(--muted)">urun3</text>
+                <rect x="234" y="176" width="60" height="24" fill="rgba(var(--acc-rgb),.3)" stroke="var(--acc)"/><text x="264" y="191" text-anchor="middle" fill="var(--ink)">fiyat3</text>
+                <text x="98" y="223" text-anchor="end" fill="var(--muted)">satır 4</text>
+                <rect x="106" y="208" width="60" height="24" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="136" y="223" text-anchor="middle" fill="var(--muted)">id4</text>
+                <rect x="170" y="208" width="60" height="24" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="200" y="223" text-anchor="middle" fill="var(--muted)">urun4</text>
+                <rect x="234" y="208" width="60" height="24" fill="rgba(var(--acc-rgb),.3)" stroke="var(--acc)"/><text x="264" y="223" text-anchor="middle" fill="var(--ink)">fiyat4</text>
+              </g>
+              <rect x="100" y="106" width="200" height="132" fill="none" stroke="var(--warn)" stroke-width="1.6" stroke-dasharray="5 4"/>
+              <text x="195" y="262" text-anchor="middle" fill="var(--warn)" font-size="10.5" font-weight="600">okunan bölge: dosyanın tamamı</text>
+
+              <!-- sütunsal panel -->
+              <rect x="395" y="62" width="340" height="218" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="565" y="86" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Sütunsal (columnar)</text>
+              <text x="565" y="101" text-anchor="middle" fill="var(--muted)" font-size="10.5">Parquet · ORC — diskte kolon kolon</text>
+              <g font-size="9.5">
+                <text x="470" y="135" text-anchor="end" fill="var(--muted)">id bloğu</text>
+                <rect x="478" y="120" width="52" height="24" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="504" y="135" text-anchor="middle" fill="var(--muted)">id1</text>
+                <rect x="534" y="120" width="52" height="24" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="560" y="135" text-anchor="middle" fill="var(--muted)">id2</text>
+                <rect x="590" y="120" width="52" height="24" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="616" y="135" text-anchor="middle" fill="var(--muted)">id3</text>
+                <rect x="646" y="120" width="52" height="24" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="672" y="135" text-anchor="middle" fill="var(--muted)">id4</text>
+                <text x="470" y="171" text-anchor="end" fill="var(--muted)">urun bloğu</text>
+                <rect x="478" y="156" width="52" height="24" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="504" y="171" text-anchor="middle" fill="var(--muted)">urun1</text>
+                <rect x="534" y="156" width="52" height="24" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="560" y="171" text-anchor="middle" fill="var(--muted)">urun2</text>
+                <rect x="590" y="156" width="52" height="24" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="616" y="171" text-anchor="middle" fill="var(--muted)">urun3</text>
+                <rect x="646" y="156" width="52" height="24" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="672" y="171" text-anchor="middle" fill="var(--muted)">urun4</text>
+                <text x="470" y="207" text-anchor="end" fill="var(--muted)">fiyat bloğu</text>
+                <rect x="478" y="192" width="52" height="24" fill="rgba(var(--acc-rgb),.3)" stroke="var(--acc)"/><text x="504" y="207" text-anchor="middle" fill="var(--ink)">fiyat1</text>
+                <rect x="534" y="192" width="52" height="24" fill="rgba(var(--acc-rgb),.3)" stroke="var(--acc)"/><text x="560" y="207" text-anchor="middle" fill="var(--ink)">fiyat2</text>
+                <rect x="590" y="192" width="52" height="24" fill="rgba(var(--acc-rgb),.3)" stroke="var(--acc)"/><text x="616" y="207" text-anchor="middle" fill="var(--ink)">fiyat3</text>
+                <rect x="646" y="192" width="52" height="24" fill="rgba(var(--acc-rgb),.3)" stroke="var(--acc)"/><text x="672" y="207" text-anchor="middle" fill="var(--ink)">fiyat4</text>
+              </g>
+              <rect x="472" y="186" width="232" height="36" fill="none" stroke="var(--ok)" stroke-width="1.6" stroke-dasharray="5 4"/>
+              <text x="565" y="262" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="600">okunan bölge: sadece fiyat bloğu</text>
+
+              <defs>
+                <marker id="arrA2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+              </defs>
+            </g>
+          </svg>
+          <figcaption>Aynı 4×3 tablo, iki farklı disk düzeni. AVG(fiyat) satır bazlı dosyada her şeyi, sütunsal dosyada yalnızca fiyat bloğunu okur — büyük tablolarda fark onlarca kat olur.</figcaption>
+        </figure>
+
+        <h2>Binary formatlar: Parquet, Avro ve ORC</h2>
+        <p>CSV ve JSON insanlar içindir; makineler için tasarlanmış <strong>binary formatlar</strong> ise veriyi metin yerine ham bayt olarak, şema ve sıkıştırmayla birlikte saklar. Veri mühendisliğinin üç önemli oyuncusu:</p>
+        <ul>
+          <li><strong>Parquet</strong> — sütunsal, sıkıştırmalı ve tip bilgisini içinde taşıyan format; modern veri mühendisliğinin <em>fiili standardı</em>. Her kolon bloğu için min/max gibi istatistikler tutar; motor bu sayede "bu blokta işime yarayan değer yok" deyip blokları atlayabilir. Spark, pandas, BigQuery, Snowflake — hepsi Parquet konuşur.</li>
+          <li><strong>Avro</strong> — satır bazlı binary format. Kayıtlar bütün hâlinde aktığı ve şema evrimi (schema evolution) desteği güçlü olduğu için <a href="m3-streaming.html">Kafka gibi streaming sistemlerde</a> mesajların yaygın taşıyıcısıdır.</li>
+          <li><strong>ORC</strong> — Parquet'nin Hive ekosisteminde doğmuş sütunsal kuzeni. Fikir aynıdır (kolon blokları + istatistik + sıkıştırma); hangisiyle karşılaşacağın çoğunlukla ekosistem tercihine bağlıdır.</li>
+        </ul>
+        <p>Fark laf değil, ölçülebilir bir şey. Aynı DataFrame'i iki formatta yazıp karşılaştıralım:</p>
+
+        <figure class="codebox">
+          <figcaption>Python — aynı verinin CSV ve Parquet karşılaştırması</figcaption>
+          <pre><code data-lang="python">import pandas as pd
+import numpy as np
+import os, time
+
+# 1 milyon satırlık örnek satış verisi üret
+n = 1_000_000
+df = pd.DataFrame({
+    "urun_id": np.random.randint(1, 5000, n),
+    "kategori": np.random.choice(["gida", "giyim", "elektronik"], n),
+    "fiyat": np.random.uniform(10, 2500, n).round(2),
+    "tarih": pd.date_range("2026-01-01", periods=n, freq="s"),
+})
+
+# Aynı tabloyu iki formatta yaz
+df.to_csv("satis.csv", index=False)
+df.to_parquet("satis.parquet", compression="snappy")
+
+mb = lambda yol: os.path.getsize(yol) / 1024**2
+print(f"CSV boyutu:     {mb('satis.csv'):.1f} MB")      # ~52 MB
+print(f"Parquet boyutu: {mb('satis.parquet'):.1f} MB")  # ~13 MB → ~4 kat küçük
+
+t = time.perf_counter()
+pd.read_csv("satis.csv")                       # tüm dosya + tip tahmini
+print(f"CSV okuma:     {time.perf_counter() - t:.2f} sn")   # ~1.8 sn
+
+t = time.perf_counter()
+pd.read_parquet("satis.parquet", columns=["fiyat"])  # sadece 1 kolon!
+print(f"Parquet okuma: {time.perf_counter() - t:.2f} sn")   # ~0.1 sn</code></pre>
+        </figure>
+
+        <div class="tip"><b>Pratik kural.</b> Pipeline'ının ara katmanlarında ve analitik depolarda varsayılanın <strong>Parquet</strong> olsun; CSV/JSON'u yalnızca sınırlarda (kaynaktan alırken, insana verirken) kullan. pandas'ta Parquet için <code>pyarrow</code> paketinin kurulu olması gerekir.</div>
+
+        <h2>Sıkıştırma ve serialization</h2>
+        <p>Binary formatların gücünün altında iki genel kavram yatar. <strong>Serialization (serileştirme)</strong>, bellekteki bir nesneyi diske yazılabilir ya da ağdan gönderilebilir bir bayt dizisine çevirme işlemidir; tersine <em>deserialization</em> denir. Bir DataFrame'i Parquet'ye yazmak da, bir Python nesnesini <code>pickle</code> ile kaydetmek de serialization'dır — fark, pickle'ın yalnızca Python'un anladığı bir biçim olması, Parquet/Avro/JSON'un ise dilden bağımsız çalışmasıdır.</p>
+        <p><strong>Compression (sıkıştırma)</strong> ise bayt dizisini küçültür. İki popüler algoritmanın karakteri farklıdır: <strong>gzip</strong> yüksek oranda sıkıştırır ama CPU'yu daha çok yorar; <strong>snappy</strong> oranı biraz feda edip hıza oynar — Parquet'nin varsayılanı bu yüzden snappy'dir. Buradaki denge her zaman aynıdır: CPU süresi harcayıp disk ve ağ baytlarından tasarruf edersin. Sütunsal düzen + sıkıştırma birleşince "okunacak bayt" dramatik azalır; Parquet'nin hız sırrının özeti budur.</p>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Format kararını her gün vereceksin; iyi haber şu ki karar tablosu kısadır. Dosyayı bir <strong>insan ya da Excel</strong> açacaksa CSV; bir <strong>API veya konfigürasyonla</strong> konuşuyorsan, yapı iç içeyse JSON (log ve LLM veri setlerinde JSONL); veri bir <strong>warehouse/lake'te analitik sorguya</strong> girecekse tartışmasız Parquet; kayıtlar <strong>Kafka üzerinde tek tek akıyorsa</strong> Avro. Emin değilsen ve veri analitik boru hattındaysa, Parquet neredeyse her zaman doğru cevaptır.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 680 340" width="680" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Format seçimi karar ağacı">
+            <g font-family="inherit">
+              <!-- karar 1 -->
+              <polygon points="150,18 258,58 150,98 42,58" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="150" y="53" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">İnsan mı okuyacak,</text>
+              <text x="150" y="68" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">Excel'e mi gidecek?</text>
+              <line x1="258" y1="58" x2="320" y2="58" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arrA3)"/>
+              <text x="289" y="50" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="700">evet</text>
+              <rect x="326" y="38" width="330" height="40" rx="9" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="491" y="56" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">CSV (düz tablo) · JSON (iç içe yapı)</text>
+              <text x="491" y="71" text-anchor="middle" fill="var(--muted)" font-size="10.5">okunabilirlik &gt; performans</text>
+
+              <!-- karar 2 -->
+              <line x1="150" y1="98" x2="150" y2="122" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrA4)"/>
+              <text x="170" y="115" fill="var(--muted)" font-size="10.5">hayır</text>
+              <polygon points="150,126 258,166 150,206 42,166" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="150" y="161" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">Analitik sorgu mu?</text>
+              <text x="150" y="176" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">(warehouse / lake)</text>
+              <line x1="258" y1="166" x2="320" y2="166" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arrA3)"/>
+              <text x="289" y="158" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="700">evet</text>
+              <rect x="326" y="146" width="330" height="40" rx="9" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="491" y="164" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Parquet</text>
+              <text x="491" y="179" text-anchor="middle" fill="var(--muted)" font-size="10.5">sütunsal + sıkıştırmalı + tip bilgili standart</text>
+
+              <!-- karar 3 -->
+              <line x1="150" y1="206" x2="150" y2="230" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrA4)"/>
+              <text x="170" y="223" fill="var(--muted)" font-size="10.5">hayır</text>
+              <polygon points="150,234 258,274 150,314 42,274" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="150" y="269" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">Kayıt kayıt akış mı?</text>
+              <text x="150" y="284" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">(Kafka / streaming)</text>
+              <line x1="258" y1="274" x2="320" y2="274" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arrA3)"/>
+              <text x="289" y="266" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="700">evet</text>
+              <rect x="326" y="254" width="330" height="40" rx="9" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="491" y="272" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Avro</text>
+              <text x="491" y="287" text-anchor="middle" fill="var(--muted)" font-size="10.5">satır bazlı + güçlü şema evrimi</text>
+
+              <text x="150" y="334" text-anchor="middle" fill="var(--muted)" font-size="10.5">hayır → API/servis iletişimi: JSON</text>
+              <defs>
+                <marker id="arrA3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+                <marker id="arrA4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+              </defs>
+            </g>
+          </svg>
+          <figcaption>Üç soruluk karar ağacı. Şüphede kaldıysan ve iş analitikse: Parquet.</figcaption>
+        </figure>
+
+        <p>Gerçek projelerde bu kavramlar şu kılıklarda görünür:</p>
+        <ul>
+          <li><strong>Landing → dönüşüm kalıbı:</strong> kaynaktan CSV/JSON olarak inen ham veri, pipeline'ın ilk adımında Parquet'ye çevrilir; sonraki tüm adımlar hızlanır (<a href="m3-etl-elt.html">ETL/ELT konusu</a>).</li>
+          <li><strong>Bulut maliyeti:</strong> S3'te yıllarca duran log arşivini gzip'li Parquet'ye çevirmek, depolama ve tarama (scan) faturasını görünür biçimde düşürür — BigQuery gibi motorlar taranan bayt başına ücret alır.</li>
+          <li><strong>Spark ile ortaklık:</strong> <a href="m3-spark.html">Spark</a> Parquet'nin kolon istatistiklerini kullanarak dosyanın büyük kısmını hiç okumadan atlar (predicate pushdown).</li>
+          <li><strong>Mülakat klasiği:</strong> "Neden Parquet kullanıyorsunuz?" — artık cevabın var: az kolon çok satır okuyan analitik sorgular, sütunsal + sıkıştırmalı düzende kat kat az bayt okur.</li>
+        </ul>
+        <p>Structured verinin kalbine, yani tablolara indiğimize göre sıradaki durak onların sorgu dili: <a href="m2-sql.html">SQL</a>.</p>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Bir e-ticaret sitesindeki ürün yorumları hangi veri hâline girer, nasıl işlenir?</summary>
+            <div class="answer"><b>Unstructured (yapılandırılmamış).</b> Serbest metnin satırı sütunu yoktur. Klasik SQL ile "yorumun duygusu ne?" diye soramazsın; LLM/NLP modelleriyle işlenip duygu skoru, konu etiketi gibi <em>structured</em> çıktılara çevrilir — sonra o çıktılar tabloya yazılır.</div>
+          </details>
+          <details class="quiz">
+            <summary>AVG(fiyat) sorgusu Parquet'de neden CSV'den kat kat hızlıdır?</summary>
+            <div class="answer">İki sebep: <b>(1)</b> Parquet sütunsaldır — motor yalnızca fiyat kolon bloğunu okur, CSV'de her satırın tamamı taranır. <b>(2)</b> Parquet sıkıştırılmış ve tip bilgilidir — okunan bayt azdır ve "metni sayıya çevirme" maliyeti yoktur. Az kolon + çok satır okuyan her analitik sorguda bu fark büyür.</div>
+          </details>
+          <details class="quiz">
+            <summary>CSV'nin üç önemli zayıflığını sayabilir misin?</summary>
+            <div class="answer"><b>(1) Tip bilgisi yok:</b> "00420" kodu sayıya dönüşüp bozulur. <b>(2) Şema yok:</b> kolonların adı/tipi dosyada garanti edilmez, her okuyucu tahmin eder. <b>(3) Ayraç/kaçış/kodlama sorunları:</b> değer içindeki virgül, Türkçe Excel'in noktalı virgülü ve yanlış encoding klasik kırılma noktalarıdır.</div>
+          </details>
+          <details class="quiz">
+            <summary>Schema-on-write ile schema-on-read farkı nedir?</summary>
+            <div class="answer"><b>Şemanın dayatıldığı an</b> farklıdır. Schema-on-write'ta (klasik veritabanı) veri yazılırken şemaya uymak zorundadır; uymayan kayıt reddedilir. Schema-on-read'de (data lake) ham dosya olduğu gibi saklanır, şema okuma anında uygulanır. İlki temiz ama katı, ikincisi esnek ama disiplinsizlikte "veri bataklığı" riski taşır.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Yapılandırılmış Veri</span><span class="term-en">Structured Data</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Satır–sütun düzeninde, şeması belli veri; SQL tablolarının ve Excel'in dünyası.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Yarı Yapılandırılmış Veri</span><span class="term-en">Semi-structured Data</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Yapısı olan ama katı şema dayatmayan veri: JSON, XML, log kayıtları. API yanıtlarının hâli.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Yapılandırılmamış Veri</span><span class="term-en">Unstructured Data</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Metin, görsel, ses, video gibi satır–sütuna oturmayan veri; LLM'lerin ana hammaddesi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">CSV</span><span class="term-en">CSV</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Virgülle ayrık düz metin tablo formatı. Evrensel ama tipsiz; ayraç, kaçış ve kodlama tuzaklarıyla ünlü.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">JSON</span><span class="term-en">JSON</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Anahtar–değer ve listelerle iç içe yapı kurabilen metin formatı; API'lerin ortak dili.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Şema</span><span class="term-en">Schema</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Verinin sözleşmesi: kolon adları, tipleri ve kuralları. Yazarken ya da okurken dayatılabilir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Satır Bazlı Saklama</span><span class="term-en">Row-based Storage</span><span class="lvl lvl-orta">Orta</span></div><p>Kayıtları bütün hâlinde art arda yazan disk düzeni; tekil kayıt okuma/yazma (OLTP) için ideal.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Sütunsal Saklama</span><span class="term-en">Columnar Storage</span><span class="lvl lvl-orta">Orta</span></div><p>Aynı kolonun değerlerini blok hâlinde saklayan düzen; az kolon çok satır okuyan analitik sorguların dostu.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Parquet</span><span class="term-en">Parquet</span><span class="lvl lvl-orta">Orta</span></div><p>Sütunsal, sıkıştırmalı, şemasını içinde taşıyan binary format; veri mühendisliğinin fiili standardı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Avro</span><span class="term-en">Avro</span><span class="lvl lvl-orta">Orta</span></div><p>Satır bazlı binary format; güçlü şema evrimi desteğiyle Kafka/streaming dünyasının taşıyıcısı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Sıkıştırma</span><span class="term-en">Compression</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Baytları küçültme: gzip oran, snappy hız odaklıdır. CPU harcayıp disk/ağ tasarrufu yapılır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Serialization (Serileştirme)</span><span class="term-en">Serialization</span><span class="lvl lvl-orta">Orta</span></div><p>Bellekteki nesneyi diske/ağa uygun bayt dizisine çevirme; tersi deserialization.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m2-veri-kavramlari">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m1-linux-git.html"><span>← Önceki</span><b>Linux, Terminal ve Git</b></a>
+          <a class="next" href="m2-sql.html"><span>Sonraki →</span><b>SQL ve İlişkisel Veritabanları</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

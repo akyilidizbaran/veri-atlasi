@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitoring ve Model Drift — Veri Atlası</title>
+<meta name="description" content="Deploy edilen model neden sessizce bozulur? Data drift, concept drift, üç katmanlı izleme, observability, shadow/canary yayın stratejileri ve retraining döngüsü.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m8" data-slug="m8-monitoring">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m8">8. MLOps ve Üretim</a><span class="sep">/</span>
+        <span>Monitoring ve Model Drift</span>
+      </nav>
+      <span class="mod-badge">Modül 8 · MLOps ve Üretim</span>
+      <h1>Monitoring ve Model Drift</h1>
+      <p class="en-title">Monitoring &amp; Model Drift</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-ileri">İleri</span>
+        <span class="chip">⏱️ ~16 dk okuma</span>
+        <span class="chip">🔤 12 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>"Deploy edildi, bitti" yanılgısı</h2>
+        <p>Bir yazılım özelliği deploy edildiğinde genellikle çalışmaya devam eder: dünkü "sepete ekle" butonu bugün de aynı işi yapar. Makine öğrenmesi modelleri için bu varsayım <strong>yanlıştır</strong>. Model, eğitildiği andaki dünyanın bir fotoğrafıdır; dünya değişmeye devam eder ama fotoğraf sabit kalır. Kod tek satır değişmese de modelin isabeti zamanla düşer — üstelik hata fırlatmadan, log'a tek satır yazmadan, <strong>sessizce</strong>.</p>
+        <p>Buna <em>model çürümesi (model decay)</em> denir ve MLOps'un en kritik dersi şudur: deploy bir bitiş çizgisi değil, <strong>izleme döneminin başlangıcıdır</strong>. Bir öneri sistemi mevsim değişince eskiyebilir, bir dolandırıcılık modeli dolandırıcılar taktik değiştirince kör kalabilir, bir talep tahmini modeli tek bir kampanyayla anlamsızlaşabilir. Bu sayfada modelin neden çürüdüğünü, bunu nasıl fark edeceğini ve fark ettiğinde ne yapacağını öğreneceksin.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 270" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Zaman içinde model performansının düşüşü ve retrain ile toparlanması">
+            <defs>
+              <marker id="arr1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="360" y="22" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Model çürümesi: performans sessizce düşer, retrain ile toparlanır</text>
+              <!-- eksenler -->
+              <path d="M60 40 L60 215 L690 215" stroke="var(--dg-line)" stroke-width="1.5" fill="none" marker-end="url(#arr1)"/>
+              <text x="38" y="130" text-anchor="middle" fill="var(--muted)" font-size="11" transform="rotate(-90 38 130)">Doğruluk (AUC)</text>
+              <text x="380" y="240" text-anchor="middle" fill="var(--muted)" font-size="11">Zaman →</text>
+              <!-- alarm eşiği -->
+              <path d="M60 160 L690 160" stroke="var(--bad)" stroke-width="1.2" stroke-dasharray="6 5" opacity="0.7"/>
+              <text x="678" y="153" text-anchor="end" fill="var(--bad)" font-size="10.5" font-weight="600">alarm eşiği</text>
+              <!-- performans eğrisi -->
+              <path d="M80 62 C 150 66, 220 74, 285 88 C 320 96, 350 118, 400 145 C 420 156, 435 166, 448 174"
+                    fill="none" stroke="var(--acc)" stroke-width="2.5"/>
+              <!-- retrain sıçraması -->
+              <path d="M448 174 L462 68" stroke="var(--ok)" stroke-width="2.5" stroke-dasharray="4 3"/>
+              <path d="M462 68 C 530 74, 600 84, 665 100" fill="none" stroke="var(--acc)" stroke-width="2.5"/>
+              <!-- drift olayları -->
+              <path d="M285 40 L285 215" stroke="var(--warn)" stroke-width="1.2" stroke-dasharray="4 4"/>
+              <circle cx="285" cy="88" r="4" fill="var(--warn)"/>
+              <text x="285" y="56" text-anchor="middle" fill="var(--warn)" font-size="10.5" font-weight="600">drift olayı 1</text>
+              <path d="M400 40 L400 215" stroke="var(--warn)" stroke-width="1.2" stroke-dasharray="4 4"/>
+              <circle cx="400" cy="145" r="4" fill="var(--warn)"/>
+              <text x="400" y="56" text-anchor="middle" fill="var(--warn)" font-size="10.5" font-weight="600">drift olayı 2</text>
+              <!-- retrain etiketi -->
+              <circle cx="455" cy="120" r="0" fill="none"/>
+              <text x="470" y="130" fill="var(--ok)" font-size="11" font-weight="700">retrain!</text>
+              <!-- deploy etiketi -->
+              <circle cx="80" cy="62" r="4" fill="var(--acc)"/>
+              <text x="84" y="50" fill="var(--muted)" font-size="10.5">deploy günü</text>
+            </g>
+          </svg>
+          <figcaption>Eğri hata vermez, sadece yavaşça aşağı kayar. İzleme yoksa alarm eşiğinin altına indiğini aylar sonra fark edersin.</figcaption>
+        </figure>
+
+        <h2>İki drift türü: data drift vs concept drift</h2>
+        <p>Modelin çürümesinin arkasında genellikle iki farklı mekanizma vardır ve ikisini ayırt etmek teşhis için kritiktir:</p>
+        <ul>
+          <li><strong>Data drift (veri kayması)</strong> — modelin gördüğü <em>girdilerin dağılımı</em> değişir; girdi ile çıktı arasındaki ilişki aynıdır. Klasik örnek: pandemi sonrası müşterilerin harcama alışkanlıkları değişti — ortalama sepet tutarı, alışveriş saatleri, kategori dağılımı kaydı. Model "hiç görmediği bölgede" tahmin yapmak zorunda kalır.</li>
+          <li><strong>Concept drift (kavram kayması)</strong> — girdi dağılımı aynı görünse bile <em>girdi ile çıktı arasındaki ilişki</em> değişir. Klasik örnek: dolandırıcılar taktik değiştirdi — dün "riskli" görünen işlem deseni bugün masum, dün masum görünen desen bugün dolandırıcılık. Modelin öğrendiği kural artık geçersizdir.</li>
+        </ul>
+        <p>Peki drift'i nasıl tespit edersin? Temel fikir hep aynı: <strong>referans dağılım</strong> (eğitim verisi ya da "sağlıklı" bir dönem) ile <strong>güncel dağılımı</strong> (son gün/hafta) karşılaştırırsın. Bunun için Kolmogorov–Smirnov gibi istatistiksel testler ya da iki dağılım arasındaki uzaklığı ölçen metrikler kullanılır. Sektörde en yaygın metriklerden biri <strong>PSI (Population Stability Index)</strong>'dır: dağılımı dilimlere bölüp her dilimin payının ne kadar değiştiğini tek bir skorda özetler; kabaca 0.2 üzeri "ciddi kayma" sinyali sayılır.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 265" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Data drift ve concept drift karşılaştırması">
+            <g font-family="inherit">
+              <!-- sol panel: data drift -->
+              <rect x="20" y="30" width="330" height="205" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="185" y="55" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Data drift</text>
+              <text x="185" y="72" text-anchor="middle" fill="var(--muted)" font-size="11">girdi dağılımı kaydı</text>
+              <path d="M45 195 L325 195" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <!-- referans çan eğrisi -->
+              <path d="M55 195 C 95 195, 105 100, 140 100 C 175 100, 185 195, 225 195" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="2"/>
+              <text x="105" y="120" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="600">eğitim</text>
+              <!-- kaymış çan eğrisi -->
+              <path d="M145 195 C 185 195, 195 105, 230 105 C 265 105, 275 195, 315 195" fill="none" stroke="var(--warn)" stroke-width="2" stroke-dasharray="5 4"/>
+              <text x="268" y="120" text-anchor="middle" fill="var(--warn)" font-size="10.5" font-weight="600">bugün</text>
+              <text x="185" y="222" text-anchor="middle" fill="var(--muted)" font-size="10.5">örn. harcama tutarları sağa kaydı</text>
+
+              <!-- sağ panel: concept drift -->
+              <rect x="370" y="30" width="330" height="205" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="535" y="55" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Concept drift</text>
+              <text x="535" y="72" text-anchor="middle" fill="var(--muted)" font-size="11">aynı girdiler, ilişki değişti</text>
+              <!-- noktalar: iki sınıf -->
+              <g fill="rgba(var(--acc-rgb),.55)">
+                <circle cx="420" cy="110" r="5"/><circle cx="445" cy="130" r="5"/><circle cx="425" cy="160" r="5"/><circle cx="455" cy="175" r="5"/><circle cx="475" cy="105" r="5"/>
+              </g>
+              <g fill="var(--warn)">
+                <circle cx="600" cy="115" r="5"/><circle cx="625" cy="140" r="5"/><circle cx="605" cy="170" r="5"/><circle cx="640" cy="105" r="5"/><circle cx="650" cy="165" r="5"/>
+              </g>
+              <!-- eski karar sınırı -->
+              <path d="M530 90 L530 200" stroke="var(--acc)" stroke-width="2"/>
+              <text x="530" y="86" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="600">eski sınır</text>
+              <!-- yeni karar sınırı -->
+              <path d="M500 200 L585 90" stroke="var(--bad)" stroke-width="2" stroke-dasharray="5 4"/>
+              <text x="596" y="86" text-anchor="middle" fill="var(--bad)" font-size="10.5" font-weight="600">yeni sınır</text>
+              <text x="535" y="222" text-anchor="middle" fill="var(--muted)" font-size="10.5">örn. dolandırıcılık deseni değişti</text>
+            </g>
+          </svg>
+          <figcaption>Solda girdiler kayıyor (model tanımadığı bölgede), sağda girdiler aynı ama doğru karar sınırı yer değiştirmiş (modelin kuralı eskidi).</figcaption>
+        </figure>
+
+        <div class="note"><b>İkisi birlikte de gelebilir.</b> Gerçek hayatta data drift ve concept drift çoğu zaman iç içedir: pandemi hem harcama dağılımını kaydırdı (data drift) hem de "normal alışveriş" tanımını değiştirdi (concept drift). Teşhiste önce girdileri, sonra girdi–çıktı ilişkisini kontrol etmek iyi bir sıradır.</div>
+
+        <h2>Ne izlenir? Üç katman</h2>
+        <p>"Modeli izle" demek yeterince somut değil. Pratikte izleme üç katmanda kurulur ve sorunlar genellikle yukarıdan aşağıya teşhis edilir:</p>
+        <ul>
+          <li><strong>Sistem katmanı</strong> — model bir servis olarak ayakta mı? Yanıt süresi (latency), hata oranı, istek sayısı, CPU/bellek kullanımı. Bu katman klasik yazılım izlemesiyle aynıdır; model doğru bile olsa 5 saniyede yanıt veriyorsa kimse kullanmaz.</li>
+          <li><strong>Veri katmanı</strong> — modele gelen girdiler sağlıklı mı? Şema kontrolü (beklenen kolonlar geldi mi, tipler doğru mu), null oranı, değer aralıkları ve dağılım karşılaştırmaları (PSI, KS testi). Üretimdeki model hatalarının büyük kısmı aslında model değil <a href="m3-veri-kalitesi.html">veri kalitesi</a> sorunudur: bozulan bir upstream pipeline modele çöp göndermeye başlar.</li>
+          <li><strong>Model katmanı</strong> — tahminler mantıklı mı? Tahmin dağılımı (örn. onay oranı aniden %60'tan %90'a çıktıysa bir şey bozuldu), güven skorlarının dağılımı ve — etiketler geldikçe — gerçek performans metrikleri (AUC, precision/recall).</li>
+        </ul>
+        <p>Model katmanının en sinsi sorunu <strong>ground truth gecikmesidir</strong>: tahminin doğru olup olmadığını çoğu zaman hemen bilemezsin. Kredi modelinin "geri öder" dediği müşterinin gerçekten ödeyip ödemediğini aylar sonra, kargo tahminini birkaç gün sonra öğrenirsin. Bu yüzden doğruluk metriği her zaman <em>gecikmeli</em> bir göstergedir — anlık sinyal için tahmin dağılımı ve girdi drift'i gibi <em>vekil (proxy)</em> metriklere bakarsın.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 300" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Üç katmanlı izleme: sistem, veri, model">
+            <g font-family="inherit">
+              <text x="350" y="24" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">İzleme panosu: üç katman, her katmanın kendi metrikleri</text>
+              <!-- model katmanı -->
+              <rect x="60" y="42" width="580" height="72" rx="12" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="120" y="72" fill="var(--ink)" font-size="13.5" font-weight="700">Model</text>
+              <text x="120" y="93" fill="var(--muted)" font-size="11">"tahminler hâlâ isabetli mi?"</text>
+              <rect x="300" y="56" width="150" height="20" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="375" y="70" text-anchor="middle" fill="var(--muted)" font-size="10.5">tahmin dağılımı</text>
+              <rect x="460" y="56" width="160" height="20" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="540" y="70" text-anchor="middle" fill="var(--muted)" font-size="10.5">gecikmeli AUC / recall</text>
+              <rect x="300" y="82" width="150" height="20" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="375" y="96" text-anchor="middle" fill="var(--muted)" font-size="10.5">güven skorları</text>
+              <!-- veri katmanı -->
+              <rect x="60" y="126" width="580" height="72" rx="12" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.3"/>
+              <text x="120" y="156" fill="var(--ink)" font-size="13.5" font-weight="700">Veri</text>
+              <text x="120" y="177" fill="var(--muted)" font-size="11">"girdiler hâlâ sağlıklı mı?"</text>
+              <rect x="300" y="140" width="150" height="20" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="375" y="154" text-anchor="middle" fill="var(--muted)" font-size="10.5">şema kontrolü</text>
+              <rect x="460" y="140" width="160" height="20" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="540" y="154" text-anchor="middle" fill="var(--muted)" font-size="10.5">dağılım / PSI</text>
+              <rect x="300" y="166" width="150" height="20" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="375" y="180" text-anchor="middle" fill="var(--muted)" font-size="10.5">null oranı</text>
+              <!-- sistem katmanı -->
+              <rect x="60" y="210" width="580" height="72" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="120" y="240" fill="var(--ink)" font-size="13.5" font-weight="700">Sistem</text>
+              <text x="120" y="261" fill="var(--muted)" font-size="11">"servis ayakta mı?"</text>
+              <rect x="300" y="224" width="150" height="20" rx="10" fill="rgba(var(--acc-rgb),.10)" stroke="var(--dg-line)"/><text x="375" y="238" text-anchor="middle" fill="var(--muted)" font-size="10.5">latency (p95)</text>
+              <rect x="460" y="224" width="160" height="20" rx="10" fill="rgba(var(--acc-rgb),.10)" stroke="var(--dg-line)"/><text x="540" y="238" text-anchor="middle" fill="var(--muted)" font-size="10.5">hata oranı (5xx)</text>
+              <rect x="300" y="250" width="150" height="20" rx="10" fill="rgba(var(--acc-rgb),.10)" stroke="var(--dg-line)"/><text x="375" y="264" text-anchor="middle" fill="var(--muted)" font-size="10.5">istek sayısı</text>
+            </g>
+          </svg>
+          <figcaption>Alttaki katman sağlam değilse üsttekini yorumlayamazsın: latency patlıyorsa önce onu, veri bozuksa önce veriyi düzelt.</figcaption>
+        </figure>
+
+        <h2>Gözlemlenebilirlik altyapısı: log, metrik, trace</h2>
+        <p>Bu üç katmanı izleyebilmek için sinyal toplayan bir altyapıya ihtiyacın var. Yazılım dünyası buna <strong>observability (gözlemlenebilirlik)</strong> der ve klasik üçlüsü şudur:</p>
+        <ul>
+          <li><strong>Logging</strong> — her olayın yapılandırılmış kaydı. ML'de altın kural: her tahmin isteğinin girdisini, tahminini, model versiyonunu ve zaman damgasını logla. Bu log'lar hem hata ayıklamanın hem de drift analizinin ham maddesidir.</li>
+          <li><strong>Metrics</strong> — sayısal özetlerin zaman serileri: saniyedeki istek, p95 latency, günlük PSI, ortalama tahmin. Prometheus gibi sistemlerde toplanır, Grafana gibi araçlarla <strong>dashboard</strong>'a dönüşür.</li>
+          <li><strong>Tracing</strong> — tek bir isteğin sistemler arasındaki yolculuğunu uçtan uca takip etme: istek API'ye geldi → feature'lar çekildi → model tahmin etti → yanıt döndü. Hangi adımın yavaşlattığını bulmanın yolu budur.</li>
+        </ul>
+        <p>Sinyal toplamak yetmez; birinin haberdar olması gerekir. <strong>Alerting (uyarı)</strong> iki yaklaşımla kurulur: <em>eşik tabanlı</em> ("PSI 0.2'yi aşarsa uyar" — basit, öngörülebilir) ve <em>anomali tabanlı</em> ("bu metrik tarihsel deseninden saptıysa uyar" — eşiği bilmediğin durumlar için). İyi bir alert azdır ve eyleme dönüktür; her gün çalan alarm kısa sürede görmezden gelinen alarm olur.</p>
+
+        <figure class="codebox">
+          <figcaption>Python — referans ve güncel dağılımı KS testiyle karşılaştırarak basit drift tespiti</figcaption>
+          <pre><code data-lang="python">import numpy as np
+from scipy import stats
+
+# Referans: modelin eğitildiği dönemdeki feature değerleri
+# Güncel: üretimden gelen son 7 günün değerleri (tahmin log'larından)
+referans = np.load("egitim_donemi_harcama.npy")
+guncel = np.load("son_7_gun_harcama.npy")
+
+# Kolmogorov-Smirnov testi: "bu iki örneklem aynı dağılımdan mı?"
+ks_istatistik, p_deger = stats.ks_2samp(referans, guncel)
+
+print(f"KS istatistiği: {ks_istatistik:.3f}  p-değeri: {p_deger:.4f}")
+
+# Eşik kararı: p-değeri küçükse dağılımlar anlamlı şekilde farklı
+# (büyük veri setlerinde KS istatistiğinin kendisine de eşik koy: örn. 0.1)
+if p_deger &lt; 0.01 and ks_istatistik &gt; 0.1:
+    print("UYARI: data drift şüphesi — 'harcama' dağılımı kaydı!")
+    # burada alert sistemine bildirim gider (Slack, PagerDuty...)
+else:
+    print("Dağılım stabil görünüyor.")</code></pre>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Python — tahmin loglama şeması + basit alert koşulu</figcaption>
+          <pre><code data-lang="python">import json, time, uuid
+
+def tahmini_logla(girdi: dict, tahmin: float, model_versiyonu: str):
+    """Her tahmin isteğini yapılandırılmış JSON olarak kaydet."""
+    kayit = {
+        "istek_id": str(uuid.uuid4()),   # istekleri tekil takip için
+        "zaman": time.time(),            # drift analizi zamana bağlı: şart!
+        "model_versiyonu": model_versiyonu,  # hangi model tahmin etti?
+        "girdi": girdi,                  # feature'lar (kişisel veriyi maskele!)
+        "tahmin": tahmin,
+    }
+    # Gerçekte: log dosyası, Kafka ya da bir log servisi
+    print(json.dumps(kayit, ensure_ascii=False))
+
+tahmini_logla({"harcama_30g": 4200.0, "islem_sayisi": 17}, 0.83, "v2.1.0")
+
+# Basit alert koşulu: son 1 saatin pozitif tahmin oranı,
+# tarihsel ortalamadan 3 standart sapma uzaklaştıysa alarm çal
+# (oran_* değerleri metrik sisteminden okunur)
+if abs(oran_son_1saat - oran_tarihsel) &gt; 3 * oran_std:
+    alarm_gonder("Tahmin dağılımı anormal: modeli ve veriyi kontrol et!")</code></pre>
+        </figure>
+
+        <h2>Güvenli yayın: shadow → canary → tam geçiş</h2>
+        <p>Yeni bir model eğittin, offline metrikleri eskisinden iyi. Hemen tüm trafiği ona mı verirsin? Hayır — offline metrik, üretim davranışının garantisi değildir. Riski kademeli açan üç aşamalı bir strateji standarttır:</p>
+        <ul>
+          <li><strong>Shadow deployment (gölge yayın)</strong> — yeni model üretim trafiğinin <em>kopyasını</em> alır, tahmin yapar, tahminleri loglanır ama <strong>hiçbir karara karışmaz</strong>. Kullanıcı hâlâ eski modelin çıktısını görür. Böylece yeni modeli gerçek veriyle sıfır riskle test edersin.</li>
+          <li><strong>Canary deployment</strong> — gölgede sorun çıkmadıysa trafiğin küçük bir dilimi (örn. %5) gerçekten yeni modele yönlendirilir. Metrikler yakından izlenir: bir sorun olursa etki sınırlıdır ve tek komutla <strong>rollback</strong> (eski modele geri dönüş) yapılır.</li>
+          <li><strong>Tam geçiş</strong> — canary dilimi kademeli büyütülür (%5 → %25 → %100) ve eski model emekliye ayrılır; ancak acil geri dönüş için bir süre hazırda bekletilir.</li>
+        </ul>
+        <p>İki modeli <em>bilimsel olarak</em> karşılaştırmak istiyorsan bu düzenek bir <strong>A/B testine</strong> dönüşür: trafik rastgele bölünür ve iş metriği (tıklama, dönüşüm, tahsilat) üzerinden istatistiksel anlamlılık aranır. Bunun metodolojisini <a href="m4-istatistiksel-cikarim.html">istatistiksel çıkarım konusunda</a> görmüştük — hipotez testi burada gerçek paraya dokunur.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 300" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Shadow, canary ve tam geçiş aşamaları">
+            <defs>
+              <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              <marker id="arr3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <!-- aşama 1: shadow -->
+              <rect x="20" y="35" width="210" height="205" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="125" y="60" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">1. Shadow</text>
+              <text x="125" y="78" text-anchor="middle" fill="var(--muted)" font-size="10.5">trafik: %100 eski, %0 yeni</text>
+              <rect x="45" y="95" width="160" height="38" rx="8" fill="rgba(var(--acc-rgb),.20)" stroke="var(--acc)"/>
+              <text x="125" y="118" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">Eski model → karar</text>
+              <rect x="45" y="150" width="160" height="38" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-dasharray="5 4"/>
+              <text x="125" y="167" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="600">Yeni model (gölge)</text>
+              <text x="125" y="182" text-anchor="middle" fill="var(--muted)" font-size="10">sadece loglar, karar vermez</text>
+              <text x="125" y="222" text-anchor="middle" fill="var(--muted)" font-size="10.5">risk: sıfır</text>
+
+              <!-- aşama 2: canary -->
+              <rect x="255" y="35" width="210" height="205" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="360" y="60" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">2. Canary</text>
+              <text x="360" y="78" text-anchor="middle" fill="var(--muted)" font-size="10.5">trafik: %95 eski, %5 yeni</text>
+              <rect x="280" y="95" width="160" height="38" rx="8" fill="rgba(var(--acc-rgb),.20)" stroke="var(--acc)"/>
+              <text x="360" y="118" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">Eski model — %95</text>
+              <rect x="280" y="150" width="160" height="38" rx="8" fill="rgba(var(--acc-rgb),.10)" stroke="var(--warn)"/>
+              <text x="360" y="167" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">Yeni model — %5</text>
+              <text x="360" y="182" text-anchor="middle" fill="var(--muted)" font-size="10">gerçek karar verir, izlenir</text>
+              <text x="360" y="222" text-anchor="middle" fill="var(--muted)" font-size="10.5">sorun varsa → rollback</text>
+
+              <!-- aşama 3: tam geçiş -->
+              <rect x="490" y="35" width="210" height="205" rx="12" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="595" y="60" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">3. Tam geçiş</text>
+              <text x="595" y="78" text-anchor="middle" fill="var(--muted)" font-size="10.5">trafik: %100 yeni</text>
+              <rect x="515" y="95" width="160" height="38" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-dasharray="5 4"/>
+              <text x="595" y="118" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="600">Eski model (yedekte)</text>
+              <rect x="515" y="150" width="160" height="38" rx="8" fill="rgba(var(--acc-rgb),.25)" stroke="var(--ok)" stroke-width="1.6"/>
+              <text x="595" y="167" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">Yeni model — %100</text>
+              <text x="595" y="182" text-anchor="middle" fill="var(--muted)" font-size="10">kademeli: %5 → %25 → %100</text>
+              <text x="595" y="222" text-anchor="middle" fill="var(--muted)" font-size="10.5">eski model bir süre hazırda</text>
+
+              <!-- oklar -->
+              <path d="M232 137 L253 137" stroke="var(--acc)" stroke-width="2" marker-end="url(#arr2)"/>
+              <path d="M467 137 L488 137" stroke="var(--acc)" stroke-width="2" marker-end="url(#arr2)"/>
+              <text x="360" y="272" text-anchor="middle" fill="var(--muted)" font-size="11">Her aşamada koşul aynı: metrikler temizse ilerle, değilse geri dön</text>
+              <path d="M360 258 L360 250" stroke="var(--dg-line)" stroke-width="0" marker-end="url(#arr3)"/>
+            </g>
+          </svg>
+          <figcaption>Kademeli yayın, "yeni model üretimde patlarsa" sorusunun cevabını felaketten sıradan bir geri dönüşe çevirir.</figcaption>
+        </figure>
+
+        <div class="tip"><b>Rollback bir buton olmalı.</b> Yeni modele geçmeden önce kendine sor: "Eskiye dönmek kaç dakika sürer?" Cevap "modeli yeniden eğitmek gerekir" ise hazır değilsin. Model registry'de eski versiyonun duruyor olması ve tek komutla geri alınabilmesi, canary'nin ön koşuludur.</div>
+
+        <h2>Retraining döngüsü: ne zaman yeniden eğitmeli?</h2>
+        <p>Drift tespit ettin; çözüm çoğu zaman modeli güncel veriyle <strong>yeniden eğitmektir (retraining)</strong>. Asıl soru zamanlamadır ve iki temel strateji vardır:</p>
+        <ul>
+          <li><strong>Takvim tetiklemeli</strong> — modeli düzenli aralıklarla (her hafta/ay) güncel veriyle yeniden eğit. Basit ve öngörülebilir; ama sakin dönemde gereksiz maliyet, fırtınalı dönemde geç kalmışlık demek olabilir.</li>
+          <li><strong>Drift tetiklemeli</strong> — izleme sistemi kayma sinyali verdiğinde retrain başlat. Kaynakları verimli kullanır ama sağlam bir izleme altyapısına muhtaçtır; o altyapı da bu sayfada kurduğumuz şeydir.</li>
+        </ul>
+        <p>Pratikte çoğu ekip ikisini birleştirir: düzenli takvim + drift alarmında erken tetikleme. Retrain edilen model de doğrudan üretime çıkmaz; yukarıdaki shadow → canary hattından geçer. Böylece döngü tamamlanır: <em>izle → tespit et → yeniden eğit → güvenle yayınla → izlemeye devam et</em>.</p>
+        <div class="warn"><b>Otomatik retrain sihirli değnek değildir.</b> Kimse bakmadan kendini yeniden eğiten pipeline iki tuzağa açıktır: (1) bozuk veri geldiyse model çöple eğitilir ve "otomatik olarak" kötüleşir; (2) concept drift döneminde eski etiketlerle eğitmek yanlış kuralı pekiştirir. Otomatik retrain'in önüne mutlaka veri kalitesi kontrolleri ve "yeni model eskisini geçemezse yayınlama" kuralı koy.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Monitoring, MLOps mülakatlarının ve gerçek üretim sistemlerinin değişmez gündemi:</p>
+        <ul>
+          <li><strong>İlk üretim modelin →</strong> "model çalışıyor mu?" sorusuna dashboard'suz cevap veremediğini ilk haftada fark edersin; tahmin loglama bu yüzden birinci iş.</li>
+          <li><strong>Veri ekibiyle ortak nöbet →</strong> model alarmlarının çoğu upstream veri sorunudur; <a href="m3-veri-kalitesi.html">veri kalitesi</a> testleriyle model izleme aynı zincirin halkalarıdır.</li>
+          <li><strong>Model karşılaştırma tartışması →</strong> "yeni model daha iyi" iddiası canary/A-B verisi olmadan kabul görmez; <a href="m4-istatistiksel-cikarim.html">hipotez testi</a> bilgin burada paraya dönüşür.</li>
+          <li><strong>Feature tutarlılığı →</strong> izlediğin drift bazen gerçek dünya değil, eğitim–servis feature uyuşmazlığıdır — bu ayrı bir dert ve <a href="m8-feature-store.html">bir sonraki konunun</a> ta kendisi.</li>
+          <li><strong>Mülakat klasiği →</strong> "Deploy ettiğin modelin performansı düştü, nasıl teşhis edersin?" Cevabın bu sayfanın üç katmanı: önce sistem, sonra veri, sonra model.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Data drift ile concept drift arasındaki fark nedir? Birer örnek ver.</summary>
+            <div class="answer"><b>Data drift'te girdilerin dağılımı</b> değişir (pandemi sonrası harcama tutarları kaydı), girdi–çıktı ilişkisi aynıdır. <b>Concept drift'te ilişkinin kendisi</b> değişir (dolandırıcılar taktik değiştirdi; aynı işlem deseni artık farklı anlama geliyor). İlki "model tanımadığı veriyle karşılaşıyor", ikincisi "modelin öğrendiği kural eskidi" demektir.</div>
+          </details>
+          <details class="quiz">
+            <summary>"Ground truth gecikmesi" nedir ve izleme stratejisini nasıl etkiler?</summary>
+            <div class="answer">Tahminin doğru olup olmadığını gösteren <b>gerçek etiketin geç gelmesidir</b>: kredi geri ödemesi aylar, kargo teslimi günler sonra belli olur. Bu yüzden doğruluk metriği anlık izlenemez; erken uyarı için <b>vekil sinyallere</b> — girdi drift'i, tahmin dağılımındaki ani değişimler — bakılır, gerçek performans etiketler geldikçe geriye dönük hesaplanır.</div>
+          </details>
+          <details class="quiz">
+            <summary>Shadow deployment ile canary deployment arasındaki temel fark nedir?</summary>
+            <div class="answer"><b>Karar yetkisi.</b> Shadow'da yeni model trafiğin kopyası üzerinde tahmin yapar ama hiçbir karara karışmaz — risk sıfırdır, sadece log toplanır. Canary'de trafiğin küçük bir yüzdesi (örn. %5) <b>gerçekten</b> yeni modele yönlendirilir: gerçek etki ölçülür ama sorun çıkarsa etki sınırlı kalır ve rollback yapılır.</div>
+          </details>
+          <details class="quiz">
+            <summary>Otomatik retraining'in iki temel riski nedir?</summary>
+            <div class="answer">(1) <b>Çöple eğitim:</b> upstream veri bozulduysa model otomatik olarak bozuk veriyle eğitilir ve sessizce kötüleşir. (2) <b>Yanlış kuralı pekiştirme:</b> concept drift döneminde eski/gecikmeli etiketlerle eğitmek geçersiz ilişkiyi yeniden öğretir. Çare: retrain öncesi veri kalitesi kontrolleri + yeni model eskisini geçemiyorsa yayınlamama kuralı + kademeli yayın.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Monitoring (İzleme)</span><span class="term-en">Model Monitoring</span><span class="lvl lvl-orta">Orta</span></div><p>Üretimdeki modelin sistem, veri ve tahmin sağlığını sürekli gözlemleme pratiği; deploy sonrası hayatın kendisi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Data Drift (Veri Kayması)</span><span class="term-en">Data Drift</span><span class="lvl lvl-ileri">İleri</span></div><p>Modele gelen girdilerin dağılımının eğitim dönemine göre kayması; model tanımadığı bölgede tahmin yapmak zorunda kalır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Concept Drift (Kavram Kayması)</span><span class="term-en">Concept Drift</span><span class="lvl lvl-ileri">İleri</span></div><p>Girdi ile çıktı arasındaki ilişkinin değişmesi; girdiler aynı görünse de modelin öğrendiği kural eskimiştir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">PSI</span><span class="term-en">Population Stability Index</span><span class="lvl lvl-ileri">İleri</span></div><p>İki dağılım arasındaki kaymayı dilim payları üzerinden tek skorda özetleyen metrik; kabaca 0.2 üzeri ciddi kayma sinyalidir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Ground Truth Gecikmesi</span><span class="term-en">Ground Truth Lag</span><span class="lvl lvl-ileri">İleri</span></div><p>Tahminin doğruluğunu gösteren gerçek etiketin geç gelmesi; doğruluk metriklerini gecikmeli, vekil sinyalleri anlık izlemeyi zorunlu kılar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Observability (Gözlemlenebilirlik)</span><span class="term-en">Observability</span><span class="lvl lvl-ileri">İleri</span></div><p>Sistemin iç durumunu dışarıdan anlayabilme yeteneği; log, metrik ve trace üçlüsüyle kurulur.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Logging</span><span class="term-en">Logging</span><span class="lvl lvl-orta">Orta</span></div><p>Olayların yapılandırılmış kaydı; ML'de her tahminin girdi + çıktı + versiyon + zaman bilgisiyle loglanması drift analizinin ham maddesidir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Alerting (Uyarı)</span><span class="term-en">Alerting</span><span class="lvl lvl-orta">Orta</span></div><p>Metrik eşik aştığında ya da anormal davrandığında ekibi otomatik haberdar etme; iyi alert az ve eyleme dönüktür.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Shadow Deployment (Gölge Yayın)</span><span class="term-en">Shadow Deployment</span><span class="lvl lvl-ileri">İleri</span></div><p>Yeni modelin üretim trafiğinin kopyasında tahmin yapıp hiçbir karara karışmaması; sıfır riskle gerçek veri testi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Canary Deployment</span><span class="term-en">Canary Deployment</span><span class="lvl lvl-ileri">İleri</span></div><p>Yeni versiyonu trafiğin küçük bir yüzdesine açıp izleyerek kademeli yaygınlaştırma; sorun çıkarsa etki sınırlı kalır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Rollback (Geri Alma)</span><span class="term-en">Rollback</span><span class="lvl lvl-orta">Orta</span></div><p>Sorun çıktığında bir önceki model/servis versiyonuna hızla dönme; "tek komutla eskiye dönüş" güvenli yayının ön koşuludur.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Retraining (Yeniden Eğitim)</span><span class="term-en">Retraining</span><span class="lvl lvl-orta">Orta</span></div><p>Modeli güncel veriyle yeniden eğitme; takvimle ya da drift alarmıyla tetiklenir, çıkan model kademeli yayın hattından geçer.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m8-monitoring">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m8-cicd-tracking.html"><span>← Önceki</span><b>CI/CD ve Experiment Tracking</b></a>
+          <a class="next" href="m8-feature-store.html"><span>Sonraki →</span><b>Feature Store ve Veri Versiyonlama</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

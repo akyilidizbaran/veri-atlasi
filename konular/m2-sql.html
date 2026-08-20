@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL ve İlişkisel Veritabanları — Veri Atlası</title>
+<meta name="description" content="Primary key, foreign key, JOIN türleri, GROUP BY, window functions, index, transaction ve ACID: veri dünyasının ortak dili SQL'e kapsamlı bir giriş.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m2" data-slug="m2-sql">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m2">2. Veri Dünyası</a><span class="sep">/</span>
+        <span>SQL ve İlişkisel Veritabanları</span>
+      </nav>
+      <span class="mod-badge">Modül 2 · Veri Dünyası</span>
+      <h1>SQL ve İlişkisel Veritabanları</h1>
+      <p class="en-title">SQL &amp; Relational Databases</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-baslangic">Başlangıç</span>
+        <span class="chip">⏱️ ~20 dk okuma</span>
+        <span class="chip">🔤 14 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Neden hâlâ SQL?</h2>
+        <p>1970'te Edgar Codd ilişkisel modeli önerdi; birkaç yıl sonra doğan SQL, yarım asırdır veri işinin ortak dili olmayı sürdürüyor. Bu arada nice moda geldi geçti — NoSQL dalgası, "big data SQL'i öldürecek" dönemi… Sonuç? BigQuery, Snowflake, <a href="m3-spark.html">Spark</a>, dbt: modern veri yığınının her katı yine SQL konuşuyor. <a href="m2-veri-kavramlari.html">Önceki konuda</a> gördüğün structured verinin sorgu dili budur ve data engineer mülakatlarının değişmez birinci ayağıdır.</p>
+        <p>SQL'i özel kılan şey <strong>deklaratif</strong> olmasıdır: motoru adım adım yönlendirmezsin, "bana şunu getir" diye <em>ne</em> istediğini tarif edersin. Verinin nasıl taranacağına, hangi sırayla birleştirileceğine motor karar verir — bu kararların haritasına sorgu planı denir, sayfanın sonunda ona da değineceğiz.</p>
+
+        <h2>İlişkisel model: tablolar ve anahtarlar</h2>
+        <p>İlişkisel veritabanında her <strong>tablo</strong> tek bir varlık türünü anlatır: müşteriler ayrı, siparişler ayrı. Satırlar kayıtları, kolonlar özellikleri taşır. Peki iki tablo birbirini nereden tanır? İki anahtarla:</p>
+        <ul>
+          <li><strong>Primary key (birincil anahtar)</strong> — her satırın tekrarsız kimliği. Boş olamaz, çakışamaz: <code>musteri_id</code> gibi.</li>
+          <li><strong>Foreign key (yabancı anahtar)</strong> — başka bir tablonun primary key'ine işaret eden kolon. <code>siparisler.musteri_id</code>, "bu sipariş şu müşterinin" der ve iki tabloyu <em>ilişkilendirir</em>.</li>
+        </ul>
+        <p>Neden tek dev tablo yerine bu bölünmüşlük? Müşterinin adını her siparişin yanına yazsaydın, Ayşe soyadını değiştirdiğinde binlerce satırı güncellemen gerekirdi. Bilgiyi tek yerde tutup anahtarla işaret etmek, tutarlılığın temel taktiğidir — buna birazdan "normalizasyon" adını vereceğiz.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 250" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="musteriler ve siparisler tabloları arasında primary key - foreign key ilişkisi">
+            <g font-family="inherit">
+              <path d="M545 62 C 500 16, 140 16, 88 60" fill="none" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrB1)"/>
+              <text x="318" y="24" text-anchor="middle" fill="var(--acc)" font-size="11" font-weight="700">FK, PK'yi işaret eder: her sipariş bir müşteriye bağlıdır</text>
+
+              <!-- musteriler -->
+              <text x="170" y="60" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">musteriler</text>
+              <rect x="40" y="70" width="80" height="26" fill="rgba(var(--acc-rgb),.22)" stroke="var(--dg-line)"/>
+              <rect x="120" y="70" width="90" height="26" fill="rgba(var(--acc-rgb),.1)" stroke="var(--dg-line)"/>
+              <rect x="210" y="70" width="90" height="26" fill="rgba(var(--acc-rgb),.1)" stroke="var(--dg-line)"/>
+              <text x="80" y="87" text-anchor="middle" fill="var(--ink)" font-size="10" font-weight="700">musteri_id PK</text>
+              <text x="165" y="87" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="600">ad</text>
+              <text x="255" y="87" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="600">sehir</text>
+              <g font-size="10.5" fill="var(--muted)">
+                <rect x="40" y="96" width="80" height="26" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/>
+                <rect x="120" y="96" width="90" height="26" fill="none" stroke="var(--dg-line)"/>
+                <rect x="210" y="96" width="90" height="26" fill="none" stroke="var(--dg-line)"/>
+                <text x="80" y="113" text-anchor="middle" fill="var(--ink)" font-weight="600">1</text>
+                <text x="165" y="113" text-anchor="middle">Ayşe</text>
+                <text x="255" y="113" text-anchor="middle">İstanbul</text>
+                <rect x="40" y="122" width="80" height="26" fill="none" stroke="var(--dg-line)"/>
+                <rect x="120" y="122" width="90" height="26" fill="none" stroke="var(--dg-line)"/>
+                <rect x="210" y="122" width="90" height="26" fill="none" stroke="var(--dg-line)"/>
+                <text x="80" y="139" text-anchor="middle">2</text>
+                <text x="165" y="139" text-anchor="middle">Mehmet</text>
+                <text x="255" y="139" text-anchor="middle">Ankara</text>
+                <rect x="40" y="148" width="80" height="26" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/>
+                <rect x="120" y="148" width="90" height="26" fill="none" stroke="var(--dg-line)"/>
+                <rect x="210" y="148" width="90" height="26" fill="none" stroke="var(--dg-line)"/>
+                <text x="80" y="165" text-anchor="middle" fill="var(--ink)" font-weight="600">3</text>
+                <text x="165" y="165" text-anchor="middle">Zeynep</text>
+                <text x="255" y="165" text-anchor="middle">İzmir</text>
+              </g>
+
+              <!-- siparisler -->
+              <text x="550" y="60" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">siparisler</text>
+              <rect x="420" y="70" width="85" height="26" fill="rgba(var(--acc-rgb),.22)" stroke="var(--dg-line)"/>
+              <rect x="505" y="70" width="90" height="26" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)"/>
+              <rect x="595" y="70" width="85" height="26" fill="rgba(var(--acc-rgb),.1)" stroke="var(--dg-line)"/>
+              <text x="462" y="87" text-anchor="middle" fill="var(--ink)" font-size="10" font-weight="700">siparis_id PK</text>
+              <text x="550" y="87" text-anchor="middle" fill="var(--ink)" font-size="10" font-weight="700">musteri_id FK</text>
+              <text x="637" y="87" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="600">tutar (TL)</text>
+              <g font-size="10.5" fill="var(--muted)">
+                <rect x="420" y="96" width="85" height="26" fill="none" stroke="var(--dg-line)"/>
+                <rect x="505" y="96" width="90" height="26" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/>
+                <rect x="595" y="96" width="85" height="26" fill="none" stroke="var(--dg-line)"/>
+                <text x="462" y="113" text-anchor="middle">101</text>
+                <text x="550" y="113" text-anchor="middle" fill="var(--ink)" font-weight="600">1</text>
+                <text x="637" y="113" text-anchor="middle">250</text>
+                <rect x="420" y="122" width="85" height="26" fill="none" stroke="var(--dg-line)"/>
+                <rect x="505" y="122" width="90" height="26" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/>
+                <rect x="595" y="122" width="85" height="26" fill="none" stroke="var(--dg-line)"/>
+                <text x="462" y="139" text-anchor="middle">102</text>
+                <text x="550" y="139" text-anchor="middle" fill="var(--ink)" font-weight="600">1</text>
+                <text x="637" y="139" text-anchor="middle">90</text>
+                <rect x="420" y="148" width="85" height="26" fill="none" stroke="var(--dg-line)"/>
+                <rect x="505" y="148" width="90" height="26" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/>
+                <rect x="595" y="148" width="85" height="26" fill="none" stroke="var(--dg-line)"/>
+                <text x="462" y="165" text-anchor="middle">103</text>
+                <text x="550" y="165" text-anchor="middle" fill="var(--ink)" font-weight="600">3</text>
+                <text x="637" y="165" text-anchor="middle">480</text>
+              </g>
+
+              <text x="170" y="205" text-anchor="middle" fill="var(--muted)" font-size="10.5">Ayşe'nin 2 siparişi var (101, 102)</text>
+              <text x="550" y="205" text-anchor="middle" fill="var(--muted)" font-size="10.5">Mehmet (id=2) hiç siparişte yok → LEFT JOIN'de NULL</text>
+              <defs>
+                <marker id="arrB1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              </defs>
+            </g>
+          </svg>
+          <figcaption>İlişkinin anatomisi: siparisler.musteri_id (FK), musteriler.musteri_id'ye (PK) işaret eder. Bu ok, birazdan yazacağın her JOIN'in temelidir.</figcaption>
+        </figure>
+
+        <h2>SELECT anatomisi: yazım sırası ≠ çalışma sırası</h2>
+        <p>Bir sorguyu <code>SELECT</code> ile yazmaya başlarsın ama motor onu <code>FROM</code>'dan çalıştırmaya başlar. Mantıksal sıra şudur: önce tablolar alınıp birleştirilir (FROM/JOIN), satırlar filtrelenir (WHERE), gruplanır (GROUP BY), gruplar filtrelenir (HAVING), <em>ancak ondan sonra</em> kolonlar seçilir (SELECT), sıralanır (ORDER BY) ve kesilir (LIMIT).</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 780 160" width="780" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SELECT sorgusunun mantıksal çalışma sırası">
+            <g font-family="inherit">
+              <text x="390" y="18" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Motorun çalıştırma sırası (yazım sırası değil!)</text>
+              <g font-size="11" font-weight="700">
+                <text x="60" y="36" text-anchor="middle" fill="var(--acc)">1</text>
+                <text x="170" y="36" text-anchor="middle" fill="var(--acc)">2</text>
+                <text x="280" y="36" text-anchor="middle" fill="var(--acc)">3</text>
+                <text x="390" y="36" text-anchor="middle" fill="var(--acc)">4</text>
+                <text x="500" y="36" text-anchor="middle" fill="var(--acc)">5</text>
+                <text x="610" y="36" text-anchor="middle" fill="var(--acc)">6</text>
+                <text x="720" y="36" text-anchor="middle" fill="var(--acc)">7</text>
+              </g>
+              <rect x="12" y="42" width="96" height="42" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="60" y="68" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">FROM</text>
+              <rect x="122" y="42" width="96" height="42" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="170" y="68" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">WHERE</text>
+              <rect x="232" y="42" width="96" height="42" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="280" y="68" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">GROUP BY</text>
+              <rect x="342" y="42" width="96" height="42" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="390" y="68" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">HAVING</text>
+              <rect x="452" y="42" width="96" height="42" rx="9" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="500" y="68" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">SELECT</text>
+              <rect x="562" y="42" width="96" height="42" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="610" y="68" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">ORDER BY</text>
+              <rect x="672" y="42" width="96" height="42" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="720" y="68" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">LIMIT</text>
+              <line x1="108" y1="63" x2="118" y2="63" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arrB2)"/>
+              <line x1="218" y1="63" x2="228" y2="63" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arrB2)"/>
+              <line x1="328" y1="63" x2="338" y2="63" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arrB2)"/>
+              <line x1="438" y1="63" x2="448" y2="63" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arrB2)"/>
+              <line x1="548" y1="63" x2="558" y2="63" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arrB2)"/>
+              <line x1="658" y1="63" x2="668" y2="63" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arrB2)"/>
+              <g font-size="10" fill="var(--muted)">
+                <text x="60" y="102" text-anchor="middle">tablolar + JOIN</text>
+                <text x="170" y="102" text-anchor="middle">satır filtrele</text>
+                <text x="280" y="102" text-anchor="middle">grupla</text>
+                <text x="390" y="102" text-anchor="middle">grup filtrele</text>
+                <text x="500" y="102" text-anchor="middle">kolonları seç</text>
+                <text x="610" y="102" text-anchor="middle">sırala</text>
+                <text x="720" y="102" text-anchor="middle">ilk N satır</text>
+              </g>
+              <text x="390" y="140" text-anchor="middle" fill="var(--muted)" font-size="11">Yazarken ilk sırada duran SELECT, çalışırken 5. sıradadır — WHERE bu yüzden SELECT'teki takma adı (alias) göremez.</text>
+              <defs>
+                <marker id="arrB2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              </defs>
+            </g>
+          </svg>
+          <figcaption>SELECT'in mantıksal boru hattı. Bu sırayı ezberlemek, "neden bu sorgu hata veriyor?" sorularının yarısını kökten çözer.</figcaption>
+        </figure>
+
+        <p>Bu sıranın pratik bir sonucu: <code>SELECT fiyat * 1.2 AS zamli</code> yazdıysan, çoğu veritabanında <code>WHERE zamli &gt; 100</code> diyemezsin — WHERE çalışırken o takma ad henüz doğmamıştır. <code>ORDER BY zamli</code> ise çalışır, çünkü sıralama SELECT'ten sonra gelir. Şimdi ilk sorgunu yaz:</p>
+
+        <figure class="codebox">
+          <figcaption>SQL — temel SELECT: filtrele, sırala, kes</figcaption>
+          <pre><code data-lang="sql">-- Elektronik kategorisinde 500 TL üstü ürünler, pahalıdan ucuza
+SELECT urun_adi,
+       fiyat,
+       stok
+FROM urunler
+WHERE kategori = 'elektronik'
+  AND fiyat &gt; 500          -- satır filtresi: gruplamadan ÖNCE çalışır
+ORDER BY fiyat DESC        -- sıralama: neredeyse en sonda
+LIMIT 10;                  -- sadece ilk 10 satır</code></pre>
+        </figure>
+
+        <div class="tip"><b>Hemen denemek için sunucu gerekmez.</b> SQLite tek dosyalık bir veritabanıdır: Python'da <code>import sqlite3</code> ile, tarayıcıda sqliteonline.com ile saniyeler içinde SQL yazmaya başlayabilirsin. Okuduğun her sorguyu elle yazıp bozarak öğren.</div>
+
+        <h2>JOIN: tabloları buluşturmak</h2>
+        <p>Veri ayrı tablolarda yaşadığına göre, rapor almak için onları buluşturman gerekir. <strong>JOIN</strong>, iki tabloyu bir eşleşme koşulu üzerinden (genellikle <code>FK = PK</code>) yan yana getirir. Dört tür vardır ve fark, <em>eşleşmeyen satırlara ne olacağıdır</em>:</p>
+        <ul>
+          <li><strong>INNER JOIN</strong> — yalnızca iki tarafta da eşleşen satırlar. "Siparişi olan müşteriler ve siparişleri."</li>
+          <li><strong>LEFT JOIN</strong> — soldaki tablonun <em>tamamı</em>; sağda eşleşme yoksa kolonlar NULL gelir. "Tüm müşteriler, sipariş yoksa boş."</li>
+          <li><strong>RIGHT JOIN</strong> — LEFT'in aynadaki hâli; pratikte tablolarının yerini değiştirip LEFT yazmak daha yaygındır.</li>
+          <li><strong>FULL JOIN</strong> — iki tarafın da tamamı; eşleşmeyen her satır karşı taraftan NULL alır. İki kaynağı karşılaştırıp uyuşmazlık avlarken birebirdir.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 760 250" width="760" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="INNER, LEFT, RIGHT ve FULL JOIN Venn şemaları">
+            <g font-family="inherit">
+              <!-- INNER -->
+              <text x="95" y="42" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">INNER JOIN</text>
+              <clipPath id="lensB2"><circle cx="72" cy="110" r="42"/></clipPath>
+              <circle cx="118" cy="110" r="42" fill="rgba(var(--acc-rgb),.4)" clip-path="url(#lensB2)"/>
+              <circle cx="72" cy="110" r="42" fill="none" stroke="var(--dg-line)" stroke-width="1.6"/>
+              <circle cx="118" cy="110" r="42" fill="none" stroke="var(--dg-line)" stroke-width="1.6"/>
+              <text x="52" y="114" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="600">A</text>
+              <text x="138" y="114" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="600">B</text>
+              <text x="95" y="176" text-anchor="middle" fill="var(--muted)" font-size="10.5">sadece eşleşenler</text>
+              <text x="95" y="191" text-anchor="middle" fill="var(--muted)" font-size="10.5">(kesişim)</text>
+
+              <!-- LEFT -->
+              <text x="285" y="42" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">LEFT JOIN</text>
+              <circle cx="262" cy="110" r="42" fill="rgba(var(--acc-rgb),.4)" stroke="var(--dg-line)" stroke-width="1.6"/>
+              <circle cx="308" cy="110" r="42" fill="none" stroke="var(--dg-line)" stroke-width="1.6"/>
+              <text x="242" y="114" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">A</text>
+              <text x="328" y="114" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="600">B</text>
+              <text x="285" y="176" text-anchor="middle" fill="var(--muted)" font-size="10.5">A'nın tamamı</text>
+              <text x="285" y="191" text-anchor="middle" fill="var(--muted)" font-size="10.5">eşleşmeyen B → NULL</text>
+
+              <!-- RIGHT -->
+              <text x="475" y="42" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">RIGHT JOIN</text>
+              <circle cx="452" cy="110" r="42" fill="none" stroke="var(--dg-line)" stroke-width="1.6"/>
+              <circle cx="498" cy="110" r="42" fill="rgba(var(--acc-rgb),.4)" stroke="var(--dg-line)" stroke-width="1.6"/>
+              <text x="432" y="114" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="600">A</text>
+              <text x="518" y="114" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">B</text>
+              <text x="475" y="176" text-anchor="middle" fill="var(--muted)" font-size="10.5">B'nin tamamı</text>
+              <text x="475" y="191" text-anchor="middle" fill="var(--muted)" font-size="10.5">eşleşmeyen A → NULL</text>
+
+              <!-- FULL -->
+              <text x="665" y="42" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">FULL JOIN</text>
+              <circle cx="642" cy="110" r="42" fill="rgba(var(--acc-rgb),.3)" stroke="var(--dg-line)" stroke-width="1.6"/>
+              <circle cx="688" cy="110" r="42" fill="rgba(var(--acc-rgb),.3)" stroke="var(--dg-line)" stroke-width="1.6"/>
+              <text x="622" y="114" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">A</text>
+              <text x="708" y="114" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">B</text>
+              <text x="665" y="176" text-anchor="middle" fill="var(--muted)" font-size="10.5">iki tarafın tamamı</text>
+              <text x="665" y="191" text-anchor="middle" fill="var(--muted)" font-size="10.5">eşleşmeyenler → NULL</text>
+
+              <text x="380" y="228" text-anchor="middle" fill="var(--faint)" font-size="11">A = FROM'daki (sol) tablo · B = JOIN'lenen (sağ) tablo · boyalı alan = sonuca giren satırlar</text>
+            </g>
+          </svg>
+          <figcaption>Dört JOIN türü. Karar sorusu hep aynıdır: "eşleşmeyen satırları istiyor muyum, istiyorsam hangi taraftan?"</figcaption>
+        </figure>
+
+        <div class="warn"><b>LEFT JOIN'i sessizce INNER'a çevirme.</b> <code>LEFT JOIN siparisler s</code> yazıp sonra <code>WHERE s.tutar &gt; 100</code> dersen, sağdan NULL gelen satırlar (siparişsiz müşteriler) koşulu geçemez ve elenir — LEFT JOIN fiilen INNER olur. Sağ tabloya ait koşulu <code>ON</code> satırına taşı ya da <code>WHERE (s.tutar &gt; 100 OR s.tutar IS NULL)</code> gibi NULL'a bilinçli izin ver.</div>
+
+        <h2>Aggregation: GROUP BY düşünme biçimi</h2>
+        <p><code>COUNT</code>, <code>SUM</code>, <code>AVG</code>, <code>MIN</code>, <code>MAX</code> gibi <strong>aggregate fonksiyonlar</strong> çok satırı tek değere özetler. <strong>GROUP BY</strong> ise "bu özeti her grup için ayrı ayrı yap" der. Zihinsel model şu: satırları şehirlere göre kümelere ayır, sonra <em>her kümeyi tek satıra indir</em>. Bu yüzden SELECT'te yalnızca iki şey durabilir: gruplanan kolonlar ya da aggregate edilmiş değerler — "hangi müşterinin tutarı?" sorusunun grup satırında tek bir cevabı olmadığı için motor başka kolona izin vermez.</p>
+        <p>Filtrelerin işbölümünü de netleştirelim: <strong>WHERE satırları</strong> (gruplamadan önce), <strong>HAVING grupları</strong> (gruplamadan sonra) filtreler. Üçünü tek gerçekçi raporda birleştirelim:</p>
+
+        <figure class="codebox">
+          <figcaption>SQL — JOIN + GROUP BY + HAVING ile şehir bazlı ciro raporu</figcaption>
+          <pre><code data-lang="sql">-- 2026'da şehir başına ciro; 100.000 TL'yi aşan şehirler
+SELECT m.sehir,
+       COUNT(DISTINCT m.musteri_id) AS musteri_sayisi,
+       SUM(s.tutar)                 AS toplam_ciro
+FROM musteriler AS m
+INNER JOIN siparisler AS s
+        ON s.musteri_id = m.musteri_id   -- FK = PK eşleşmesi
+WHERE s.tarih &gt;= '2026-01-01'            -- 1) önce satırlar süzülür
+GROUP BY m.sehir                         -- 2) şehir başına kümelenir
+HAVING SUM(s.tutar) &gt; 100000             -- 3) en son gruplar elenir
+ORDER BY toplam_ciro DESC;               -- 4) rapor sıralanır</code></pre>
+        </figure>
+
+        <h2>Window functions: satırları yutmayan hesaplar</h2>
+        <p>GROUP BY'ın bedeli vardır: <strong>satırları yutar</strong> — 1 milyon satır, 81 şehir satırına iner ve tekil satırların detayı kaybolur. Peki "her siparişin yanına, o müşterinin toplam harcamasını da yaz" istersen? İşte <strong>window function (pencere fonksiyonu)</strong> bunun için var: <em>GROUP BY satırları yutar, window korur.</em> Her satır yerinde durur; fonksiyon o satırın "penceresinden" görünen satırlar üzerinde hesap yapıp sonucu yeni bir kolon olarak iliştirir.</p>
+        <p>Pencereyi <code>OVER (PARTITION BY ... ORDER BY ...)</code> tanımlar: PARTITION BY grupları (GROUP BY'ın karşılığı), ORDER BY pencere içindeki sırayı belirler. En çok kullanacakların: <code>ROW_NUMBER()</code> (grup içi sıra numarası), <code>LAG()</code> (önceki satırın değeri), <code>SUM() OVER (ORDER BY ...)</code> (kümülatif toplam).</p>
+
+        <figure class="codebox">
+          <figcaption>SQL — window functions: grup içi sıralama ve kümülatif toplam</figcaption>
+          <pre><code data-lang="sql">-- 1) Her kategorinin en çok satan 3 ürünü
+SELECT *
+FROM (
+    SELECT kategori, urun_adi, satis_adedi,
+           ROW_NUMBER() OVER (
+               PARTITION BY kategori          -- her kategori kendi yarışı
+               ORDER BY satis_adedi DESC      -- pencere içi sıralama
+           ) AS sira
+    FROM urun_satislari
+) t
+WHERE sira &lt;= 3;   -- satırlar korunduğu için detay kolonlar hâlâ elimizde
+
+-- 2) Aylık ciro + kümülatif toplam + önceki aya göre fark
+SELECT ay,
+       ciro,
+       SUM(ciro) OVER (ORDER BY ay)        AS kumulatif_ciro,
+       ciro - LAG(ciro) OVER (ORDER BY ay) AS onceki_aya_fark
+FROM aylik_ciro;
+-- LAG(ciro): bir önceki satırın (ayın) cirosunu bu satıra getirir</code></pre>
+        </figure>
+
+        <h2>Index: telefon rehberi hilesi</h2>
+        <p>Bir tabloda <code>WHERE ad = 'Kaya'</code> aradığında motor, varsayılan olarak <em>her satıra</em> bakmak zorundadır (full scan). Eski telefon rehberlerini düşün: rehber soyada göre <strong>sıralı</strong> olduğu için "Kaya"yı saniyede bulursun; aynı isimler rastgele bir yığında olsaydı tek tek bakardın. <strong>Index (indeks)</strong> tam olarak bu rehberdir: bir kolonun değerlerini sıralı bir yapıda (çoğunlukla B-tree) tutar ve her değerin hangi satırda olduğunu işaret eder.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 300" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Index olmadan tam tarama ile index üzerinden doğrudan erişim karşılaştırması">
+            <g font-family="inherit">
+              <text x="360" y="22" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Sorgu: WHERE ad = 'Kaya'</text>
+
+              <!-- index yok -->
+              <text x="185" y="52" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Index yok → full scan</text>
+              <g font-size="10.5">
+                <rect x="105" y="64" width="180" height="24" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="195" y="80" text-anchor="middle" fill="var(--muted)">Yılmaz</text>
+                <rect x="105" y="94" width="180" height="24" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="195" y="110" text-anchor="middle" fill="var(--muted)">Demir</text>
+                <rect x="105" y="124" width="180" height="24" rx="5" fill="rgba(var(--acc-rgb),.25)" stroke="var(--acc)" stroke-width="1.5"/><text x="195" y="140" text-anchor="middle" fill="var(--ink)" font-weight="700">Kaya</text>
+                <rect x="105" y="154" width="180" height="24" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="195" y="170" text-anchor="middle" fill="var(--muted)">Çelik</text>
+                <rect x="105" y="184" width="180" height="24" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="195" y="200" text-anchor="middle" fill="var(--muted)">Şahin</text>
+                <rect x="105" y="214" width="180" height="24" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="195" y="230" text-anchor="middle" fill="var(--muted)">Arslan</text>
+              </g>
+              <line x1="82" y1="70" x2="82" y2="232" stroke="var(--warn)" stroke-width="2" marker-end="url(#arrB3)"/>
+              <text x="60" y="155" text-anchor="middle" fill="var(--warn)" font-size="10.5" font-weight="700" transform="rotate(-90 60 155)">hepsine bak</text>
+              <text x="185" y="262" text-anchor="middle" fill="var(--warn)" font-size="10.5" font-weight="600">okuma: yavaş — satır sayısıyla büyür</text>
+              <text x="185" y="278" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="600">yazma: hızlı — sadece ekle</text>
+
+              <!-- index var -->
+              <text x="540" y="52" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Index var → rehberden atla</text>
+              <g font-size="10.5">
+                <rect x="450" y="64" width="180" height="24" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="540" y="80" text-anchor="middle" fill="var(--muted)">Arslan</text>
+                <rect x="450" y="94" width="180" height="24" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="540" y="110" text-anchor="middle" fill="var(--muted)">Çelik</text>
+                <rect x="450" y="124" width="180" height="24" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="540" y="140" text-anchor="middle" fill="var(--muted)">Demir</text>
+                <rect x="450" y="154" width="180" height="24" rx="5" fill="rgba(var(--acc-rgb),.25)" stroke="var(--acc)" stroke-width="1.5"/><text x="540" y="170" text-anchor="middle" fill="var(--ink)" font-weight="700">Kaya</text>
+                <rect x="450" y="184" width="180" height="24" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="540" y="200" text-anchor="middle" fill="var(--muted)">Şahin</text>
+                <rect x="450" y="214" width="180" height="24" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="540" y="230" text-anchor="middle" fill="var(--muted)">Yılmaz</text>
+              </g>
+              <text x="668" y="70" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="700">sıralı yapı</text>
+              <path d="M 690 80 C 700 115, 685 145, 640 164" fill="none" stroke="var(--ok)" stroke-width="2" marker-end="url(#arrB4)"/>
+              <text x="540" y="262" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="600">okuma: hızlı — doğrudan hedefe in</text>
+              <text x="540" y="278" text-anchor="middle" fill="var(--warn)" font-size="10.5" font-weight="600">yazma: yavaşlar — index de güncellenir</text>
+
+              <defs>
+                <marker id="arrB3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--warn)"/></marker>
+                <marker id="arrB4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--ok)"/></marker>
+              </defs>
+            </g>
+          </svg>
+          <figcaption>Telefon rehberi analojisi: index okumaları uçurur ama her yazmada rehberin de güncellenmesi gerekir. Bedava değil, takas.</figcaption>
+        </figure>
+
+        <p>Takası net gör: index, <strong>WHERE ve JOIN'de sık kullanılan kolonlarda okumayı</strong> dramatik hızlandırır; karşılığında <strong>her INSERT/UPDATE index yapısını da güncellemek zorunda kalır</strong> ve disk alanı harcar. "Her kolona index at" bu yüzden çözüm değil, klasik bir acemi hatasıdır. Motorun index'i gerçekten kullanıp kullanmadığını <code>EXPLAIN</code> komutuyla görürsün: sorgunun <strong>sorgu planını</strong> — motorun izleyeceği adım haritasını — basar. Yavaş sorgu şikâyeti geldiğinde ilk refleksin bu olacak.</p>
+
+        <h2>Transaction ve ACID: banka havalesi güvencesi</h2>
+        <p>Ayşe'den Mehmet'e 100 TL havale iki ayrı yazmadır: Ayşe'nin hesabından düş, Mehmet'inkine ekle. İlk adımdan sonra elektrik kesilirse para buharlaşır! <strong>Transaction (işlem)</strong>, birden çok operasyonu tek bir "ya hep ya hiç" paketine sarar: <code>BEGIN</code> ile açılır, her şey yolundaysa <code>COMMIT</code> ile kalıcılaşır, sorun çıkarsa <code>ROLLBACK</code> ile tamamı geri alınır. İlişkisel veritabanları bu güvenceyi <strong>ACID</strong> kısaltmasıyla anılan dört sözle verir:</p>
+        <ul>
+          <li><strong>Atomicity (bölünmezlik)</strong> — paket ya bütünüyle uygulanır ya hiç; yarım havale olmaz.</li>
+          <li><strong>Consistency (tutarlılık)</strong> — işlem sonunda kurallar (bakiye negatif olamaz, FK geçerli olmalı) korunmuş olmalıdır.</li>
+          <li><strong>Isolation (yalıtım)</strong> — eşzamanlı işlemler birbirinin yarım hâlini görmez; herkes sanki sırayla çalışıyormuş gibi davranır.</li>
+          <li><strong>Durability (kalıcılık)</strong> — COMMIT dendiği an veri, elektrik kesilse bile kalıcıdır.</li>
+        </ul>
+        <p>Bu garantiler operasyonel sistemlerin (banka, e-ticaret sepeti) olmazsa olmazıdır. <a href="m2-nosql.html">Bir sonraki konuda</a>, dağıtık NoSQL sistemlerin ölçeklenmek için bu garantilerin bir kısmından nasıl feragat ettiğini göreceksin.</p>
+
+        <h2>Normalizasyon: her bilgi tek yerde</h2>
+        <p>Sayfanın başındaki soruya dönelim: neden müşteri adını siparişler tablosuna yazmıyoruz? Çünkü aynı bilginin iki kopyası, iki gerçeğin olabileceği anlamına gelir. <strong>Normalizasyon</strong>, tekrarı azaltmak için veriyi ayrı tablolara bölüp anahtarlarla bağlama disiplinidir: müşteri bilgisi yalnızca <code>musteriler</code>'da durur, değişiklik tek satırda biter, çelişki ihtimali kalkar. (Literatürde bu disiplinin kademeleri "normal formlar" olarak adlandırılır; pratikteki özü budur.)</p>
+        <p>İki pratik not: birincisi, sürekli aynı JOIN'leri yazmamak için sorguyu bir <strong>view (görünüm)</strong> olarak kaydedebilirsin — view, adlandırılmış bir sorgudur ve sanal tablo gibi sorgulanır. İkincisi, normalizasyon operasyonel sistemler için altın kuraldır ama <em>analitik</em> dünyada tersi bilinçli bir tercihtir: raporlama sorgularını hızlandırmak için tablolar bile bile <strong>denormalize</strong> edilir (JOIN azalsın diye tekrar göze alınır). Bu takasın kurallı hâlini — star schema ve arkadaşlarını — <a href="m2-veri-modelleme.html">veri modelleme konusunda</a> işleyeceğiz.</p>
+        <div class="note"><b>Ölçütün kullanım şekli.</b> Saniyede bin küçük yazma alan sistemde normalize et; günde bir yüklenip bin kez okunan rapor tablosunda denormalize et. "Doğru şema" diye tek bir şey yoktur; iş yüküne doğru şema vardır.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>SQL, bu sitedeki en yüksek "yatırım getirili" beceridir; her modülde tekrar karşına çıkacak:</p>
+        <ul>
+          <li><strong>Mülakatlar:</strong> data engineer/analyst mülakatlarının standart ısınması JOIN + GROUP BY, ayırt edici sorusu window function'dır ("her kategorinin en çok satan 3 ürünü" — artık çözebiliyorsun).</li>
+          <li><strong>Modern veri yığını:</strong> <a href="m3-warehouse-lake.html">BigQuery/Snowflake gibi warehouse'larda</a> analitiğin tamamı SQL'dir; dbt ile SQL'e test ve versiyon kontrolü eklenir (<a href="m3-etl-elt.html">ETL/ELT konusu</a>).</li>
+          <li><strong>Spark SQL:</strong> Burada öğrendiğin sorgular, <a href="m3-spark.html">Spark'ta</a> yüzlerce makineye dağıtılmış veri üzerinde neredeyse aynen çalışır.</li>
+          <li><strong>Uygulama kodunun altında:</strong> ORM'ler (SQLAlchemy, Django ORM) arkada hep SQL üretir; yavaşlayan uygulamanın teşhisi çoğu zaman üretilen sorgunun planını okumaktan geçer.</li>
+          <li><strong>ML beslemesi:</strong> <a href="m5-feature-engineering.html">Feature engineering</a> pratikte büyük oranda SQL'dir — "müşterinin son 30 günlük harcaması" bir window function'dır.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>SELECT fiyat * 1.2 AS zamli ... WHERE zamli &gt; 100 çoğu veritabanında neden hata verir?</summary>
+            <div class="answer"><b>Mantıksal çalışma sırası yüzünden.</b> Motor WHERE'i SELECT'ten önce çalıştırır; WHERE değerlendirilirken <code>zamli</code> takma adı henüz hesaplanmamıştır. Çözüm: koşulda ifadeyi tekrar yaz (<code>WHERE fiyat * 1.2 &gt; 100</code>) ya da sorguyu alt sorguya/CTE'ye sar. <code>ORDER BY zamli</code> ise çalışır, çünkü sıralama SELECT'ten sonra gelir.</div>
+          </details>
+          <details class="quiz">
+            <summary>Hiç sipariş vermemiş müşterileri hangi JOIN ile bulursun?</summary>
+            <div class="answer"><b>LEFT JOIN + IS NULL.</b> <code>musteriler LEFT JOIN siparisler</code> tüm müşterileri getirir; siparişi olmayanların sipariş kolonları NULL kalır. <code>WHERE s.siparis_id IS NULL</code> filtresi tam olarak o müşterileri bırakır. Bu kalıba "anti-join" denir ve raporlamada çok sık kullanılır.</div>
+          </details>
+          <details class="quiz">
+            <summary>GROUP BY ile window function arasındaki temel fark nedir?</summary>
+            <div class="answer"><b>GROUP BY satırları yutar, window korur.</b> GROUP BY her grubu tek özet satıra indirir; detay kaybolur. Window function ise her satırı yerinde bırakıp pencere üzerinden hesaplanan değeri yeni kolon olarak ekler — "her siparişin yanında müşterinin toplam harcaması" gibi hem detay hem özet isteyen sorular ancak window ile çözülür.</div>
+          </details>
+          <details class="quiz">
+            <summary>Havale örneğinde ACID'in hangi harfi "yarım işlem kalmaz" güvencesini verir?</summary>
+            <div class="answer"><b>A — Atomicity (bölünmezlik).</b> "Ayşe'den düş + Mehmet'e ekle" tek pakettir: ikisi birden uygulanır ya da hiçbiri. İlk adımdan sonra sistem çökerse veritabanı ROLLBACK ile başlangıç hâline döner. Durability ise ayrı bir sözdür: COMMIT edilen işlemin elektrik kesintisinde bile kaybolmayacağını garanti eder.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">İlişkisel Veritabanı</span><span class="term-en">Relational Database</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Veriyi anahtarlarla ilişkilendirilmiş tablolarda tutan sistem: PostgreSQL, MySQL, SQLite.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">SQL</span><span class="term-en">SQL</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>İlişkisel veriyi sorgulamanın deklaratif dili; 50 yıldır veri işinin ortak paydası.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Tablo</span><span class="term-en">Table</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Tek bir varlık türünü satır (kayıt) ve kolonlarla (özellik) tutan yapı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Birincil Anahtar</span><span class="term-en">Primary Key</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Her satırı tekilleştiren kimlik kolonu; boş ve tekrarlı olamaz.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Yabancı Anahtar</span><span class="term-en">Foreign Key</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Başka tablonun primary key'ine işaret ederek ilişki kuran kolon; JOIN'lerin temeli.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">JOIN</span><span class="term-en">JOIN</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>İki tabloyu eşleşme koşuluyla birleştirme; INNER/LEFT/RIGHT/FULL türleri eşleşmeyenlerin kaderini belirler.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">GROUP BY</span><span class="term-en">GROUP BY</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Satırları gruplara ayırıp her grubu COUNT/SUM/AVG gibi özetlerle tek satıra indirir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Window Function (Pencere Fonksiyonu)</span><span class="term-en">Window Function</span><span class="lvl lvl-ileri">İleri</span></div><p>Satırları yutmadan pencere üzerinden hesap yapar: ROW_NUMBER, LAG, kümülatif SUM.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">İndeks</span><span class="term-en">Index</span><span class="lvl lvl-orta">Orta</span></div><p>Kolon değerlerini sıralı tutan "rehber"; okumayı hızlandırır, yazmayı yavaşlatır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Transaction (İşlem)</span><span class="term-en">Transaction</span><span class="lvl lvl-orta">Orta</span></div><p>Birden çok operasyonu "ya hep ya hiç" paketine saran birim: BEGIN → COMMIT / ROLLBACK.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">ACID</span><span class="term-en">ACID</span><span class="lvl lvl-orta">Orta</span></div><p>Atomicity, Consistency, Isolation, Durability: ilişkisel veritabanının dört güvence sözü.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Normalizasyon</span><span class="term-en">Normalization</span><span class="lvl lvl-orta">Orta</span></div><p>Tekrarı azaltmak için veriyi ayrı tablolara bölüp anahtarla bağlama disiplini; analitikte bilinçli tersine çevrilir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">View (Görünüm)</span><span class="term-en">View</span><span class="lvl lvl-orta">Orta</span></div><p>Kaydedilmiş, adlandırılmış sorgu; sanal tablo gibi sorgulanır, tekrar eden JOIN'leri sadeleştirir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Sorgu Planı</span><span class="term-en">Query Plan</span><span class="lvl lvl-ileri">İleri</span></div><p>Motorun sorguyu çalıştırma stratejisi; EXPLAIN ile okunur, yavaş sorgu teşhisinin ilk adımıdır.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m2-sql">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m2-veri-kavramlari.html"><span>← Önceki</span><b>Veri Tipleri ve Formatları</b></a>
+          <a class="next" href="m2-nosql.html"><span>Sonraki →</span><b>NoSQL ve Dağıtık Veritabanları</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dbt ve Analytics Engineering — Veri Atlası</title>
+<meta name="description" content="SQL'e yazılım mühendisliği disiplini getirmek: dbt modelleri, ref() ile otomatik DAG, materialization stratejileri, testler, Jinja ve staging→mart katman düzeni.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m3" data-slug="m3-dbt">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular" class="active">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m3">3. Veri Mühendisliği</a><span class="sep">/</span>
+        <span>dbt ve Analytics Engineering</span>
+      </nav>
+      <span class="mod-badge">Modül 3 · Veri Mühendisliği</span>
+      <h1>dbt ve Analytics Engineering</h1>
+      <p class="en-title">dbt &amp; Analytics Engineering</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~17 dk okuma</span>
+        <span class="chip">🔤 13 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>SQL'in büyüme sancısı</h2>
+        <p>Bir şirkette analitik hep aynı şekilde başlar: biri warehouse'a bağlanıp bir sorgu yazar, güzel çalışır, bir view'a çevirir. Altı ay sonra tablo şudur — <code>v_satis</code>, <code>v_satis_yeni</code>, <code>v_satis_FINAL</code>, <code>rapor_gecici_2</code>; hangisi doğru kimse bilmez. Bir kolonun adı değişince hangi raporların kırılacağını kestirmek imkânsızdır. Test yoktur, dokümantasyon yoktur, sürüm geçmişi yoktur; "ciro" kelimesinin üç ekipte üç farklı tanımı vardır.</p>
+        <p>Tuhaf olan şu: yazılım dünyası bu sorunları otuz yıl önce çözdü — sürüm kontrolü, modülerlik, otomatik test, kod incelemesi, CI. <strong>dbt (data build tool)</strong>'nin tek fikri bu çözümleri SQL'e taşımaktır. Yeni bir sorgu dili öğrenmezsin; bildiğin <code>SELECT</code>'i yazarsın, dbt etrafına mühendislik disiplinini örer.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 300" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="dbt öncesi karmaşa ile dbt sonrası düzenin karşılaştırması">
+            <defs>
+              <marker id="dbArrM" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+              <marker id="dbArrBad" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--bad)"/></marker>
+              <marker id="dbArrOk" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--ok)"/></marker>
+            </defs>
+            <g>
+              <text x="180" y="22" text-anchor="middle" fill="var(--bad)" font-size="13" font-weight="800">dbt'siz: view çorbası</text>
+              <rect x="16" y="34" width="328" height="248" rx="12" fill="var(--dg-box)" stroke="var(--bad)" stroke-width="1.3" stroke-dasharray="6 5" opacity="0.85"/>
+              <rect x="40" y="58" width="130" height="34" rx="8" fill="var(--surface-2)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="105" y="79" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">v_satis</text>
+              <rect x="200" y="96" width="130" height="34" rx="8" fill="var(--surface-2)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="265" y="117" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">v_satis_yeni</text>
+              <rect x="34" y="140" width="146" height="34" rx="8" fill="var(--surface-2)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="107" y="161" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">v_satis_FINAL</text>
+              <rect x="196" y="182" width="140" height="34" rx="8" fill="var(--surface-2)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="266" y="203" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">rapor_gecici_2</text>
+              <path d="M170 75 L200 105" stroke="var(--bad)" stroke-width="1.2" marker-end="url(#dbArrBad)"/>
+              <path d="M200 122 L180 150" stroke="var(--bad)" stroke-width="1.2" marker-end="url(#dbArrBad)"/>
+              <path d="M180 165 L196 190" stroke="var(--bad)" stroke-width="1.2" marker-end="url(#dbArrBad)"/>
+              <path d="M105 92 L107 136" stroke="var(--bad)" stroke-width="1.2" marker-end="url(#dbArrBad)"/>
+              <text x="180" y="240" text-anchor="middle" fill="var(--muted)" font-size="10.5">Hangisi doğru? Sıra elle. Test yok. Kim kırdı belli değil.</text>
+              <text x="180" y="262" text-anchor="middle" fill="var(--muted)" font-size="10.5">"Ciro" kelimesinin üç ayrı tanımı dolaşımda.</text>
+
+              <text x="540" y="22" text-anchor="middle" fill="var(--ok)" font-size="13" font-weight="800">dbt ile: model ağacı</text>
+              <rect x="376" y="34" width="328" height="248" rx="12" fill="var(--dg-box)" stroke="var(--ok)" stroke-width="1.3"/>
+              <rect x="430" y="58" width="220" height="36" rx="8" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="540" y="74" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">stg_siparisler.sql</text>
+              <text x="540" y="88" text-anchor="middle" fill="var(--muted)" font-size="9.5">temizlik · 1 kaynak = 1 model</text>
+              <rect x="430" y="126" width="220" height="36" rx="8" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="540" y="142" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">int_siparis_zengin.sql</text>
+              <text x="540" y="156" text-anchor="middle" fill="var(--muted)" font-size="9.5">iş mantığı · join'ler</text>
+              <rect x="430" y="194" width="220" height="36" rx="8" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="540" y="210" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">mart_musteri_ozet.sql</text>
+              <text x="540" y="224" text-anchor="middle" fill="var(--muted)" font-size="9.5">iş birimine sunulan tablo</text>
+              <path d="M540 94 L540 122" stroke="var(--ok)" stroke-width="1.6" marker-end="url(#dbArrOk)"/>
+              <path d="M540 162 L540 190" stroke="var(--ok)" stroke-width="1.6" marker-end="url(#dbArrOk)"/>
+              <text x="672" y="80" fill="var(--ok)" font-size="12" font-weight="800">✓</text>
+              <text x="672" y="148" fill="var(--ok)" font-size="12" font-weight="800">✓</text>
+              <text x="672" y="216" fill="var(--ok)" font-size="12" font-weight="800">✓</text>
+              <text x="540" y="256" text-anchor="middle" fill="var(--muted)" font-size="10.5">Git'te sürümlü · testli · sırası otomatik · belgeli</text>
+            </g>
+          </svg>
+          <figcaption>dbt yeni bir veri tabanı değildir; warehouse'undaki SQL'i düzenli bir yazılım projesine dönüştüren bir çalışma biçimidir.</figcaption>
+        </figure>
+
+        <h2>Analytics Engineer: aradaki yeni rol</h2>
+        <p>dbt'nin yaygınlaşması yeni bir unvan doğurdu. Klasik ayrımda <strong>veri mühendisi</strong> veriyi taşır (pipeline, altyapı), <strong>veri analisti</strong> soruyu cevaplar (rapor, içgörü). Arada bir boşluk kalıyordu: ham tabloları güvenilir, herkesin aynı şekilde anladığı iş tablolarına çevirme işi.</p>
+        <p><strong>Analytics Engineer</strong> bu boşluğu doldurur: SQL'i çok iyi bilir, yazılım pratiklerini (Git, test, code review, CI) uygular, iş tanımlarının sahibidir. "Aktif müşteri" tanımını koda yazan ve bunun herkes için tek doğru olduğunu garanti eden kişidir. <a href="m9-yol-haritasi.html">Kariyer yolları</a> arasında en hızlı büyüyen giriş kapılarından biridir — çünkü ağır dağıtık sistem bilgisi istemeden yüksek değer üretir.</p>
+
+        <h2>dbt nasıl çalışır: sadece SELECT yaz</h2>
+        <p>Temel fikir şaşırtıcı derecede sade. Bir <strong>dbt modeli</strong>, içinde tek bir <code>SELECT</code> ifadesi olan <code>.sql</code> dosyasıdır. Sen <code>CREATE TABLE</code>, <code>DROP</code>, <code>INSERT</code> yazmazsın; dbt dosya adına ve ayarlarına bakarak gerekli DDL'i kendisi üretir ve warehouse'da çalıştırır.</p>
+        <ul>
+          <li><code>models/staging/stg_siparisler.sql</code> dosyası → warehouse'da <code>stg_siparisler</code> nesnesi.</li>
+          <li>Çalıştırma tek komut: <code>dbt run</code> — tüm modeller doğru sırayla kurulur.</li>
+          <li>Kod Git'te yaşar: değişiklik pull request ile gelir, ekip inceler, geçmiş kaydı tutulur.</li>
+        </ul>
+        <p>Dikkat: <strong>dbt bir orkestratör değildir</strong>. "Her sabah 6'da çalış" demek <a href="m3-orkestrasyon.html">Airflow'un</a> işidir; dbt yalnızca "çalıştığında dönüşümü doğru sırayla yap" der. Modern kurulumlarda Airflow, zamanı gelince <code>dbt run</code> komutunu tetikleyen taraftır. dbt ayrıca veriyi <em>taşımaz</em>: ham veriyi warehouse'a getirmek <a href="m3-etl-elt.html">ingestion katmanının</a> işidir — dbt, ELT'nin "T"sidir.</p>
+
+        <figure class="codebox">
+          <figcaption>SQL — bir staging modeli (models/staging/stg_siparisler.sql)</figcaption>
+          <pre><code data-lang="sql">with kaynak as (
+
+    select * from {{ source('ham', 'siparisler') }}   -- ham tabloyu adıyla değil, tanımıyla çağır
+
+),
+
+temiz as (
+
+    select
+        siparis_id,
+        musteri_id,
+        cast(tutar as numeric)          as tutar,
+        cast(olusturma_ts as timestamp) as siparis_ts,
+        lower(trim(durum))              as durum      -- 'Kargoda ' ve 'kargoda' aynı olsun
+    from kaynak
+    where siparis_id is not null                      -- bozuk kayıtları kapıda ele
+
+)
+
+select * from temiz</code></pre>
+        </figure>
+
+        <h2>ref(): bağımlılıkları dbt'nin kendisi bulur</h2>
+        <p>dbt'nin en zarif fikri budur. Bir modelde başka bir modele atıf yaparken tablo adını elle yazmazsın; <code>{{ ref('stg_siparisler') }}</code> dersin. Bunun üç sonucu vardır:</p>
+        <ul>
+          <li><strong>DAG otomatik doğar.</strong> dbt tüm dosyalardaki <code>ref</code> çağrılarını tarar ve modeller arası bağımlılık grafiğini kendisi çıkarır — <a href="m1-veri-yapilari-algoritmalar.html">graf</a> ve <a href="m3-orkestrasyon.html">DAG</a> kavramlarının burada işe yaradığı yer. Çalışma sırasını sen değil, grafik belirler.</li>
+          <li><strong>Ortam bağımsızlığı.</strong> Aynı kod geliştirme şemanda <code>dev_ahmet.stg_siparisler</code>, üretimde <code>analytics.stg_siparisler</code> olarak çözülür. Tek satır değiştirmeden test ortamı kurabilirsin.</li>
+          <li><strong>Ücretsiz lineage.</strong> Bağımlılık grafiği bilindiği için "bu kolonu değiştirirsem ne kırılır?" sorusu otomatik cevaplanır (<a href="m3-veri-kalitesi.html">lineage</a>).</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 292" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ref çağrılarından otomatik DAG üretimi">
+            <defs>
+              <marker id="dbArrR" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              <marker id="dbArrG" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+            </defs>
+            <g>
+              <text x="150" y="22" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="700">Sen bunu yazarsın</text>
+              <rect x="16" y="36" width="268" height="52" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="32" y="56" fill="var(--muted)" font-size="10.5">int_siparis_zengin.sql</text>
+              <text x="32" y="76" fill="var(--acc)" font-size="10.5" font-weight="700">from {{ ref('stg_siparisler') }}</text>
+              <rect x="16" y="100" width="268" height="52" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="32" y="120" fill="var(--muted)" font-size="10.5">int_siparis_zengin.sql</text>
+              <text x="32" y="140" fill="var(--acc)" font-size="10.5" font-weight="700">join {{ ref('stg_musteriler') }}</text>
+              <rect x="16" y="164" width="268" height="52" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="32" y="184" fill="var(--muted)" font-size="10.5">mart_musteri_ozet.sql</text>
+              <text x="32" y="204" fill="var(--acc)" font-size="10.5" font-weight="700">from {{ ref('int_siparis_zengin') }}</text>
+
+              <path d="M292 126 L344 126" stroke="var(--acc)" stroke-width="2" marker-end="url(#dbArrR)"/>
+              <text x="318" y="116" text-anchor="middle" fill="var(--acc)" font-size="10" font-weight="700">dbt</text>
+              <text x="318" y="146" text-anchor="middle" fill="var(--muted)" font-size="9.5">tarar</text>
+
+              <text x="530" y="22" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="700">dbt bunu üretir (DAG)</text>
+              <rect x="368" y="36" width="150" height="38" rx="9" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="443" y="60" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">stg_siparisler</text>
+              <rect x="368" y="112" width="150" height="38" rx="9" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="443" y="136" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">stg_musteriler</text>
+              <rect x="546" y="74" width="158" height="38" rx="9" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="625" y="98" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">int_siparis_zengin</text>
+              <rect x="546" y="178" width="158" height="38" rx="9" fill="rgba(var(--acc-rgb),.16)" stroke="var(--acc)" stroke-width="1.7"/>
+              <text x="625" y="202" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">mart_musteri_ozet</text>
+              <path d="M518 55 L542 84" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#dbArrG)"/>
+              <path d="M518 131 L542 104" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#dbArrG)"/>
+              <path d="M625 112 L625 174" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#dbArrG)"/>
+              <text x="360" y="258" text-anchor="middle" fill="var(--muted)" font-size="10.5">Çalışma sırasını kimse elle yazmaz: önce stg'ler, sonra int, en son mart.</text>
+              <text x="360" y="278" text-anchor="middle" fill="var(--muted)" font-size="10.5">Aynı grafik lineage belgesi ve etki analizi olarak da kullanılır.</text>
+            </g>
+          </svg>
+          <figcaption><code>ref()</code> tek başına hem sıralamayı hem ortam yönetimini hem de soyağacını çözer.</figcaption>
+        </figure>
+
+        <h2>Materialization: aynı SQL, farklı fiziksel karşılık</h2>
+        <p>Bir modelin warehouse'da <em>nasıl</em> var olacağını <strong>materialization</strong> ayarı belirler. SQL'in kendisi değişmez; sadece maliyet–tazelik dengesini seçersin:</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 240" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dört materialization türünün karşılaştırması">
+            <g>
+              <rect x="14" y="30" width="164" height="184" rx="11" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="96" y="54" text-anchor="middle" fill="var(--acc)" font-size="12.5" font-weight="800">view</text>
+              <text x="96" y="80" text-anchor="middle" fill="var(--ink)" font-size="10.5">Sorgu kaydedilir,</text>
+              <text x="96" y="95" text-anchor="middle" fill="var(--ink)" font-size="10.5">veri saklanmaz</text>
+              <text x="96" y="124" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="700">Kurulum: bedava</text>
+              <text x="96" y="142" text-anchor="middle" fill="var(--warn)" font-size="10.5" font-weight="700">Okuma: yavaş</text>
+              <text x="96" y="160" text-anchor="middle" fill="var(--muted)" font-size="10">Tazelik: anlık</text>
+              <text x="96" y="192" text-anchor="middle" fill="var(--muted)" font-size="10">Küçük ve ara</text>
+              <text x="96" y="205" text-anchor="middle" fill="var(--muted)" font-size="10">modeller için</text>
+
+              <rect x="192" y="30" width="164" height="184" rx="11" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="274" y="54" text-anchor="middle" fill="var(--acc)" font-size="12.5" font-weight="800">table</text>
+              <text x="274" y="80" text-anchor="middle" fill="var(--ink)" font-size="10.5">Her koşuda</text>
+              <text x="274" y="95" text-anchor="middle" fill="var(--ink)" font-size="10.5">sıfırdan yazılır</text>
+              <text x="274" y="124" text-anchor="middle" fill="var(--warn)" font-size="10.5" font-weight="700">Kurulum: pahalı</text>
+              <text x="274" y="142" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="700">Okuma: hızlı</text>
+              <text x="274" y="160" text-anchor="middle" fill="var(--muted)" font-size="10">Tazelik: son koşu</text>
+              <text x="274" y="192" text-anchor="middle" fill="var(--muted)" font-size="10">Sık sorgulanan</text>
+              <text x="274" y="205" text-anchor="middle" fill="var(--muted)" font-size="10">mart'lar için</text>
+
+              <rect x="370" y="30" width="176" height="184" rx="11" fill="rgba(var(--acc-rgb),.10)" stroke="var(--acc)" stroke-width="1.7"/>
+              <text x="458" y="54" text-anchor="middle" fill="var(--acc)" font-size="12.5" font-weight="800">incremental</text>
+              <text x="458" y="80" text-anchor="middle" fill="var(--ink)" font-size="10.5">Yalnızca yeni/değişen</text>
+              <text x="458" y="95" text-anchor="middle" fill="var(--ink)" font-size="10.5">satırlar işlenir</text>
+              <text x="458" y="124" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="700">Kurulum: ucuz</text>
+              <text x="458" y="142" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="700">Okuma: hızlı</text>
+              <text x="458" y="160" text-anchor="middle" fill="var(--warn)" font-size="10">Karmaşıklık: yüksek</text>
+              <text x="458" y="192" text-anchor="middle" fill="var(--muted)" font-size="10">Büyük olay/log</text>
+              <text x="458" y="205" text-anchor="middle" fill="var(--muted)" font-size="10">tabloları için</text>
+
+              <rect x="560" y="30" width="146" height="184" rx="11" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="633" y="54" text-anchor="middle" fill="var(--acc)" font-size="12.5" font-weight="800">ephemeral</text>
+              <text x="633" y="80" text-anchor="middle" fill="var(--ink)" font-size="10.5">Warehouse'da hiç</text>
+              <text x="633" y="95" text-anchor="middle" fill="var(--ink)" font-size="10.5">nesne oluşmaz</text>
+              <text x="633" y="124" text-anchor="middle" fill="var(--muted)" font-size="10.5">Diğer modele CTE</text>
+              <text x="633" y="142" text-anchor="middle" fill="var(--muted)" font-size="10.5">olarak gömülür</text>
+              <text x="633" y="192" text-anchor="middle" fill="var(--muted)" font-size="10">Tekrarlanan küçük</text>
+              <text x="633" y="205" text-anchor="middle" fill="var(--muted)" font-size="10">mantık parçaları</text>
+            </g>
+          </svg>
+          <figcaption>Kural: küçükse <code>view</code>, sık okunuyorsa <code>table</code>, devasa ve sürekli büyüyorsa <code>incremental</code>.</figcaption>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>SQL — incremental model (models/marts/fct_siparisler.sql)</figcaption>
+          <pre><code data-lang="sql">{{ config(
+    materialized = 'incremental',
+    unique_key = 'siparis_id'
+) }}
+
+select
+    siparis_id,
+    musteri_id,
+    tutar,
+    siparis_ts
+from {{ ref('stg_siparisler') }}
+
+{% if is_incremental() %}
+
+  -- Bu blok YALNIZCA tablo zaten varken çalışır.
+  -- İlk koşuda tüm geçmiş yüklenir; sonraki koşularda sadece yeni satırlar.
+  where siparis_ts &gt;= (select max(siparis_ts) from {{ this }})
+
+{% endif %}</code></pre>
+        </figure>
+
+        <div class="warn"><b>Incremental, bedava hız değildir.</b> Geç gelen (late-arriving) kayıtlar, geriye dönük düzeltmeler ve şema değişiklikleri incremental modellerde sessiz veri kaybına yol açabilir. Kural: <code>unique_key</code> ver, ara sıra <code>dbt run --full-refresh</code> ile tabloyu baştan kur ve <b>ancak tablo gerçekten büyüdüğünde</b> incremental'a geç. Erken optimizasyon burada da kötüdür.</div>
+
+        <h2>Test ve dokümantasyon: ücretsiz güven</h2>
+        <p>dbt'nin en çok değer üreten parçası testlerdir. Bir YAML dosyasında birkaç satırla, her koşuda otomatik çalışan veri testleri tanımlarsın (<a href="m3-veri-kalitesi.html">veri kalitesi</a> konusunun pratik karşılığı):</p>
+        <ul>
+          <li><strong>Hazır (generic) testler:</strong> <code>not_null</code>, <code>unique</code>, <code>accepted_values</code>, <code>relationships</code> (yabancı anahtar bütünlüğü).</li>
+          <li><strong>Özel (singular) testler:</strong> "hiç satır dönmemeli" mantığıyla yazdığın herhangi bir SQL — ör. <em>negatif tutarlı sipariş</em> sorgusu boş dönmeli.</li>
+          <li><strong>Belgeler:</strong> aynı YAML'daki <code>description</code> alanları <code>dbt docs</code> ile aranabilir bir siteye ve tıklanabilir lineage grafiğine dönüşür.</li>
+        </ul>
+
+        <figure class="codebox">
+          <figcaption>YAML — testler ve dokümantasyon (models/staging/schema.yml)</figcaption>
+          <pre><code data-lang="yaml">version: 2
+
+models:
+  - name: stg_siparisler
+    description: "Temizlenmiş sipariş tablosu. Tanım gereği bir satır = bir sipariş."
+    columns:
+      - name: siparis_id
+        description: "Siparişin benzersiz kimliği."
+        tests:
+          - not_null
+          - unique
+
+      - name: musteri_id
+        description: "stg_musteriler tablosuna referans."
+        tests:
+          - not_null
+          - relationships:              # her siparişin gerçek bir müşterisi olmalı
+              to: ref('stg_musteriler')
+              field: musteri_id
+
+      - name: durum
+        tests:
+          - accepted_values:            # beklenmedik bir durum değeri gelirse koşu kırmızıya döner
+              values: ['yeni', 'hazirlaniyor', 'kargoda', 'teslim', 'iptal']</code></pre>
+        </figure>
+
+        <div class="tip"><b>CI ile birleştiğinde asıl güç ortaya çıkar.</b> Pull request açıldığında <a href="m8-cicd-tracking.html">GitHub Actions</a> değişen modelleri ve testlerini çalıştırır (<code>dbt build --select state:modified+</code>). Bozuk bir dönüşüm üretime <b>hiç ulaşamaz</b>; kırılan raporu kullanıcıdan önce sen görürsün.</div>
+
+        <h2>Jinja: SQL'e kaybettiği yetenekleri geri vermek</h2>
+        <p>SQL'de döngü ve koşul yoktur; bu yüzden 12 ay için birbirinin kopyası 12 blok yazılır. dbt, SQL dosyalarını çalıştırmadan önce <strong>Jinja</strong> şablon motorundan geçirir — böylece SQL'in içine değişken, döngü ve koşul girer.</p>
+        <ul>
+          <li><code>{% for durum in ['yeni', 'iptal'] %}</code> ile tekrarlanan <code>CASE</code> blokları üretilir.</li>
+          <li><strong>Makrolar</strong>, SQL'in fonksiyonlarıdır: bir kez yaz, on modelde çağır (<strong>DRY</strong> ilkesi). "Kuruşu liraya çevir" ya da "tarihi yerel saate al" gibi kurallar tek yerde yaşar.</li>
+          <li>Hazır makro paketleri (<code>dbt_utils</code>) yaygın işleri (surrogate key üretme, tarih tablosu, pivot) devralır.</li>
+        </ul>
+        <p>Uyarı niteliğinde bir denge: Jinja güçlüdür ama abartılırsa okunmaz SQL üretir. Ölçü, <em>tekrarı azaltmak</em>; zekâ gösterisi yapmak değil.</p>
+
+        <h2>Katman disiplini: staging → intermediate → mart</h2>
+        <p>dbt projeleri karışmasın diye endüstri ortak bir düzene yakınsadı — <a href="m3-warehouse-lake.html">medallion mimarisinin</a> SQL'deki karşılığı:</p>
+        <ul>
+          <li><strong>staging (stg_):</strong> her kaynak tablosu için bir model. Sadece temizlik: tip dönüşümü, isimlendirme, basit filtre. İş mantığı <em>yok</em>.</li>
+          <li><strong>intermediate (int_):</strong> join'ler ve iş mantığı. Karmaşık dönüşümü küçük, test edilebilir adımlara böldüğün yer.</li>
+          <li><strong>marts:</strong> iş birimlerine sunulan son tablolar — <code>fct_</code> (olaylar/ölçümler) ve <code>dim_</code> (bağlam) ayrımıyla, <a href="m2-veri-modelleme.html">yıldız şema</a> disiplininde.</li>
+        </ul>
+        <p>Bu düzenin faydası estetik değil pratiktir: bir sorun çıktığında hangi katmanda arayacağını bilirsin, ve staging katmanı sayesinde kaynak sistem şema değiştirdiğinde <em>tek bir dosyayı</em> düzeltirsin.</p>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <ul>
+          <li><strong>İlanların dilinde:</strong> "modern data stack" yazan hemen her ilanda dbt geçer; Analytics Engineer ilanlarının fiilen ortak paydasıdır.</li>
+          <li><strong>Portfolyoda:</strong> açık veriyi bir warehouse'a (ya da <code>dbt-duckdb</code> ile tamamen yerel olarak) yükleyip staging→mart katmanları ve testlerle modellemek, tek başına güçlü bir proje anlatısıdır.</li>
+          <li><strong>Ekip içinde:</strong> "Ciro nedir?" tartışması, <code>mart_ciro.sql</code> dosyasına bakılarak biter — dbt'nin en büyük katkısı teknik değil, örgütseldir.</li>
+          <li><strong>Sınırı:</strong> dbt SQL'in koşabildiği yerde çalışır. Python gerektiren ağır dönüşümler <a href="m3-spark.html">Spark'ın</a> alanıdır (dbt'nin Python modelleri bu boşluğu kısmen kapatır).</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Tablo adını elle yazmak yerine <code>ref()</code> kullanmanın üç kazancı nedir?</summary>
+            <div class="answer"><b>1) Otomatik sıralama:</b> dbt ref çağrılarından DAG'i çıkarır, modelleri doğru sırayla çalıştırır. <b>2) Ortam bağımsızlığı:</b> aynı kod dev ve prod şemalarında farklı tablolara çözülür. <b>3) Lineage:</b> bağımlılık grafiği bilindiği için etki analizi ve dokümantasyon bedavaya gelir.</div>
+          </details>
+          <details class="quiz">
+            <summary>Günde 50 milyon satır büyüyen olay tablosu için hangi materialization, neden?</summary>
+            <div class="answer"><b>incremental.</b> <code>table</code> her koşuda milyarlarca satırı sıfırdan yazardı — dakikalarca süren ve para yakan bir iş. incremental yalnızca son koşudan beri gelen satırları işler. Bedeli karmaşıklıktır: <code>unique_key</code> tanımlamalı, geç gelen kayıtlara dikkat etmeli ve ara sıra <code>--full-refresh</code> yapmalısın.</div>
+          </details>
+          <details class="quiz">
+            <summary>dbt ile Airflow birbirinin alternatifi midir?</summary>
+            <div class="answer"><b>Hayır, farklı katmanlardır.</b> dbt "dönüşümü nasıl ve hangi sırayla yapacağını" bilir ama kendi kendine zamanlanmaz. Airflow "ne zaman, hangi işten sonra çalışacağını" yönetir. Tipik kurulumda Airflow, saati gelince <code>dbt run</code> komutunu tetikleyen task'ı çalıştırır.</div>
+          </details>
+          <details class="quiz">
+            <summary>staging katmanına iş mantığı koymak neden kötü fikirdir?</summary>
+            <div class="answer">staging'in görevi kaynak sistemle projen arasına <b>ince bir yalıtım katmanı</b> koymaktır: tip dönüşümü, isimlendirme, temizlik. İş mantığı da buraya girerse aynı mantık farklı staging modellerinde tekrarlanır ve kaynak şema değişince onarılacak yer sayısı katlanır. Mantık intermediate/mart katmanına aittir; böylece kaynak değiştiğinde tek dosya düzeltilir.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">dbt</span><span class="term-en">data build tool</span><span class="lvl lvl-orta">Orta</span></div><p>Warehouse içindeki SQL dönüşümlerini sürümlü, testli ve belgeli bir yazılım projesine dönüştüren araç; ELT'nin "T" katmanı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Analytics Engineer</span><span class="term-en">Analytics Engineer</span><span class="lvl lvl-orta">Orta</span></div><p>Veri mühendisi ile analist arasındaki rol: ham tabloları güvenilir iş tablolarına çevirir, metrik tanımlarının sahibidir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">dbt Model</span><span class="term-en">dbt Model</span><span class="lvl lvl-orta">Orta</span></div><p>İçinde tek bir <code>SELECT</code> bulunan .sql dosyası; warehouse'da bir view ya da tabloya karşılık gelir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">ref()</span><span class="term-en">ref()</span><span class="lvl lvl-orta">Orta</span></div><p>Bir modelden diğerine atıf yapma işlevi; bağımlılık grafiğinin, ortam çözümlemesinin ve lineage'ın kaynağı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">source()</span><span class="term-en">source()</span><span class="lvl lvl-orta">Orta</span></div><p>Ham (dbt dışında üretilmiş) tabloları tanımlı adlarla çağırma yolu; tazelik testleri de bu tanıma bağlanır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Materialization</span><span class="term-en">Materialization</span><span class="lvl lvl-orta">Orta</span></div><p>Modelin fiziksel karşılığı: view, table, incremental ya da ephemeral. Maliyet–tazelik dengesini belirler.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Incremental Model</span><span class="term-en">Incremental Model</span><span class="lvl lvl-ileri">İleri</span></div><p>Her koşuda tabloyu baştan kurmak yerine yalnızca yeni/değişen satırları işleyen model; büyük olay tablolarının standardı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Staging Katmanı</span><span class="term-en">Staging Layer</span><span class="lvl lvl-orta">Orta</span></div><p>Kaynak başına bir model içeren, yalnızca temizlik yapan yalıtım katmanı; kaynak şeması değişince düzeltilecek tek yer.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Mart</span><span class="term-en">Data Mart</span><span class="lvl lvl-orta">Orta</span></div><p>Belirli bir iş birimine sunulan son katman tabloları; fact ve dimension ayrımıyla modellenir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">dbt Test</span><span class="term-en">dbt Test</span><span class="lvl lvl-orta">Orta</span></div><p>YAML'da tanımlanan otomatik veri doğrulamaları (not_null, unique, relationships) ve "hiç satır dönmemeli" mantığındaki özel testler.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Jinja</span><span class="term-en">Jinja</span><span class="lvl lvl-orta">Orta</span></div><p>dbt'nin SQL'i çalıştırmadan önce işlediği şablon motoru; SQL'e değişken, döngü ve koşul kazandırır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Makro</span><span class="term-en">Macro</span><span class="lvl lvl-ileri">İleri</span></div><p>Jinja ile yazılan, birçok modelde çağrılabilen tekrar kullanılabilir SQL parçası; DRY ilkesinin dbt'deki karşılığı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Snapshot</span><span class="term-en">Snapshot</span><span class="lvl lvl-ileri">İleri</span></div><p>Kaynak kayıttaki değişiklikleri tarihçeli olarak saklama mekanizması; SCD Tip 2'nin dbt tarafından yönetilen hâli.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m3-dbt">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m3-warehouse-lake.html"><span>← Önceki</span><b>Data Warehouse, Lake ve Lakehouse</b></a>
+          <a class="next" href="m3-veri-kalitesi.html"><span>Sonraki →</span><b>Veri Kalitesi, Governance ve Lineage</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

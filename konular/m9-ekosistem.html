@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Araç Ekosistemi Haritası — Veri Atlası</title>
+<meta name="description" content="Modern data stack'i katman katman haritalayan rehber: ingestion'dan GenAI'ye kategoriler, örnek araçlar, seçim ilkeleri ve araç yorgunluğuna karşı 'kavram kalıcı, araç geçici' kuralı.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m9" data-slug="m9-ekosistem">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m9">9. Kariyer ve Yol Haritası</a><span class="sep">/</span>
+        <span>Araç Ekosistemi Haritası</span>
+      </nav>
+      <span class="mod-badge">Modül 9 · Kariyer ve Yol Haritası</span>
+      <h1>Araç Ekosistemi Haritası</h1>
+      <p class="en-title">The Tool Ecosystem Map</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-baslangic">Başlangıç</span>
+        <span class="chip">⏱️ ~14 dk okuma</span>
+        <span class="chip">🔤 11 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Logo denizinde boğulanlara</h2>
+        <p>LinkedIn'de bir "data landscape" görseli görmüşsündür: binlerce minicik logo, yan yana, bir duvar hâlinde. İlk tepki hep aynıdır — "bunların hepsini mi öğrenmem gerekiyor?" Hayır. O duvardaki logoların çoğu birbirinin rakibi, yani <strong>aynı işi yapan alternatifler</strong>. Duvar korkutucu görünür ama aslında 8–10 kategoriye iner.</p>
+        <p>Bu sayfanın tek kuralı şu: <strong>araçları değil, kategorileri öğren.</strong> "Airflow nedir?" sorusunun cevabı ezber gerektirir; "orkestrasyon nedir?" sorusunun cevabı ise kalıcı bir kavramdır — <a href="m3-orkestrasyon.html">Modül 3'te</a> öğrendiğin gibi: işleri doğru sırayla, zamanında, hata yönetimiyle çalıştırmak. Bu kavramı bilen biri için Airflow'dan Dagster'a geçmek, otomobil değiştirmek gibidir: direksiyon yine direksiyondur.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 335" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kavram kalıcı araç geçici: orkestrasyon kavramı çevresinde eskiyen ve yeni araç halkaları">
+            <g font-family="inherit">
+              <defs>
+                <marker id="ekoArr1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              </defs>
+              <circle cx="300" cy="170" r="150" fill="none" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <circle cx="300" cy="170" r="128" fill="none" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <circle cx="300" cy="170" r="103" fill="none" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <circle cx="300" cy="170" r="75" fill="none" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <circle cx="300" cy="170" r="45" fill="rgba(var(--acc-rgb),.2)" stroke="var(--acc)" stroke-width="1.8"/>
+              <text x="300" y="167" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Orkestrasyon</text>
+              <text x="300" y="183" text-anchor="middle" fill="var(--muted)" font-size="10.5">(kavram)</text>
+              <text x="300" y="112" text-anchor="middle" fill="var(--muted)" font-size="10.5">cron — 1975'ten beri iş görür</text>
+              <text x="300" y="84" text-anchor="middle" fill="var(--muted)" font-size="10.5">Oozie — 2010'lar, emekli oldu</text>
+              <text x="300" y="58" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="600">Airflow — 2015'ten beri standart</text>
+              <text x="300" y="34" text-anchor="middle" fill="var(--muted)" font-size="10.5">Dagster — 2020'ler, yükselen</text>
+              <path d="M268 226 L196 268" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#ekoArr1)"/>
+              <text x="196" y="290" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="600">zaman dışa doğru akar</text>
+              <text x="480" y="140" fill="var(--muted)" font-size="11">Halkalar (araçlar) eskir,</text>
+              <text x="480" y="157" fill="var(--muted)" font-size="11">merkez (kavram) kalır.</text>
+              <text x="480" y="182" fill="var(--muted)" font-size="11">Kavramı bilene yeni araç,</text>
+              <text x="480" y="199" fill="var(--muted)" font-size="11">sadece yeni sözdizimidir.</text>
+            </g>
+          </svg>
+          <figcaption>Bir ağacın yaş halkaları gibi: orkestrasyon kavramının çevresinde araçlar doğar, parlar, emekli olur. Kavrama yatırım hiç eskimez.</figcaption>
+        </figure>
+
+        <div class="note"><b>Araç yorgunluğu (tool fatigue) gerçektir.</b> Sektör görselleştirmelerinde binlerce veri/AI aracı listelenir ve her yıl yenileri eklenir. Hepsini takip eden kimse yok — kıdemli mühendisler dahil. Herkes kategori haritasını bilir, kendi stack'indeki 5–10 aracı derin tanır, gerisine "lazım olunca bakarım" der.</div>
+
+        <h2>Modern data stack: katman katman</h2>
+        <p>"Modern data stack", verinin kaynaktan karar ekranına yolculuğunu kategorilere bölen yaygın bir çerçevedir. Aşağıdaki harita, müfredat boyunca gördüğün her şeyi tek görselde toplar — sayfanın en önemli diyagramı bu:</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 780 545" width="780" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Modern data stack katman haritası: kaynaklardan GenAI katmanına">
+            <g font-family="inherit">
+              <text x="330" y="22" text-anchor="middle" fill="var(--faint)" font-size="12" font-weight="600">Modern data stack — kategoriler kalıcı, kutulardaki araçlar örnek</text>
+              <defs>
+                <marker id="ekoArr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              </defs>
+              <!-- 1 kaynak -->
+              <rect x="15" y="38" width="620" height="56" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="25" y="62" fill="var(--ink)" font-size="12.5" font-weight="700">Kaynaklar</text>
+              <text x="25" y="79" fill="var(--muted)" font-size="10">veri nerede doğar</text>
+              <rect x="170" y="51" width="140" height="30" rx="7" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/><text x="240" y="70" text-anchor="middle" fill="var(--ink)" font-size="11">PostgreSQL</text>
+              <rect x="322" y="51" width="140" height="30" rx="7" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/><text x="392" y="70" text-anchor="middle" fill="var(--ink)" font-size="11">API'ler</text>
+              <rect x="474" y="51" width="148" height="30" rx="7" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/><text x="548" y="70" text-anchor="middle" fill="var(--ink)" font-size="11">SaaS / loglar</text>
+              <path d="M330 94 L330 106" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#ekoArr2)"/>
+              <!-- 2 ingestion -->
+              <rect x="15" y="108" width="620" height="56" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="25" y="132" fill="var(--ink)" font-size="12.5" font-weight="700">Ingestion</text>
+              <text x="25" y="149" fill="var(--muted)" font-size="10">veriyi içeri taşı</text>
+              <rect x="170" y="121" width="140" height="30" rx="7" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/><text x="240" y="140" text-anchor="middle" fill="var(--ink)" font-size="11">Airbyte</text>
+              <rect x="322" y="121" width="140" height="30" rx="7" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/><text x="392" y="140" text-anchor="middle" fill="var(--ink)" font-size="11">Fivetran</text>
+              <rect x="474" y="121" width="148" height="30" rx="7" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/><text x="548" y="140" text-anchor="middle" fill="var(--ink)" font-size="11">Kafka (stream)</text>
+              <path d="M330 164 L330 176" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#ekoArr2)"/>
+              <!-- 3 depolama -->
+              <rect x="15" y="178" width="620" height="56" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="25" y="202" fill="var(--ink)" font-size="12.5" font-weight="700">Depolama</text>
+              <text x="25" y="219" fill="var(--muted)" font-size="10">lake + warehouse</text>
+              <rect x="170" y="191" width="140" height="30" rx="7" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/><text x="240" y="210" text-anchor="middle" fill="var(--ink)" font-size="11">S3</text>
+              <rect x="322" y="191" width="140" height="30" rx="7" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/><text x="392" y="210" text-anchor="middle" fill="var(--ink)" font-size="11">Snowflake</text>
+              <rect x="474" y="191" width="148" height="30" rx="7" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/><text x="548" y="210" text-anchor="middle" fill="var(--ink)" font-size="11">BigQuery</text>
+              <path d="M330 234 L330 246" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#ekoArr2)"/>
+              <!-- 4 transform -->
+              <rect x="15" y="248" width="620" height="56" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="25" y="272" fill="var(--ink)" font-size="12.5" font-weight="700">Transform</text>
+              <text x="25" y="289" fill="var(--muted)" font-size="10">ham → temiz model</text>
+              <rect x="170" y="261" width="140" height="30" rx="7" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/><text x="240" y="280" text-anchor="middle" fill="var(--ink)" font-size="11">dbt</text>
+              <rect x="322" y="261" width="140" height="30" rx="7" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/><text x="392" y="280" text-anchor="middle" fill="var(--ink)" font-size="11">Spark</text>
+              <path d="M330 304 L330 316" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#ekoArr2)"/>
+              <!-- 5 orkestrasyon -->
+              <rect x="15" y="318" width="620" height="56" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="25" y="342" fill="var(--ink)" font-size="12.5" font-weight="700">Orkestrasyon</text>
+              <text x="25" y="359" fill="var(--muted)" font-size="10">akışı yönet</text>
+              <rect x="170" y="331" width="140" height="30" rx="7" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/><text x="240" y="350" text-anchor="middle" fill="var(--ink)" font-size="11">Airflow</text>
+              <rect x="322" y="331" width="140" height="30" rx="7" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/><text x="392" y="350" text-anchor="middle" fill="var(--ink)" font-size="11">Dagster</text>
+              <path d="M330 374 L330 386" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#ekoArr2)"/>
+              <!-- 6 BI & ML -->
+              <rect x="15" y="388" width="620" height="56" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="25" y="412" fill="var(--ink)" font-size="12.5" font-weight="700">BI &amp; ML</text>
+              <text x="25" y="429" fill="var(--muted)" font-size="10">karar + tahmin</text>
+              <rect x="170" y="401" width="106" height="30" rx="7" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/><text x="223" y="420" text-anchor="middle" fill="var(--ink)" font-size="11">Metabase</text>
+              <rect x="286" y="401" width="106" height="30" rx="7" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/><text x="339" y="420" text-anchor="middle" fill="var(--ink)" font-size="11">Tableau</text>
+              <rect x="402" y="401" width="106" height="30" rx="7" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/><text x="455" y="420" text-anchor="middle" fill="var(--ink)" font-size="11">scikit-learn</text>
+              <rect x="518" y="401" width="104" height="30" rx="7" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)"/><text x="570" y="420" text-anchor="middle" fill="var(--ink)" font-size="11">PyTorch</text>
+              <path d="M330 444 L330 456" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#ekoArr2)"/>
+              <!-- 7 GenAI -->
+              <rect x="15" y="458" width="620" height="56" rx="10" fill="rgba(var(--acc-rgb),.08)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="25" y="482" fill="var(--ink)" font-size="12.5" font-weight="700">GenAI</text>
+              <text x="25" y="499" fill="var(--muted)" font-size="10">LLM katmanı</text>
+              <rect x="170" y="471" width="140" height="30" rx="7" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)"/><text x="240" y="490" text-anchor="middle" fill="var(--ink)" font-size="11">Claude API</text>
+              <rect x="322" y="471" width="140" height="30" rx="7" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)"/><text x="392" y="490" text-anchor="middle" fill="var(--ink)" font-size="11">Hugging Face</text>
+              <rect x="474" y="471" width="148" height="30" rx="7" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)"/><text x="548" y="490" text-anchor="middle" fill="var(--ink)" font-size="11">Vektör DB'ler</text>
+              <!-- çapraz katman -->
+              <rect x="650" y="38" width="115" height="476" rx="10" fill="rgba(var(--acc-rgb),.06)" stroke="var(--acc)" stroke-width="1.4" stroke-dasharray="6 4"/>
+              <text x="707" y="62" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">Çapraz katman</text>
+              <text x="707" y="78" text-anchor="middle" fill="var(--muted)" font-size="10">her katmanı keser</text>
+              <rect x="662" y="100" width="91" height="30" rx="7" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="707" y="119" text-anchor="middle" fill="var(--ink)" font-size="10.5">Great Exp.</text>
+              <text x="707" y="146" text-anchor="middle" fill="var(--muted)" font-size="10">veri kalitesi</text>
+              <rect x="662" y="162" width="91" height="30" rx="7" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="707" y="181" text-anchor="middle" fill="var(--ink)" font-size="10.5">MLflow</text>
+              <text x="707" y="208" text-anchor="middle" fill="var(--muted)" font-size="10">deney takibi</text>
+              <rect x="662" y="224" width="91" height="30" rx="7" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="707" y="243" text-anchor="middle" fill="var(--ink)" font-size="10.5">Docker</text>
+              <text x="707" y="270" text-anchor="middle" fill="var(--muted)" font-size="10">paketleme</text>
+              <rect x="662" y="286" width="91" height="30" rx="7" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="707" y="305" text-anchor="middle" fill="var(--ink)" font-size="10.5">Kubernetes</text>
+              <text x="707" y="332" text-anchor="middle" fill="var(--muted)" font-size="10">ölçekleme</text>
+              <rect x="662" y="348" width="91" height="30" rx="7" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="707" y="367" text-anchor="middle" fill="var(--ink)" font-size="10.5">Git</text>
+              <text x="707" y="394" text-anchor="middle" fill="var(--muted)" font-size="10">sürümleme</text>
+              <text x="707" y="440" text-anchor="middle" fill="var(--muted)" font-size="10">kalite · MLOps ·</text>
+              <text x="707" y="455" text-anchor="middle" fill="var(--muted)" font-size="10">altyapı araçları</text>
+            </g>
+          </svg>
+          <figcaption>Stack haritası: veri yukarıdan aşağı akar; sağdaki çapraz katman (kalite, MLOps, altyapı) her seviyeye dokunur. Bu haritayı ezberleme — çizerek yeniden üretebiliyor musun, ona bak.</figcaption>
+        </figure>
+
+        <p>Katmanları müfredatla eşleştirirsek:</p>
+        <ul>
+          <li><strong>Kaynak &amp; ingestion:</strong> Airbyte ve Fivetran, yüzlerce kaynaktan <a href="m3-etl-elt.html">ELT'nin "E ve L" adımını</a> hazır bağlantılarla çözer; akan veri için <a href="m3-streaming.html">Kafka</a>.</li>
+          <li><strong>Depolama:</strong> S3 gibi nesne depoları, Snowflake/BigQuery gibi warehouse'lar — <a href="m3-warehouse-lake.html">warehouse ve lake konusu</a>.</li>
+          <li><strong>Transform:</strong> SQL tabanlı dönüşümlerde dbt; büyük ölçekte <a href="m3-spark.html">Spark</a>.</li>
+          <li><strong>Orkestrasyon:</strong> <a href="m3-orkestrasyon.html">Airflow</a> ve yeni nesil Dagster.</li>
+          <li><strong>BI:</strong> Tableau, Looker ve açık kaynak Metabase — <a href="m4-gorsellestirme.html">görselleştirme konusunun</a> kurumsal hâli.</li>
+          <li><strong>Kalite:</strong> Great Expectations ile <a href="m3-veri-kalitesi.html">otomatik veri testleri</a>.</li>
+          <li><strong>ML &amp; MLOps:</strong> <a href="m5-ml-giris.html">scikit-learn</a>, <a href="m6-sinir-aglari.html">PyTorch</a>, Hugging Face; üretim tarafında <a href="m8-cicd-tracking.html">MLflow</a>, <a href="m8-deployment.html">Docker ve Kubernetes</a>.</li>
+          <li><strong>GenAI:</strong> Anthropic/OpenAI API'leri, <a href="m7-rag.html">vektör veritabanları</a> ve <a href="m7-llm-temelleri.html">LLM</a> etrafındaki hızla büyüyen katman.</li>
+        </ul>
+
+        <h2>Tek makinenin dönüşü: DuckDB ve Polars</h2>
+        <p>Son yılların en pratik trendi, "büyük veri" refleksinin tersine dönmesi oldu. Donanım sessizce güçlendi: 32 GB bellekli bir dizüstü, on yıl önce küme gerektiren işleri tek başına yapabiliyor. Bu boşluğu iki araç doldurdu ve öğrenci olarak ikisi de senin en iyi arkadaşın:</p>
+        <ul>
+          <li><strong>DuckDB</strong> — "analitiğin SQLite'ı". Sunucu kurmadan, tek bir kütüphane olarak çalışır ve doğrudan Parquet/CSV dosyaları üzerinde SQL koşturur: <code>SELECT * FROM 'veri/*.parquet'</code> yazıp gigabaytları sorgulayabilirsin. <a href="m3-dbt.html">dbt</a> ile birleştirdiğinde, bulut warehouse'una hiç para vermeden eksiksiz bir analitik projesi kurarsın.</li>
+          <li><strong>Polars</strong> — pandas'ın modern rakibi. Rust ile yazılmış, çok çekirdekli ve tembel değerlendirmeli (lazy) bir DataFrame kütüphanesi. Aynı işi pandas'tan kat kat hızlı ve çok daha az bellekle yapar; API'si <a href="m3-spark.html">Spark'a</a> pandas'tan daha çok benzediği için ikisi arasında geçiş yapmayı da kolaylaştırır.</li>
+        </ul>
+        <p>Pratik sonuç: <strong>Spark'a geçmeden önce bu ikisini dene.</strong> Veri onlarca gigabayt seviyesindeyse, küme kurmanın ve dağıtık hata ayıklamanın karmaşıklığına hiç girmeden tek makinede bitirebilirsin. Büyük veri araçları, gerçekten büyük veri için saklanmalıdır — bu da tam olarak bu sayfanın ana fikridir: <em>araç, sorunun boyutuna göre seçilir.</em></p>
+
+        <h2>Araç seçme ilkeleri</h2>
+        <p>Bir kategoriden hangi aracı seçeceğin dört pratik soruya iner:</p>
+        <ul>
+          <li><strong>Yönetilen mi, kendin mi kuracaksın?</strong> Yönetilen servis (managed service) parayla zaman satın almaktır: Fivetran'a fatura ödersin, bakım derdin olmaz. Açık kaynağı kendin kurmak (self-hosted) ucuzdur ama <a href="m1-linux-git.html">Linux/sunucu</a> eforu ister.</li>
+          <li><strong>Topluluk ne kadar büyük?</strong> Büyük topluluk = bol dokümantasyon, cevaplanmış hatalar, hazır eklentiler. Sorunla karşılaştığında Stack Overflow'da cevabı olan araç, olmayandan yıllarca önce gidiyor demektir.</li>
+          <li><strong>İş ilanlarında geçiyor mu?</strong> Öğrenme yatırımının getirisi, o aracın piyasada aranmasıyla ölçülür. Hedeflediğin roldeki 20 ilanı tara: hangi araçlar tekrar ediyor?</li>
+          <li><strong>Ücretsiz katmanı var mı?</strong> Öğrenci için kritik: Snowflake, BigQuery ve çoğu bulut servisinin deneme/ücretsiz katmanı portfolyo projesi için yeterlidir.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 345" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Yönetilen servis mi açık kaynak mı karar akışı">
+            <g font-family="inherit">
+              <defs>
+                <marker id="ekoArr3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              </defs>
+              <polygon points="170,30 280,78 170,126 60,78" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="170" y="73" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Ekipte altyapı/DevOps</text>
+              <text x="170" y="90" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">gücü var mı?</text>
+              <path d="M285 78 L420 78" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#ekoArr3)"/>
+              <text x="352" y="68" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="600">hayır</text>
+              <rect x="428" y="46" width="250" height="64" rx="10" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="553" y="73" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Yönetilen servis</text>
+              <text x="553" y="93" text-anchor="middle" fill="var(--muted)" font-size="11">Fivetran · Snowflake · BigQuery</text>
+              <path d="M170 131 L170 168" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#ekoArr3)"/>
+              <text x="188" y="153" fill="var(--muted)" font-size="11" font-weight="600">evet</text>
+              <polygon points="170,172 285,220 170,268 55,220" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="170" y="215" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Bütçe kısıtlı ya da</text>
+              <text x="170" y="232" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">ölçek çok mu büyük?</text>
+              <path d="M290 220 L420 220" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#ekoArr3)"/>
+              <text x="352" y="210" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="600">evet</text>
+              <rect x="428" y="188" width="250" height="64" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="553" y="215" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Açık kaynak, kendin kur</text>
+              <text x="553" y="235" text-anchor="middle" fill="var(--muted)" font-size="11">Airbyte · Airflow · Metabase</text>
+              <path d="M170 273 L170 296" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#ekoArr3)"/>
+              <text x="188" y="290" fill="var(--muted)" font-size="11" font-weight="600">hayır</text>
+              <rect x="45" y="300" width="250" height="40" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="170" y="318" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Karma yaklaşım</text>
+              <text x="170" y="333" text-anchor="middle" fill="var(--muted)" font-size="10.5">çekirdek yönetilen + kenarlar açık kaynak</text>
+            </g>
+          </svg>
+          <figcaption>Basitleştirilmiş karar akışı: doğru cevap şirkete göre değişir; mülakatta "duruma göre, çünkü…" diyebilmek aracın adını bilmekten değerlidir.</figcaption>
+        </figure>
+
+        <div class="warn"><b>Vendor lock-in tuzağı.</b> Yönetilen servisler kolaydır ama veri modelini ve pipeline'larını tek tedarikçinin özel formatına gömersen çıkış maliyeti (lock-in) büyür. Panzehir: açık standartlar (SQL, Parquet, Iceberg) üzerine kurulmuş araçları tercih etmek — <a href="m3-warehouse-lake.html">lakehouse konusundaki</a> açık tablo formatları tam bu yüzden önemli.</div>
+
+        <h2>"Hangisini öğreneyim?" — pratik cevap</h2>
+        <p>Kural basit: <strong>her kategoriden BİR temsilci, ama derinlemesine.</strong> Beş aracı yüzeysel bilen aday, mülakatın ikinci sorusunda dökülür; bir aracı derin bilen aday "bunu bilen diğerini de öğrenir" güveni verir. Önerilen başlangıç seti:</p>
+
+        <figure class="codebox">
+          <figcaption>Metin — başlangıç seti: her satır bir kategorinin temsilcisi</figcaption>
+          <pre><code data-lang="text">BAŞLANGIÇ SETİ — önerilen öğrenme sırası
+
+1. Python         → her aracın ortak dili; olmadan gerisi açılmaz
+2. SQL            → 50 yıldır emekli olmayan tek "araç"
+3. Git + Linux    → tüm işlerin görünmez altyapısı
+4. dbt            → SQL bilgini üretim kalitesinde pipeline'a çevirir
+5. Airflow        → orkestrasyon kavramının referans uygulaması
+6. Bir bulut      → AWS ya da GCP; S3/BigQuery ile depolamayı öğren
+7. scikit-learn   → klasik ML'in standart kütüphanesi
+8. Docker         → "bende çalışıyordu" sorununun ilacı
+
+Sıra önemli: her adım bir öncekinin üstüne biner.
+Kural: her satır bir KATEGORİ temsilcisidir — kategoriyi kavra;
+araç değişirse (Airflow → Dagster) sadece sözdizimi öğrenirsin.</code></pre>
+        </figure>
+
+        <p>Bu set tesadüfen seçilmedi: Python (<a href="m1-python.html">Modül 1</a>) ve SQL (<a href="m2-sql.html">Modül 2</a>) her rolün ortak dili; dbt + Airflow + bulut üçlüsü <a href="m3-etl-elt.html">Modül 3'ün</a> pratik özü; scikit-learn <a href="m5-supervised.html">Modül 5'in</a>, Docker <a href="m8-deployment.html">Modül 8'in</a> giriş kapısı. Bu seti bitiren biri, <a href="m9-portfolyo.html">portfolyo konusundaki</a> orta seviye projelerin hepsini kurabilir.</p>
+
+        <div class="tip"><b>İlan taraması yöntemi.</b> Hedeflediğin şehirde/rolde 20 iş ilanı aç, geçen araçları bir tabloya çıkar, frekansa göre sırala. Bu 1 saatlik egzersiz, hangi "temsilciyi" seçeceğin sorusunu senin pazarın için kesin olarak cevaplar — genel listelerden daha isabetlidir.</div>
+
+        <h2>Trendi izle, hype'a kapılma</h2>
+        <p>Ekosistem hızlı değişir; tamamen kapalı kalmak da her yeniliğe atlamak da hatadır. Dengeli takip için: bir-iki e-posta bülteni (veri mühendisliği ve ML odaklı olanlardan), büyük konferansların (ör. veri ve AI zirvelerinin) YouTube'a düşen konuşmaları ve çalıştığın kategorilerin changelog'ları yeterlidir. Haftada yarım saatlik tarama, seni "bu aracı hiç duymadım" durumuna düşmekten korur.</p>
+        <p>Yeni parlak bir araç gördüğünde iki filtre sorusu sor:</p>
+        <ul>
+          <li><strong>"2 yıldır yaşıyor mu?"</strong> Çoğu araç ilk iki yılı atlatamaz. Hype döngüsünün zirvesinde parlayan araçların önemli kısmı, "hayal kırıklığı çukurunu" göremeden kaybolur.</li>
+          <li><strong>"Production'da kullanan var mı?"</strong> Demo videosu başka, gerçek şirketin gerçek yükü başka. "X şirketi üretimde kullanıyor" hikâyesi yoksa, öğrenme sıranda arkalarda dursun.</li>
+        </ul>
+        <p>Bu iki soruyu geçen araçlar (dbt, Airflow, Docker gibi) yatırıma değer; geçemeyenler için "çıkınca bakarım" demek profesyonel bir cevaptır.</p>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Kategori haritası sahada üç yerde işine yarar:</p>
+        <ul>
+          <li><strong>Mülakatta.</strong> "Dagster kullandın mı?" sorusuna "Hayır ama Airflow'la orkestrasyon kavramını biliyorum: DAG, retry, backfill… Dagster'ın farkı asset odaklı olması" cevabı, sıradan bir "hayır"ı güçlü bir sinyale çevirir.</li>
+          <li><strong>İlk işinde.</strong> Şirketin stack'i senin öğrendiklerinle birebir aynı olmayacak. Kategori haritan varsa "burada ingestion'ı X ile, orkestrasyonu Y ile yapıyorlar" diye birkaç günde yerleşirsin.</li>
+          <li><strong>Araç seçimi tartışmalarında.</strong> Junior'ken bile "yönetilen mi kuralım, topluluk büyüklüğü ne, lock-in riski var mı?" sorularını sorabilen kişi, toplantıda fark edilir.</li>
+        </ul>
+        <p>Haritayı cebe koyduysan sıradaki iş bu araçları hangi sırayla, hangi hedefe doğru öğreneceğini planlamak — <a href="m9-yol-haritasi.html">öğrenme yol haritası</a> tam olarak bunu yapıyor. Elindeki setle ne inşa edeceğini ise <a href="m9-portfolyo.html">portfolyo konusunda</a> görmüştün.</p>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>"Araçları değil kategorileri öğren" kuralının mantığı nedir?</summary>
+            <div class="answer">Araçlar 5–10 yıllık dalgalarla değişir (Oozie → Airflow → Dagster) ama çözdükleri sorun — <b>kategori/kavram</b> — aynı kalır. Orkestrasyon kavramını (DAG, retry, zamanlama) bilen biri için yeni araç yalnızca yeni sözdizimidir; kavramı bilmeyen içinse her araç sıfırdan ezberdir.</div>
+          </details>
+          <details class="quiz">
+            <summary>Yönetilen servis ile açık kaynağı kendin kurma arasındaki seçim hangi sorulara bakar?</summary>
+            <div class="answer">Üç ana soru: <b>ekipte altyapı/DevOps kapasitesi var mı</b> (yoksa yönetilen), <b>bütçe ve ölçek ne durumda</b> (bütçe darsa/ölçek çok büyükse açık kaynak cazipleşir) ve <b>vendor lock-in riski</b> ne kadar kabul edilebilir. Doğru cevap şirkete göre değişir — bunu söyleyebilmek mülakatta artıdır.</div>
+          </details>
+          <details class="quiz">
+            <summary>Yeni çıkan parlak bir araca zaman yatırmadan önce hangi iki filtre sorusunu sormalısın?</summary>
+            <div class="answer"><b>"2 yıldır yaşıyor mu?"</b> ve <b>"production'da kullanan gerçek şirket var mı?"</b> Hype döngüsünün zirvesindeki araçların çoğu kalıcı olmaz; iki filtreyi geçenler (dbt, Docker gibi) öğrenme yatırımını hak eder. Ek bonus soru: hedef rolündeki iş ilanlarında geçiyor mu?</div>
+          </details>
+          <details class="quiz">
+            <summary>Neden 5 orkestrasyon aracını yüzeysel bilmek yerine birini derin bilmek daha iyidir?</summary>
+            <div class="answer">Mülakatlar derinliği test eder: "Airflow'da backfill nasıl yapılır, retry stratejini nasıl kurarsın?" sorusuna yüzeysel bilgi dayanmaz. <b>Bir aracı derin bilen kişi kategoriyi kavramıştır</b> ve diğer araçlara transfer edebilir; beş aracı yüzeysel bilen kişi hiçbirinde iş çıkaramaz. Her kategoriden bir temsilci, derinlemesine.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Modern Data Stack</span><span class="term-en">Modern Data Stack</span><span class="lvl lvl-orta">Orta</span></div><p>Bulut temelli, katmanlara ayrılmış veri araç seti çerçevesi: ingestion → depolama → transform → orkestrasyon → BI.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Ingestion Aracı</span><span class="term-en">Ingestion Tool</span><span class="lvl lvl-orta">Orta</span></div><p>Kaynaklardan veriyi hazır bağlantılarla (connector) depoya taşıyan araç kategorisi; ELT'nin "E ve L" adımını otomatikleştirir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Managed Service (Yönetilen Servis)</span><span class="term-en">Managed Service</span><span class="lvl lvl-orta">Orta</span></div><p>Kurulum ve bakımı sağlayıcının üstlendiği hizmet; parayla zaman satın alırsın, karşılığında esneklikten ödün verirsin.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Açık Kaynak</span><span class="term-en">Open Source</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Kodu herkese açık, ücretsiz kullanılabilen yazılım; kendin kurar, kendin işletirsin. Veri ekosisteminin bel kemiği.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Vendor Lock-in (Tedarikçiye Bağımlılık)</span><span class="term-en">Vendor Lock-in</span><span class="lvl lvl-ileri">İleri</span></div><p>Sistemini tek tedarikçinin özel formatlarına bağlayıp çıkış maliyetini büyütme riski; açık standartlar panzehirdir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Topluluk</span><span class="term-en">Community</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Bir aracın kullanıcı/katkıcı kitlesi. Büyük topluluk, bol dokümantasyon ve cevaplanmış hata demektir — araç seçiminde ciddi kriterdir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Fivetran &amp; Airbyte</span><span class="term-en">Fivetran &amp; Airbyte</span><span class="lvl lvl-orta">Orta</span></div><p>Ingestion kategorisinin iki bilinen örneği: Fivetran yönetilen, Airbyte açık kaynak. Aynı kategorinin iki iş modeli.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Dagster</span><span class="term-en">Dagster</span><span class="lvl lvl-orta">Orta</span></div><p>Airflow'a alternatif yeni nesil orkestrasyon aracı; görevler yerine veri varlıklarını (asset) merkeze alır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Metabase</span><span class="term-en">Metabase</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Açık kaynak BI aracı; portfolyo projelerinde ücretsiz dashboard katmanı kurmanın en pratik yollarından biri.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Hype Döngüsü</span><span class="term-en">Hype Cycle</span><span class="lvl lvl-orta">Orta</span></div><p>Yeni teknolojilerin şişirilmiş beklenti zirvesinden hayal kırıklığı çukuruna, oradan olgunluğa geçtiği model; "2 yıl filtresi"nin kuramsal temeli.</p></div>
+
+          <div class="term"><div class="term-head"><span class="term-tr">DuckDB &amp; Polars</span><span class="term-en">DuckDB &amp; Polars</span><span class="lvl lvl-orta">Orta</span></div><p>Tek makinede gigabayt ölçeğini kaldıran modern analitik araçları; Spark'a geçmeden önce denenmesi gereken ucuz ve hızlı seçenek.</p></div>        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m9-ekosistem">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m9-portfolyo.html"><span>← Önceki</span><b>Portfolyo Projeleri</b></a>
+          <a class="next" href="m9-yol-haritasi.html"><span>Sonraki →</span><b>Öğrenme Yol Haritası ve Kaynaklar</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

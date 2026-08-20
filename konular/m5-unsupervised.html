@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unsupervised Learning — Veri Atlası</title>
+<meta name="description" content="K-means, hierarchical clustering, DBSCAN, PCA, t-SNE/UMAP, anomaly detection ve association rules: etiketsiz veride yapı ve desen bulmanın yolları.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m5" data-slug="m5-unsupervised">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m5">5. Makine Öğrenmesi</a><span class="sep">/</span>
+        <span>Unsupervised Learning</span>
+      </nav>
+      <span class="mod-badge">Modül 5 · Makine Öğrenmesi</span>
+      <h1>Unsupervised Learning</h1>
+      <p class="en-title">Unsupervised Learning</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~16 dk okuma</span>
+        <span class="chip">🔤 12 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Etiket yoksa ne öğrenilir?</h2>
+        <p><a href="m5-supervised.html">Supervised learning konusunda</a> hep bir cevap anahtarımız vardı: her satırın yanında "bu spam", "bu ev 2,4 milyon TL" gibi bir etiket duruyordu. Ama gerçek dünyada verinin büyük kısmı etiketsizdir. Elinde 500 bin müşterinin harcama geçmişi var; kimse bu müşterilerin alnına "cimri", "sadık", "kaybetmek üzeresin" yazmamış. Peki etiket yokken model neyi öğrenecek?</p>
+        <p>Cevap: <strong>verinin kendi iç yapısını</strong>. Unsupervised learning (gözetimsiz öğrenme), "doğru cevabı tahmin et" yerine "bu veride hangi desenler, gruplar, sıra dışılıklar var?" sorusunu sorar. Üç büyük iş ailesi vardır:</p>
+        <ul>
+          <li><strong>Kümeleme (clustering)</strong> — birbirine benzeyen kayıtları gruplara ayır: müşteri segmentasyonu, benzer haberleri toplama.</li>
+          <li><strong>Boyut indirgeme (dimensionality reduction)</strong> — yüzlerce kolonu, bilginin özünü koruyarak birkaç eksene sıkıştır.</li>
+          <li><strong>Anomali tespiti (anomaly detection)</strong> — normalden sapan kayıtları bul: sahte kart işlemi, arızalanmak üzere olan sensör.</li>
+        </ul>
+        <p>Klasik motivasyon örneği müşteri segmentasyonudur: pazarlama ekibi "herkese aynı kampanya" yerine "az harcayan ama sık gelenlere ayrı, çok harcayıp seyrelenlere ayrı mesaj" atmak ister. Segmentlerin ne olduğunu kimse önceden bilmez — onları veriden <em>keşfetmek</em> gerekir. İşte bu sayfa o keşif araç çantası.</p>
+
+        <h2>K-means: en çok kullanılan kümeleme</h2>
+        <p>K-means'in fikri çocuk oyunu kadar basittir: "bana kaç küme istediğini söyle (k), ben her kümeye bir <strong>merkez (centroid)</strong> yerleştirip noktaları en yakın merkeze dağıtayım." Algoritma iki adımı dönüşümlü tekrarlar:</p>
+        <ol>
+          <li><strong>Atama:</strong> her nokta, kendisine en yakın merkezin kümesine yazılır.</li>
+          <li><strong>Taşıma:</strong> her merkez, kendi kümesindeki noktaların ortalamasına taşınır.</li>
+        </ol>
+        <p>Atamalar değişmez hâle gelince algoritma durur. Başlangıç merkezleri rastgele seçildiği için sonuç şansa bağlı olabilir; bu yüzden scikit-learn varsayılan olarak algoritmayı birden çok kez başlatır (<code>n_init</code>) ve en iyi sonucu tutar.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 780 250" width="780" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="K-means döngüsünün üç adımı: rastgele merkezler, atama, merkez taşıma">
+            <defs>
+              <marker id="arru1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              <marker id="arru2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--warn)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <!-- Panel 1: rastgele merkezler -->
+              <text x="130" y="38" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">1. Rastgele merkezler</text>
+              <g transform="translate(10,50)">
+                <rect x="0" y="0" width="240" height="175" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+                <g fill="var(--muted)" opacity="0.8">
+                  <circle cx="40" cy="140" r="5"/><circle cx="58" cy="122" r="5"/><circle cx="72" cy="148" r="5"/><circle cx="50" cy="158" r="5"/><circle cx="85" cy="132" r="5"/><circle cx="98" cy="155" r="5"/>
+                  <circle cx="145" cy="75" r="5"/><circle cx="162" cy="92" r="5"/><circle cx="178" cy="64" r="5"/><circle cx="196" cy="86" r="5"/><circle cx="155" cy="58" r="5"/><circle cx="185" cy="105" r="5"/>
+                </g>
+                <g stroke="var(--acc)" stroke-width="3.5" stroke-linecap="round"><path d="M88 53 L102 67"/><path d="M102 53 L88 67"/></g>
+                <g stroke="var(--warn)" stroke-width="3.5" stroke-linecap="round"><path d="M108 143 L122 157"/><path d="M122 143 L108 157"/></g>
+              </g>
+              <text x="262" y="142" text-anchor="middle" fill="var(--acc)" font-size="15" font-weight="700">→</text>
+              <!-- Panel 2: atama -->
+              <text x="390" y="38" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">2. En yakın merkeze atama</text>
+              <g transform="translate(270,50)">
+                <rect x="0" y="0" width="240" height="175" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+                <g fill="var(--warn)" opacity="0.85">
+                  <circle cx="40" cy="140" r="5"/><circle cx="58" cy="122" r="5"/><circle cx="72" cy="148" r="5"/><circle cx="50" cy="158" r="5"/><circle cx="85" cy="132" r="5"/><circle cx="98" cy="155" r="5"/><circle cx="185" cy="105" r="5"/>
+                </g>
+                <g fill="var(--acc)" opacity="0.85">
+                  <circle cx="145" cy="75" r="5"/><circle cx="162" cy="92" r="5"/><circle cx="178" cy="64" r="5"/><circle cx="196" cy="86" r="5"/><circle cx="155" cy="58" r="5"/>
+                </g>
+                <g stroke="var(--acc)" stroke-width="3.5" stroke-linecap="round"><path d="M88 53 L102 67"/><path d="M102 53 L88 67"/></g>
+                <g stroke="var(--warn)" stroke-width="3.5" stroke-linecap="round"><path d="M108 143 L122 157"/><path d="M122 143 L108 157"/></g>
+                <text x="120" y="192" text-anchor="middle" fill="var(--muted)" font-size="10.5" transform="translate(0,-4)">her nokta en yakın merkezin rengini alır</text>
+              </g>
+              <text x="522" y="142" text-anchor="middle" fill="var(--acc)" font-size="15" font-weight="700">→</text>
+              <!-- Panel 3: merkez taşıma -->
+              <text x="650" y="38" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">3. Merkezler taşınır</text>
+              <g transform="translate(530,50)">
+                <rect x="0" y="0" width="240" height="175" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+                <g fill="var(--warn)" opacity="0.85">
+                  <circle cx="40" cy="140" r="5"/><circle cx="58" cy="122" r="5"/><circle cx="72" cy="148" r="5"/><circle cx="50" cy="158" r="5"/><circle cx="85" cy="132" r="5"/><circle cx="98" cy="155" r="5"/><circle cx="185" cy="105" r="5"/>
+                </g>
+                <g fill="var(--acc)" opacity="0.85">
+                  <circle cx="145" cy="75" r="5"/><circle cx="162" cy="92" r="5"/><circle cx="178" cy="64" r="5"/><circle cx="196" cy="86" r="5"/><circle cx="155" cy="58" r="5"/>
+                </g>
+                <g stroke="var(--muted)" stroke-width="3" stroke-linecap="round" opacity="0.4"><path d="M88 53 L102 67"/><path d="M102 53 L88 67"/><path d="M108 143 L122 157"/><path d="M122 143 L108 157"/></g>
+                <path d="M100 62 L158 72" stroke="var(--acc)" stroke-width="1.8" stroke-dasharray="4 3" marker-end="url(#arru1)"/>
+                <path d="M112 148 L92 139" stroke="var(--warn)" stroke-width="1.8" stroke-dasharray="4 3" marker-end="url(#arru2)"/>
+                <g stroke="var(--acc)" stroke-width="3.5" stroke-linecap="round"><path d="M160 68 L174 82"/><path d="M174 68 L160 82"/></g>
+                <g stroke="var(--warn)" stroke-width="3.5" stroke-linecap="round"><path d="M77 130 L91 144"/><path d="M91 130 L77 144"/></g>
+              </g>
+              <text x="390" y="244" text-anchor="middle" fill="var(--faint)" font-size="11">Atama ↔ taşıma döngüsü, atamalar değişmeyene kadar sürer</text>
+            </g>
+          </svg>
+          <figcaption>K-means döngüsü: merkezleri rastgele at → noktaları en yakın merkeze ata → merkezleri kümenin ortalamasına taşı → tekrar et.</figcaption>
+        </figure>
+
+        <div class="tip"><b>Önce ölçekle.</b> K-means noktalar arası <em>mesafeye</em> dayanır. "Yıllık harcama" (20.000–90.000) ile "ziyaret sıklığı" (1–50) aynı tabloda ise mesafeyi tek başına harcama belirler ve sıklık kolonu görünmez olur. Kümelemeden önce <code>StandardScaler</code> şart — ayrıntısı <a href="m5-feature-engineering.html">Feature Engineering konusunda</a>.</div>
+
+        <h3>k'yı kim seçiyor? Elbow yöntemi</h3>
+        <p>K-means'in en can alıcı sorusu şudur: kaç küme? Algoritma bunu söyleyemez; sen söylersin. En yaygın pusula <strong>elbow (dirsek) yöntemi</strong>dir. Her k değeri için <strong>inertia</strong> — noktaların kendi merkezlerine uzaklıklarının kareler toplamı — hesaplanır. k arttıkça inertia hep düşer (uçta her nokta kendi kümesi olur, inertia sıfırlanır); ama bir noktadan sonra düşüş ciddi biçimde yavaşlar. Eğrinin "dirsek yaptığı" o nokta, ekstra kümenin artık az şey kazandırdığı yerdir — makul k adayı orasıdır.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 640 300" width="640" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Elbow grafiği: k arttıkça inertia düşer, dirsek k=3'te">
+            <defs>
+              <marker id="arru3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <path d="M70 240 L600 240" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arru3)"/>
+              <path d="M70 240 L70 40" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arru3)"/>
+              <text x="335" y="275" text-anchor="middle" fill="var(--muted)" font-size="12">küme sayısı (k)</text>
+              <text x="34" y="140" text-anchor="middle" fill="var(--muted)" font-size="12" transform="rotate(-90 34 140)">inertia</text>
+              <g fill="var(--muted)" font-size="11" text-anchor="middle">
+                <text x="132" y="258">1</text><text x="194" y="258">2</text><text x="256" y="258">3</text><text x="318" y="258">4</text><text x="380" y="258">5</text><text x="442" y="258">6</text><text x="504" y="258">7</text><text x="566" y="258">8</text>
+              </g>
+              <polyline points="132,70 194,120 256,185 318,200 380,210 442,217 504,222 566,226" fill="none" stroke="var(--acc)" stroke-width="2.5"/>
+              <g fill="var(--acc)">
+                <circle cx="132" cy="70" r="4"/><circle cx="194" cy="120" r="4"/><circle cx="256" cy="185" r="4"/><circle cx="318" cy="200" r="4"/><circle cx="380" cy="210" r="4"/><circle cx="442" cy="217" r="4"/><circle cx="504" cy="222" r="4"/><circle cx="566" cy="226" r="4"/>
+              </g>
+              <path d="M256 185 L256 240" stroke="var(--bad)" stroke-width="1.4" stroke-dasharray="5 4"/>
+              <circle cx="256" cy="185" r="9" fill="none" stroke="var(--bad)" stroke-width="2"/>
+              <text x="256" y="162" text-anchor="middle" fill="var(--bad)" font-size="12" font-weight="700">dirsek: k=3</text>
+              <text x="170" y="95" text-anchor="middle" fill="var(--ok)" font-size="11">hızlı düşüş:</text>
+              <text x="170" y="109" text-anchor="middle" fill="var(--ok)" font-size="11">her küme çok kazandırıyor</text>
+              <text x="460" y="192" text-anchor="middle" fill="var(--muted)" font-size="11">azalan getiri:</text>
+              <text x="460" y="206" text-anchor="middle" fill="var(--muted)" font-size="11">yeni küme az şey katıyor</text>
+            </g>
+          </svg>
+          <figcaption>Elbow yöntemi: inertia'nın hızlı düştüğü bölge biter, düzlük başlar — kırılma noktası makul k adayıdır. Dirsek her zaman bu kadar net değildir; silhouette skoru gibi ek ölçütlerle desteklenir.</figcaption>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Python — KMeans ile müşteri segmentasyonu ve elbow döngüsü</figcaption>
+          <pre><code data-lang="python">from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+
+# Müşteri verisi: yıllık harcama ve ziyaret sıklığı
+X = musteriler[["yillik_harcama", "ziyaret_sikligi"]]
+X_olcekli = StandardScaler().fit_transform(X)   # k-means mesafe kullanır → önce ölçekle!
+
+# 4 segmente ayır
+model = KMeans(n_clusters=4, n_init=10, random_state=42)
+model.fit(X_olcekli)
+
+musteriler["segment"] = model.labels_    # her müşterinin küme etiketi (0..3)
+print(model.cluster_centers_)            # segment merkezleri → yorumlayıp isim vereceğiz
+
+# Elbow: farklı k'lar için inertia'yı karşılaştır
+for k in range(1, 9):
+    km = KMeans(n_clusters=k, n_init=10, random_state=42).fit(X_olcekli)
+    print(k, round(km.inertia_, 1))      # düşüşün yavaşladığı k'yı ara</code></pre>
+        </figure>
+
+        <p>K-means'in bir de karakteri var: merkez + mesafe mantığı yüzünden kümelerin <strong>küresel (yuvarlak) ve benzer boyutlu</strong> olduğunu varsayar. Uzun ince şeritler, iç içe halkalar, ay şeklindeki kümeler bu varsayıma uymaz ve k-means onları yanlış böler. Bu da bizi diğer yaklaşımlara götürüyor.</p>
+
+        <h2>Diğer kümeleme yaklaşımları</h2>
+        <p><strong>Hiyerarşik kümeleme (hierarchical clustering)</strong>, k'yı baştan seçmek yerine bir aile ağacı kurar: en yakın iki nokta/küme birleştirilir, sonra bir sonraki en yakın çift, ta ki her şey tek kümede toplanana kadar. Bu birleşme geçmişi <strong>dendrogram</strong> denen ağaç grafiğiyle çizilir; ağacı hangi yükseklikten "kesersen" o kadar küme elde edersin. Küme sayısına karar vermeden önce yapıyı görmek istediğinde ve veri küçük–orta boyutluyken (hesap maliyeti yüksektir) değerlidir.</p>
+        <p><strong>DBSCAN</strong> ise kümeye bambaşka bir gözle bakar: küme, "noktaların <em>yoğun</em> olduğu bölge"dir. Bir noktanın çevresinde (eps yarıçapında) yeterli komşu varsa yoğun bölgenin parçası sayılır; yoğun bölgeler zincirleme büyüyerek kümeyi oluşturur. Bunun üç güzel sonucu var:</p>
+        <ul>
+          <li>Küme sayısını (k) önceden vermezsin — yoğunluk kaç bölge oluşturuyorsa o kadar küme çıkar.</li>
+          <li>Küme şekli serbesttir: ay, halka, şerit... yoğunluk neredeyse küme orada.</li>
+          <li>Hiçbir yoğun bölgeye girmeyen noktalar <strong>gürültü (noise)</strong> olarak dışarıda bırakılır — aykırı değerlere karşı dayanıklıdır.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 260" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ay şeklindeki iki kümede k-means'in yanlış, DBSCAN'in doğru ayırması">
+            <g font-family="inherit">
+              <text x="180" y="38" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">K-means: mesafe temelli</text>
+              <g transform="translate(20,50)">
+                <rect x="0" y="0" width="320" height="185" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+                <path d="M175 15 L155 175" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="5 4"/>
+                <g fill="var(--acc)" opacity="0.85">
+                  <circle cx="60" cy="120" r="5"/><circle cx="70" cy="85" r="5"/><circle cx="90" cy="60" r="5"/><circle cx="120" cy="45" r="5"/><circle cx="150" cy="45" r="5"/>
+                  <circle cx="120" cy="90" r="5"/><circle cx="130" cy="125" r="5"/><circle cx="150" cy="150" r="5"/>
+                </g>
+                <g fill="var(--warn)" opacity="0.85">
+                  <circle cx="180" cy="60" r="5"/><circle cx="200" cy="85" r="5"/><circle cx="210" cy="120" r="5"/>
+                  <circle cx="180" cy="163" r="5"/><circle cx="210" cy="163" r="5"/><circle cx="240" cy="150" r="5"/><circle cx="260" cy="125" r="5"/><circle cx="270" cy="90" r="5"/>
+                </g>
+                <text x="160" y="178" text-anchor="middle" fill="var(--bad)" font-size="11" font-weight="700">iki ayı da ortadan böldü ✗</text>
+              </g>
+              <text x="520" y="38" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">DBSCAN: yoğunluk temelli</text>
+              <g transform="translate(360,50)">
+                <rect x="0" y="0" width="320" height="185" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+                <g fill="var(--acc)" opacity="0.85">
+                  <circle cx="60" cy="120" r="5"/><circle cx="70" cy="85" r="5"/><circle cx="90" cy="60" r="5"/><circle cx="120" cy="45" r="5"/><circle cx="150" cy="45" r="5"/><circle cx="180" cy="60" r="5"/><circle cx="200" cy="85" r="5"/><circle cx="210" cy="120" r="5"/>
+                </g>
+                <g fill="var(--ok)" opacity="0.85">
+                  <circle cx="120" cy="90" r="5"/><circle cx="130" cy="125" r="5"/><circle cx="150" cy="150" r="5"/><circle cx="180" cy="163" r="5"/><circle cx="210" cy="163" r="5"/><circle cx="240" cy="150" r="5"/><circle cx="260" cy="125" r="5"/><circle cx="270" cy="90" r="5"/>
+                </g>
+                <circle cx="295" cy="40" r="5" fill="var(--muted)" opacity="0.7"/>
+                <text x="295" y="24" text-anchor="middle" fill="var(--muted)" font-size="10.5">gürültü</text>
+                <text x="160" y="178" text-anchor="middle" fill="var(--ok)" font-size="11" font-weight="700">her ay kendi kümesi ✓</text>
+              </g>
+            </g>
+          </svg>
+          <figcaption>Aynı "iki ay" verisi: k-means küresel küme varsaydığı için ayları ortadan keser; DBSCAN yoğunluğu takip ederek her ayı doğru bulur, uzaktaki noktayı gürültü ilan eder.</figcaption>
+        </figure>
+
+        <p>Peki hangisini ne zaman? Pratik kural: kümeler kabaca yuvarlak ve sayısı hakkında fikrin varsa <strong>k-means</strong> (hızlı, ölçeklenir, merkezi yorumlanabilir). Şekiller düzensizse, veri gürültülüyse ya da k'yı bilmiyorsan <strong>DBSCAN</strong>. Kümelerin iç içe geçmiş hiyerarşisini görmek istiyorsan (örneğin ürün taksonomisi) <strong>hierarchical</strong>. DBSCAN'in bedeli, eps ve min_samples parametrelerinin ayarının hassas olması ve kümeler arasında yoğunluk farkı büyükse zorlanmasıdır.</p>
+
+        <h2>Boyut indirgeme: 50 kolonu 2 eksene sığdırmak</h2>
+        <p>Kümeleme bölümünde mesafe kavramına yaslandık; ama mesafenin garip bir düşmanı var: <strong>boyut laneti (curse of dimensionality)</strong>. Kolon sayısı arttıkça uzay üstel biçimde seyrekleşir; yüzlerce boyutta her nokta her noktaya "neredeyse eşit uzaklıkta" görünmeye başlar ve en yakın komşu kavramı anlamını yitirir. Ayrıca 50 boyutlu veriyi ne çizebilir ne gözle inceleyebilirsin. Çare: bilgiyi az sayıda eksene sıkıştırmak.</p>
+        <p><strong>PCA (Principal Component Analysis)</strong> bunun klasik yoludur. Fikir: verinin <strong>en çok varyans taşıyan</strong> (en çok yayıldığı) yönünü bul — bu 1. bileşen (PC1) olur; ona dik yönler arasında kalan varyansı en çok taşıyanı bul — PC2 olur; böyle devam eder. İlk birkaç bileşen çoğu zaman toplam varyansın büyük kısmını taşır; gerisini atarak veriyi sıkıştırırsın. İki temel kullanım: <em>görselleştirme</em> (ilk 2 bileşeni scatter'a dökmek) ve <em>ön işleme</em> (yüzlerce korelasyonlu kolonu az sayıda bağımsız eksene indirip modeli hızlandırmak).</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 640 320" width="640" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PCA: elips saçılımda PC1 ve PC2 eksenleri, noktaların PC1'e izdüşümü">
+            <defs>
+              <marker id="arru4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              <marker id="arru5" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--warn)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <path d="M137 252 L423 88" stroke="var(--dg-line)" stroke-width="1.2" opacity="0.7"/>
+              <g fill="var(--muted)" opacity="0.8">
+                <circle cx="152" cy="209" r="5"/><circle cx="197" cy="247" r="5"/><circle cx="199" cy="200" r="5"/><circle cx="246" cy="230" r="5"/><circle cx="225" cy="155" r="5"/><circle cx="272" cy="186" r="5"/><circle cx="276" cy="143" r="5"/><circle cx="321" cy="181" r="5"/><circle cx="323" cy="134" r="5"/><circle cx="332" cy="100" r="5"/><circle cx="377" cy="137" r="5"/><circle cx="391" cy="123" r="5"/><circle cx="196" cy="224" r="5"/><circle cx="389" cy="90" r="5"/><circle cx="339" cy="182" r="5"/>
+              </g>
+              <path d="M197 247 L184 225" stroke="var(--acc)" stroke-width="1.3" stroke-dasharray="3 3"/>
+              <path d="M332 100 L349 130" stroke="var(--acc)" stroke-width="1.3" stroke-dasharray="3 3"/>
+              <path d="M246 230 L229 200" stroke="var(--acc)" stroke-width="1.3" stroke-dasharray="3 3"/>
+              <g fill="var(--acc)">
+                <circle cx="184" cy="225" r="4"/><circle cx="349" cy="130" r="4"/><circle cx="229" cy="200" r="4"/>
+              </g>
+              <path d="M280 170 L423 88" stroke="var(--acc)" stroke-width="2.5" marker-end="url(#arru4)"/>
+              <path d="M280 170 L245 109" stroke="var(--warn)" stroke-width="2" marker-end="url(#arru5)"/>
+              <text x="437" y="76" fill="var(--acc)" font-size="12.5" font-weight="700">PC1</text>
+              <text x="437" y="92" fill="var(--muted)" font-size="10.5">varyansın en büyük yönü</text>
+              <text x="222" y="98" fill="var(--warn)" font-size="12.5" font-weight="700">PC2</text>
+              <text x="120" y="290" fill="var(--muted)" font-size="11">kesikli çizgiler: noktaların PC1 eksenine izdüşümü — 2 boyut, en az bilgi kaybıyla 1 boyuta iner</text>
+            </g>
+          </svg>
+          <figcaption>PCA, saçılımın en uzun eksenini PC1 seçer; noktalar bu eksene izdüşürüldüğünde varyansın çoğu korunur. 50 boyutta da aynı fikir: en dolgun eksenleri tut, gerisini at.</figcaption>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Python — PCA ile 50 boyutu 2'ye indirip çizmek</figcaption>
+          <pre><code data-lang="python">from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+
+# X_olcekli: 10.000 satır × 50 sayısal kolon (PCA öncesi ölçekleme şart)
+pca = PCA(n_components=2)
+X_2d = pca.fit_transform(X_olcekli)
+
+# Her bileşenin taşıdığı varyans oranı
+print(pca.explained_variance_ratio_)
+# örn. [0.41, 0.17] → PC1 %41, PC2 %17; grafik varyansın %58'ini gösteriyor
+
+plt.scatter(X_2d[:, 0], X_2d[:, 1], s=8, alpha=0.5)
+plt.xlabel("PC1"); plt.ylabel("PC2")
+plt.title("50 boyutlu veri, 2 boyutta")
+plt.show()
+
+# Sıkıştırma modu: %90 varyansı korumak için kaç bileşen gerekir?
+pca90 = PCA(n_components=0.90)           # oran verirsen bileşen sayısını kendisi seçer
+print(pca90.fit(X_olcekli).n_components_)  # örn. 14 → 50 kolon yerine 14 eksen yeter</code></pre>
+        </figure>
+
+        <p>Görselleştirme tarafında iki modern araç daha duyacaksın: <strong>t-SNE</strong> ve <strong>UMAP</strong>. İkisi de yüksek boyutlu veride <em>komşulukları</em> koruyarak 2 boyutlu haritalar çıkarır ve küme yapısını PCA'dan çok daha çarpıcı gösterir (embedding görselleştirmelerinin standardıdır). Ama bir sözleşmeyle gelirler: bu haritalar <strong>yalnızca görselleştirme içindir</strong>.</p>
+
+        <div class="warn"><b>t-SNE/UMAP haritasında cetvel kullanma.</b> Bu yöntemler yerel komşuluğu korur, küresel geometriyi korumaz: haritada iki kümenin "arası uzak" diye gerçekte çok farklı oldukları, kümelerin "büyüklüğü" diye yoğunlukları söylenemez. Perplexity gibi parametreler değişince harita da değişir. Desenleri keşfet, ama mesafeleri ve alanları <em>yorumlama</em>; sayısal iş için PCA gibi doğrusal yöntemleri ya da orijinal uzayı kullan.</div>
+
+        <h2>Anomali tespiti: normalden sapanı bul</h2>
+        <p>Bazen ilgilendiğimiz şey kümelerin kendisi değil, hiçbir yere uymayan kayıtlardır. <strong>Anomaly detection (anomali tespiti)</strong>, "normal"in desenini öğrenip ondan sapanları işaretler: gece 03.00'te yurt dışından gelen kart harcaması, birden 90 dereceye fırlayan sensör, ortalamanın 40 katı istek atan IP. Etiket yoktur ya da çok azdır — dolandırıcılık örnekleri nadirdir ve dolandırıcılar sürekli taktik değiştirir; bu yüzden problem çoğu zaman unsupervised kurgulanır.</p>
+        <p>Pratikte en sık göreceğin algoritma <strong>Isolation Forest</strong>tır. Fikri zarif: veriyi rastgele kolon ve rastgele eşiklerle tekrar tekrar böl. Normal noktalar kalabalığın içindedir, onları tek başına izole etmek çok sayıda bölme gerektirir; anomaliler ise seyrek bölgelerde durduğu için birkaç bölmede yalnız kalıverir. "Kaç bölmede izole oldu" sayısı bir anomali skoruna dönüşür: kısa yol = şüpheli. Yüzlerce kolonlu veride bile hızlıdır ve mesafe hesabına dayanmadığı için boyut lanetinden görece az etkilenir.</p>
+
+        <h2>Association rules: sepetin içindeki desenler</h2>
+        <p>Unsupervised ailesinin ticarette en eski üyesi <strong>birliktelik kuralları (association rules)</strong>dır — nam-ı diğer <em>sepet analizi</em>. Milyonlarca alışveriş sepetini tarayıp "X alan, çoğunlukla Y de alıyor" kalıpları çıkarır: "bebek bezi alanların %30'u ıslak mendil de alıyor" gibi. Üç ölçüyle konuşur: <strong>support</strong> (kalıp ne kadar yaygın), <strong>confidence</strong> (X alındığında Y gelme olasılığı) ve <strong>lift</strong> (bu ikili, tesadüfen beklenenden kaç kat sık birlikte). E-ticaretteki "bunu alanlar şunu da aldı" kutuları, market raf düzeni ve kampanya paketleri bu kuralların doğrudan çocuğudur. Apriori ve FP-Growth klasik algoritmalarıdır; günümüzde büyük öneri sistemleri daha gelişkin modeller kullansa da hızlı, açıklanabilir bir başlangıç olarak hâlâ iş görür.</p>
+
+        <div class="note"><b>Kümeye ismi insan verir.</b> Hiçbir unsupervised algoritma sana "bu küme, fiyata duyarlı genç müşteriler" demez; yalnızca "küme 2" der. Kümelerin ortalamalarını, dağılımlarını inceleyip onlara iş diliyle ad koymak — yani <em>yorumlamak</em> — senin işindir. Bu adım atlanırsa segmentasyon projesi "renkli scatter" olarak kalır. <a href="m4-eda.html">EDA konusundaki</a> özetleme teknikleri burada tekrar sahneye çıkar.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <ul>
+          <li><strong>Müşteri segmentasyonu →</strong> RFM (recency-frequency-monetary) kolonları üzerinde k-means; çıkan segmentlere pazarlamayla birlikte isim verip CRM'e yazmak. Sektörün ekmek kapısı.</li>
+          <li><strong>Fraud ve güvenlik →</strong> kart işlemleri, sigorta talepleri ve login davranışlarında Isolation Forest tabanlı skorlar; skor eşiği aşınca insan incelemesine düşen alarm kuyruğu.</li>
+          <li><strong>Veri kalitesi nöbeti →</strong> pipeline metriklerinde (satır sayısı, null oranı) anomali tespiti; <a href="m3-veri-kalitesi.html">veri kalitesi konusundaki</a> kural tabanlı kontrollerin istatistiksel kardeşi.</li>
+          <li><strong>Model öncesi sıkıştırma →</strong> yüzlerce korelasyonlu feature'ı PCA ile azaltıp <a href="m5-supervised.html">supervised modele</a> vermek; embedding'leri UMAP ile çizip veri kümesindeki grupları göz ile denetlemek.</li>
+          <li><strong>Öneri ve raf düzeni →</strong> sepet analizinden çıkan lift'i yüksek ikililerle çapraz satış kampanyaları kurmak.</li>
+        </ul>
+        <p>Bir sonraki konuda top yeniden supervised dünyaya dönüyor ama soru değişiyor: modele vereceğin kolonları nasıl <em>daha besleyici</em> hâle getirirsin? Cevap <a href="m5-feature-engineering.html">Feature Engineering</a>.</p>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>K-means'te k'yı algoritma neden kendisi seçemiyor; sen nasıl seçersin?</summary>
+            <div class="answer">Inertia k arttıkça <b>her zaman</b> düşer; algoritma "daha çok küme = daha iyi skor" gördüğü için k'yı kendine bırakırsan uca kaçar. Bu yüzden farklı k'lar için inertia çizilir ve düşüşün belirgin biçimde yavaşladığı <b>dirsek noktası</b> seçilir (elbow yöntemi); silhouette skoru ve işin gerçek ihtiyacı (kaç segment yönetilebilir?) da hesaba katılır.</div>
+          </details>
+          <details class="quiz">
+            <summary>DBSCAN'in k-means'e göre iki önemli avantajı nedir? Bedeli ne?</summary>
+            <div class="answer">1) Küme sayısını <b>önceden istemez</b> ve ay/halka gibi <b>düzensiz şekilleri</b> bulabilir; 2) hiçbir yoğun bölgeye girmeyen noktaları <b>gürültü</b> olarak ayırdığı için aykırı değerlere dayanıklıdır. Bedeli: eps ve min_samples ayarı hassastır ve kümelerin yoğunlukları birbirinden çok farklıysa zorlanır.</div>
+          </details>
+          <details class="quiz">
+            <summary>t-SNE grafiğinde iki küme birbirine çok uzak görünüyor. "Bu iki grup gerçekte de çok farklı" diyebilir misin?</summary>
+            <div class="answer"><b>Hayır.</b> t-SNE (ve UMAP) yerel komşulukları korur ama <b>küresel mesafeleri korumaz</b>; kümeler arası uzaklık ve küme büyüklüğü haritada anlamlı değildir, parametre değişince yerleşim de değişir. Bu grafikler keşif ve sunum içindir; sayısal karşılaştırma orijinal uzayda ya da PCA gibi doğrusal izdüşümlerde yapılır.</div>
+          </details>
+          <details class="quiz">
+            <summary>PCA'da explained_variance_ratio_ = [0.45, 0.25] çıktı. Bu sana ne söylüyor?</summary>
+            <div class="answer">PC1 verideki toplam varyansın <b>%45'ini</b>, PC2 <b>%25'ini</b> taşıyor; ikisi birlikte <b>%70</b>. Yani 2 boyutlu scatter, verinin yayılımının %70'ini temsil ediyor — kalan %30 bu grafikte görünmüyor. Oran düşükse (örn. %30) 2B görselleştirmeye bakarak karar vermek yanıltıcı olur; daha çok bileşen tutmak gerekir.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Kümeleme</span><span class="term-en">Clustering</span><span class="lvl lvl-orta">Orta</span></div><p>Etiketsiz kayıtları benzerliklerine göre gruplara ayırma; unsupervised learning'in en yaygın görevi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">K-means</span><span class="term-en">K-means</span><span class="lvl lvl-orta">Orta</span></div><p>k merkez atayıp "en yakına ata → merkezi taşı" döngüsüyle kümeleyen hızlı algoritma; küresel küme varsayar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Inertia &amp; Elbow Yöntemi</span><span class="term-en">Elbow Method</span><span class="lvl lvl-orta">Orta</span></div><p>Inertia: noktaların merkezlerine uzaklık karelerinin toplamı. Elbow: inertia–k eğrisindeki dirsekten k seçme yöntemi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Hiyerarşik Kümeleme</span><span class="term-en">Hierarchical Clustering</span><span class="lvl lvl-ileri">İleri</span></div><p>Kümeleri adım adım birleştirerek ağaç (dendrogram) kuran yöntem; k'ya kesim yüksekliğiyle sonradan karar verilir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">DBSCAN</span><span class="term-en">DBSCAN</span><span class="lvl lvl-ileri">İleri</span></div><p>Yoğun bölgeleri küme sayan algoritma; k istemez, düzensiz şekilleri bulur, seyrek noktaları gürültü ilan eder.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Boyut İndirgeme</span><span class="term-en">Dimensionality Reduction</span><span class="lvl lvl-orta">Orta</span></div><p>Çok kolonlu veriyi, bilginin özünü koruyarak daha az eksende temsil etme; sıkıştırma ve görselleştirmenin anahtarı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Boyut Laneti</span><span class="term-en">Curse of Dimensionality</span><span class="lvl lvl-ileri">İleri</span></div><p>Boyut arttıkça uzayın seyrekleşmesi ve mesafelerin ayırt ediciliğini yitirmesi; komşuluk temelli yöntemlerin baş düşmanı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">PCA</span><span class="term-en">Principal Component Analysis</span><span class="lvl lvl-orta">Orta</span></div><p>Veriyi en çok varyans taşıyan dik eksenlere izdüşüren doğrusal yöntem; sıkıştırma ve 2B görselleştirmenin klasiği.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">t-SNE</span><span class="term-en">t-SNE</span><span class="lvl lvl-ileri">İleri</span></div><p>Komşulukları koruyarak 2B harita çıkaran görselleştirme tekniği; haritadaki mesafeler ve küme boyutları yorumlanmaz.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">UMAP</span><span class="term-en">UMAP</span><span class="lvl lvl-ileri">İleri</span></div><p>t-SNE'ye benzer, daha hızlı ve küresel yapıyı biraz daha koruyan modern boyut indirgeme/görselleştirme aracı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Anomali Tespiti</span><span class="term-en">Anomaly Detection</span><span class="lvl lvl-orta">Orta</span></div><p>Normal davranış deseninden sapan kayıtları bulma: fraud, sensör arızası, trafik sıçraması. Isolation Forest en yaygın aracıdır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Birliktelik Kuralları</span><span class="term-en">Association Rules</span><span class="lvl lvl-orta">Orta</span></div><p>"X alan Y de alıyor" kalıplarını support, confidence ve lift ölçüleriyle çıkaran sepet analizi yaklaşımı.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m5-unsupervised">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m5-supervised.html"><span>← Önceki</span><b>Supervised Learning Algoritmaları</b></a>
+          <a class="next" href="m5-feature-engineering.html"><span>Sonraki →</span><b>Feature Engineering</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

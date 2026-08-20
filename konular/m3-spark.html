@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dağıtık Veri İşleme: Spark — Veri Atlası</title>
+<meta name="description" content="Hadoop'tan Spark'a dağıtık veri işleme: driver ve executor mimarisi, lazy evaluation, shuffle, data skew, broadcast join ve PySpark ile uçtan uca örnekler.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m3" data-slug="m3-spark">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m3">3. Veri Mühendisliği</a><span class="sep">/</span>
+        <span>Dağıtık Veri İşleme: Spark</span>
+      </nav>
+      <span class="mod-badge">Modül 3 · Veri Mühendisliği</span>
+      <h1>Dağıtık Veri İşleme: Spark</h1>
+      <p class="en-title">Distributed Processing: Spark</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-ileri">İleri</span>
+        <span class="chip">⏱️ ~19 dk okuma</span>
+        <span class="chip">🔤 14 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Bir bilgisayarın yetmediği an</h2>
+        <p><a href="m1-bilgisayar-temelleri.html">İlk konuda</a> "büyük veri, RAM'e sığmayan veridir" demiştik. Şimdi o eşiğin ötesine geçiyoruz. Elinde 1 TB'lık log verisi var ve tek makinede işlemesi diyelim ki 10 saat sürüyor. İki seçeneğin var: ya 10 saat beklersin, ya da işi 100 bilgisayara eşit bölersin — teoride her makine kendi 10 GB'lık parçasını işler ve iş <strong>6 dakikada</strong> biter. <strong>Dağıtık hesaplama (distributed computing)</strong>'nın bütün fikri bu kadar yalındır: işi ve veriyi, <strong>küme (cluster)</strong> adı verilen bir makine ordusuna paylaştırmak.</p>
+        <p>Ama bedava değil. Veriyi kim bölecek, parçaları kim hangi makineye gönderecek, 100 makineden biri çökerse (ki 100 makinede biri hep çöker) yarım kalan işi kim devralacak, parça sonuçları kim birleştirecek? Bu <strong>koordinasyon</strong> yükü, dağıtık sistemlerin gerçek zorluğudur — ve Spark gibi framework'lerin var olma sebebi tam olarak budur: sen mantığı yazarsın, bölme/dağıtma/toparlama/çökme derdini framework taşır.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 280" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tek makine ile cluster'ın aynı işi işleme karşılaştırması">
+            <defs>
+              <marker id="sok1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="150" y="34" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Tek makine</text>
+              <rect x="45" y="52" width="210" height="140" rx="12" fill="var(--dg-box)" stroke="var(--bad)" stroke-width="1.8"/>
+              <text x="150" y="102" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">1 TB'ın tamamı</text>
+              <text x="150" y="124" text-anchor="middle" fill="var(--muted)" font-size="11">RAM ve CPU tıkalı,</text>
+              <text x="150" y="141" text-anchor="middle" fill="var(--muted)" font-size="11">disk sürekli takas yapıyor</text>
+              <text x="150" y="222" text-anchor="middle" fill="var(--bad)" font-size="12.5" font-weight="700">≈ 10 saat</text>
+              <text x="330" y="130" text-anchor="middle" fill="var(--faint)" font-size="13" font-weight="700">VS</text>
+              <text x="530" y="34" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Cluster: 1 driver + 4 executor</text>
+              <rect x="455" y="50" width="150" height="42" rx="9" fill="rgba(var(--acc-rgb),.2)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="530" y="76" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Driver (plan)</text>
+              <path d="M470 96 L436 128" stroke="var(--acc)" stroke-width="1.5" marker-end="url(#sok1)"/>
+              <path d="M510 96 L518 128" stroke="var(--acc)" stroke-width="1.5" marker-end="url(#sok1)"/>
+              <path d="M550 96 L604 128" stroke="var(--acc)" stroke-width="1.5" marker-end="url(#sok1)"/>
+              <path d="M590 96 L680 128" stroke="var(--acc)" stroke-width="1.5" marker-end="url(#sok1)"/>
+              <g fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4">
+                <rect x="392" y="132" width="80" height="60" rx="9"/>
+                <rect x="480" y="132" width="80" height="60" rx="9"/>
+                <rect x="568" y="132" width="80" height="60" rx="9"/>
+                <rect x="656" y="132" width="60" height="60" rx="9"/>
+              </g>
+              <g fill="var(--ink)" font-size="11" font-weight="600" text-anchor="middle">
+                <text x="432" y="157">Exec 1</text><text x="520" y="157">Exec 2</text><text x="608" y="157">Exec 3</text><text x="686" y="157">Exec 4</text>
+              </g>
+              <g fill="var(--muted)" font-size="10.5" text-anchor="middle">
+                <text x="432" y="176">250 GB</text><text x="520" y="176">250 GB</text><text x="608" y="176">250 GB</text><text x="686" y="176">250 GB</text>
+              </g>
+              <text x="554" y="222" text-anchor="middle" fill="var(--ok)" font-size="12.5" font-weight="700">≈ dakikalar — parçalar paralel işlenir</text>
+              <text x="360" y="262" text-anchor="middle" fill="var(--faint)" font-size="10.5">Bedeli: bölme, dağıtma, çökme yönetimi ve sonuçları birleştirme koordinasyonu — bunu Spark üstlenir.</text>
+            </g>
+          </svg>
+          <figcaption>Aynı 1 TB'lık iş: tek makinede saatler; veriyi parçalara bölüp paralel işleyen cluster'da dakikalar. Driver planı yapar, executor'lar çalışır.</figcaption>
+        </figure>
+
+        <h2>Kısa tarih dersi: Hadoop, HDFS ve MapReduce</h2>
+        <p>Bu fikri ölçekte ilk sistemleştiren Google'dı: 2004'te yayımlanan MapReduce makalesi, "binlerce ucuz makinede güvenilir hesap" reçetesini anlattı ve 2006'da bunun açık kaynak uygulaması <strong>Apache Hadoop</strong> doğdu. Hadoop'un iki bacağı vardı. <strong>HDFS</strong> (Hadoop Distributed File System) veriyi böler ve dağıtır: dev dosya 128 MB'lık bloklara ayrılır, her blok 3 kopya hâlinde farklı makinelere yazılır — hem çökmeye dayanıklılık hem de kritik bir ilke: <em>veriyi hesaba taşımak yerine, hesabı verinin durduğu makineye götür</em> (data locality).</p>
+        <p>İkinci bacak <strong>MapReduce</strong>, hesap modeliydi: <em>map</em> adımında her makine kendi veri parçasını dönüştürür, <em>shuffle</em> adımında aynı anahtara ait kayıtlar aynı makinede toplanır, <em>reduce</em> adımında özetlenir. Devrimdi; ama her adımın ara sonucunu diske yazıyordu — zincirleme işlerde ve tekrar tekrar veri okuyan algoritmalarda bu, kabul edilemez bir yavaşlık demekti. 2009'da Berkeley'de doğan <strong>Apache Spark</strong>, ara sonuçları diske değil <strong>belleğe (RAM)</strong> koyarak aynı işleri 10–100 kat hızlandırdı ve dağıtık işlemenin fiili standardı hâline geldi. HDFS'in "depolama" rolü ise bugün büyük ölçüde bulut depolamaya (S3 gibi) devrolmuş durumda — fikir aynı, adres değişti.</p>
+
+        <div class="note"><b>İsmin hikâyesi.</b> Hadoop, projenin yaratıcısı Doug Cutting'in oğlunun sarı oyuncak filinin adıdır — logodaki fil oradan gelir. Teknoloji tarihinde ciddi sistemlerin isimleri genelde bu kadar masumdur.</div>
+
+        <h2>Spark mimarisi: beyin ve işçiler</h2>
+        <p>Bir Spark uygulamasında roller nettir:</p>
+        <ul>
+          <li><strong>Driver</strong> — plan yapan beyin. Senin yazdığın program burada çalışır; işi küçük <em>task</em>'lara böler, executor'lara dağıtır ve sonuçları toplar.</li>
+          <li><strong>Executor</strong> — işçi süreçler. Cluster'daki makinelerde çalışır, kendilerine verilen task'ları veri partition'ları üzerinde koşturur, ara veriyi bellekte tutabilir (cache).</li>
+          <li><strong>Cluster manager</strong> — kaynak tahsisatçısı (YARN, Kubernetes ya da Spark'ın kendi standalone yöneticisi). "Bu uygulamaya 4 executor, her birine 8 GB RAM" kararını uygular.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 740 340" width="740" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Spark mimarisi: driver, cluster manager ve worker node'lardaki executor'lar">
+            <defs>
+              <marker id="sok2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              <marker id="sok3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <rect x="280" y="22" width="180" height="54" rx="10" fill="rgba(var(--acc-rgb),.2)" stroke="var(--acc)" stroke-width="1.7"/>
+              <text x="370" y="45" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Driver</text>
+              <text x="370" y="63" text-anchor="middle" fill="var(--muted)" font-size="10.5">kodun çalıştığı, planın yapıldığı yer</text>
+              <path d="M370 80 L370 108" stroke="var(--acc)" stroke-width="1.7" marker-end="url(#sok2)"/>
+              <text x="452" y="99" text-anchor="middle" fill="var(--muted)" font-size="10.5">"bana kaynak ver"</text>
+              <rect x="270" y="112" width="200" height="48" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="370" y="133" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Cluster Manager</text>
+              <text x="370" y="150" text-anchor="middle" fill="var(--muted)" font-size="10.5">YARN / Kubernetes / standalone</text>
+              <path d="M300 164 L150 200" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#sok3)"/>
+              <path d="M370 164 L370 200" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#sok3)"/>
+              <path d="M440 164 L590 200" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#sok3)"/>
+              <!-- worker 1 -->
+              <rect x="40" y="205" width="210" height="104" rx="11" fill="none" stroke="var(--dg-line)" stroke-width="1.5" stroke-dasharray="5 4"/>
+              <text x="145" y="226" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">Worker Node 1</text>
+              <rect x="58" y="238" width="174" height="56" rx="8" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="145" y="257" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">Executor</text>
+              <rect x="72" y="266" width="56" height="20" rx="5" fill="rgba(var(--acc-rgb),.25)"/>
+              <rect x="134" y="266" width="56" height="20" rx="5" fill="rgba(var(--acc-rgb),.25)"/>
+              <text x="100" y="280" text-anchor="middle" fill="var(--ink)" font-size="10">task</text>
+              <text x="162" y="280" text-anchor="middle" fill="var(--ink)" font-size="10">task</text>
+              <text x="210" y="280" text-anchor="middle" fill="var(--muted)" font-size="10">cache</text>
+              <!-- worker 2 -->
+              <rect x="265" y="205" width="210" height="104" rx="11" fill="none" stroke="var(--dg-line)" stroke-width="1.5" stroke-dasharray="5 4"/>
+              <text x="370" y="226" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">Worker Node 2</text>
+              <rect x="283" y="238" width="174" height="56" rx="8" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="370" y="257" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">Executor</text>
+              <rect x="297" y="266" width="56" height="20" rx="5" fill="rgba(var(--acc-rgb),.25)"/>
+              <rect x="359" y="266" width="56" height="20" rx="5" fill="rgba(var(--acc-rgb),.25)"/>
+              <text x="325" y="280" text-anchor="middle" fill="var(--ink)" font-size="10">task</text>
+              <text x="387" y="280" text-anchor="middle" fill="var(--ink)" font-size="10">task</text>
+              <text x="435" y="280" text-anchor="middle" fill="var(--muted)" font-size="10">cache</text>
+              <!-- worker 3 -->
+              <rect x="490" y="205" width="210" height="104" rx="11" fill="none" stroke="var(--dg-line)" stroke-width="1.5" stroke-dasharray="5 4"/>
+              <text x="595" y="226" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">Worker Node 3</text>
+              <rect x="508" y="238" width="174" height="56" rx="8" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="595" y="257" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">Executor</text>
+              <rect x="522" y="266" width="56" height="20" rx="5" fill="rgba(var(--acc-rgb),.25)"/>
+              <rect x="584" y="266" width="56" height="20" rx="5" fill="rgba(var(--acc-rgb),.25)"/>
+              <text x="550" y="280" text-anchor="middle" fill="var(--ink)" font-size="10">task</text>
+              <text x="612" y="280" text-anchor="middle" fill="var(--ink)" font-size="10">task</text>
+              <text x="660" y="280" text-anchor="middle" fill="var(--muted)" font-size="10">cache</text>
+              <text x="370" y="330" text-anchor="middle" fill="var(--faint)" font-size="10.5">Driver task'ları executor'lara gönderir, sonuçları toplar; cluster manager yalnızca kaynak dağıtır.</text>
+            </g>
+          </svg>
+          <figcaption>Driver plan yapar, cluster manager kaynak verir, worker node'lardaki executor'lar task'ları paralel çalıştırır.</figcaption>
+        </figure>
+
+        <p>Spark'ın veri soyutlaması da zamanla evrildi. İlk nesil <strong>RDD</strong> (Resilient Distributed Dataset), "makinelere dağılmış, hataya dayanıklı kayıt koleksiyonu" idi — güçlü ama düşük seviyeli: Spark ne yaptığını bilmez, sadece verdiğin fonksiyonları çalıştırırdı. Bugünkü standart <strong>DataFrame</strong>, aynı dağıtık koleksiyona kolonlu tablo görünümü ve şema kazandırır; Spark artık "hangi kolonu filtreliyorsun, neyi topluyorsun" bildiği için sorgunu optimize edebilir. Altta her DataFrame yine RDD'lere derlenir — sen üst katta kalırsın.</p>
+
+        <h2>Lazy evaluation: önce plan, sonra düğme</h2>
+        <p>Spark'ta yeni başlayan herkesi şaşırtan davranış şudur: <code>df.filter(...)</code> yazarsın, satır anında döner — 1 TB veri nasıl bu kadar hızlı filtrelendi? Filtrelenmedi. Spark operasyonları ikiye ayrılır:</p>
+        <ul>
+          <li><strong>Transformation</strong> — <code>filter</code>, <code>select</code>, <code>groupBy</code>, <code>join</code>… Hiçbir hesap yapmaz; yalnızca yapılacak işi <em>plana</em> ekler. (Bu plan da bir DAG'dir — <a href="m3-orkestrasyon.html">orkestrasyon konusundaki</a> kavram burada işlem düzeyinde geri döner.)</li>
+          <li><strong>Action</strong> — <code>count</code>, <code>show</code>, <code>collect</code>, <code>write</code>… Düğmeye basar: birikmiş plan o anda optimize edilir ve cluster'da gerçekten çalışır.</li>
+        </ul>
+        <p>Bu tembelliğe <strong>lazy evaluation (tembel değerlendirme)</strong> denir ve tembellik burada bir erdemdir: Spark tüm planı baştan sona gördüğü için akıllı kararlar verebilir — örneğin filtreyi okuma adımının içine iterek (predicate pushdown) diskten baştan az veri okur. Bu optimizasyonları DataFrame planları üzerinde <strong>Catalyst</strong> adlı sorgu optimizasyon motoru yapar.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 740 250" width="740" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Lazy evaluation: transformation'lar plan bölgesinde, action çalıştırmayı tetikler">
+            <defs>
+              <marker id="sok4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+              <marker id="sok5" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <rect x="25" y="45" width="445" height="150" rx="12" fill="none" stroke="var(--dg-line)" stroke-width="1.5" stroke-dasharray="6 4"/>
+              <text x="247" y="70" text-anchor="middle" fill="var(--muted)" font-size="12" font-weight="700">1) PLAN — henüz hiçbir şey hesaplanmadı</text>
+              <g opacity="0.6">
+                <rect x="48" y="95" width="118" height="46" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+                <text x="107" y="115" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">filter(...)</text>
+                <text x="107" y="132" text-anchor="middle" fill="var(--muted)" font-size="10">transformation</text>
+                <rect x="196" y="95" width="118" height="46" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+                <text x="255" y="115" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">select(...)</text>
+                <text x="255" y="132" text-anchor="middle" fill="var(--muted)" font-size="10">transformation</text>
+                <rect x="344" y="95" width="118" height="46" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+                <text x="403" y="115" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">groupBy(...)</text>
+                <text x="403" y="132" text-anchor="middle" fill="var(--muted)" font-size="10">transformation</text>
+              </g>
+              <path d="M166 118 L192 118" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#sok4)"/>
+              <path d="M314 118 L340 118" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#sok4)"/>
+              <text x="247" y="178" text-anchor="middle" fill="var(--muted)" font-size="10.5">her satır sadece DAG'e düğüm ekler — anında döner</text>
+              <path d="M470 118 L520 118" stroke="var(--acc)" stroke-width="2" marker-end="url(#sok5)"/>
+              <text x="495" y="104" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="700">tetikler</text>
+              <rect x="524" y="45" width="192" height="150" rx="12" fill="rgba(var(--acc-rgb),.08)" stroke="var(--acc)" stroke-width="1.7"/>
+              <text x="620" y="70" text-anchor="middle" fill="var(--acc)" font-size="12" font-weight="700">2) ÇALIŞTIR</text>
+              <rect x="546" y="95" width="148" height="46" rx="9" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="620" y="115" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">write.parquet(...)</text>
+              <text x="620" y="132" text-anchor="middle" fill="var(--acc)" font-size="10" font-weight="700">ACTION</text>
+              <text x="620" y="166" text-anchor="middle" fill="var(--muted)" font-size="10.5">plan optimize edilir,</text>
+              <text x="620" y="181" text-anchor="middle" fill="var(--muted)" font-size="10.5">task'lar cluster'a dağıtılır</text>
+              <text x="370" y="228" text-anchor="middle" fill="var(--faint)" font-size="10.5">Tembellik erdemdir: Spark tüm planı görünce filtreyi öne çekmek gibi optimizasyonlar yapabilir (Catalyst).</text>
+            </g>
+          </svg>
+          <figcaption>Transformation'lar yalnızca plan yazar (soluk bölge); ilk action düğmeye basar ve tüm zincir o anda çalışır.</figcaption>
+        </figure>
+
+        <div class="warn"><b>collect() tuzağı.</b> <code>collect()</code> dağıtık verinin TAMAMINI driver'ın belleğine indirir. 500 GB'lık DataFrame üzerinde çağırırsan driver "out of memory" ile çöker — cluster'ın gücü seni kurtarmaz, çünkü darboğaz tek makine olan driver'dır. Sonuca bakmak için <code>show()</code>, <code>limit()</code> ya da diske <code>write</code> kullan; <code>collect()</code> yalnız küçülmüş özet sonuçlar içindir.</div>
+
+        <h2>Shuffle: dağıtık dünyanın en pahalı işi</h2>
+        <p><code>filter</code> gibi işlemler ucuzdur: her executor kendi partition'ına bakar, kimseyle konuşmaz. Ama <code>groupBy("sehir")</code> dediğin anda kural değişir: İstanbul kayıtları 100 makineye dağılmış hâlde duruyor; toplamı alabilmek için <em>hepsinin aynı makinede buluşması</em> gerekir. Verinin anahtara göre ağ üzerinden yeniden dağıtılmasına <strong>shuffle</strong> denir — disk yazma + ağ taşıma + serileştirme üçlüsünü birden içerdiği için dağıtık dünyanın en pahalı operasyonudur. <code>groupBy</code>, <code>join</code>, <code>distinct</code>, <code>orderBy</code> hep shuffle tetikler.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 740 340" width="740" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Shuffle: karışık anahtarlı partition'ların anahtara göre yeniden dağılımı">
+            <g font-family="inherit">
+              <text x="370" y="24" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">groupBy("sehir") — renk = anahtar:
+                <tspan fill="var(--ok)"> İstanbul</tspan> ·
+                <tspan fill="var(--warn)"> Ankara</tspan> ·
+                <tspan fill="var(--bad)"> İzmir</tspan>
+              </text>
+              <!-- ÖNCE: karışık partition'lar -->
+              <g stroke="var(--dg-line)" stroke-width="1.4" fill="var(--dg-box)">
+                <rect x="60" y="48" width="160" height="76" rx="10"/>
+                <rect x="290" y="48" width="160" height="76" rx="10"/>
+                <rect x="520" y="48" width="160" height="76" rx="10"/>
+              </g>
+              <g font-size="10.5" fill="var(--muted)" text-anchor="middle">
+                <text x="140" y="64">Partition 1 (önce)</text>
+                <text x="370" y="64">Partition 2 (önce)</text>
+                <text x="600" y="64">Partition 3 (önce)</text>
+              </g>
+              <g>
+                <rect x="76" y="76" width="18" height="18" rx="4" fill="var(--ok)"/><rect x="100" y="76" width="18" height="18" rx="4" fill="var(--warn)"/><rect x="124" y="76" width="18" height="18" rx="4" fill="var(--bad)"/><rect x="148" y="76" width="18" height="18" rx="4" fill="var(--ok)"/><rect x="172" y="76" width="18" height="18" rx="4" fill="var(--warn)"/>
+                <rect x="306" y="76" width="18" height="18" rx="4" fill="var(--bad)"/><rect x="330" y="76" width="18" height="18" rx="4" fill="var(--ok)"/><rect x="354" y="76" width="18" height="18" rx="4" fill="var(--ok)"/><rect x="378" y="76" width="18" height="18" rx="4" fill="var(--warn)"/><rect x="402" y="76" width="18" height="18" rx="4" fill="var(--bad)"/>
+                <rect x="536" y="76" width="18" height="18" rx="4" fill="var(--warn)"/><rect x="560" y="76" width="18" height="18" rx="4" fill="var(--bad)"/><rect x="584" y="76" width="18" height="18" rx="4" fill="var(--ok)"/><rect x="608" y="76" width="18" height="18" rx="4" fill="var(--warn)"/><rect x="632" y="76" width="18" height="18" rx="4" fill="var(--bad)"/>
+              </g>
+              <!-- shuffle okları -->
+              <g stroke-width="1.3" fill="none" opacity="0.75">
+                <path d="M120 128 L134 208" stroke="var(--ok)"/>
+                <path d="M350 128 L160 208" stroke="var(--ok)"/>
+                <path d="M590 128 L190 210" stroke="var(--ok)"/>
+                <path d="M110 128 L344 208" stroke="var(--warn)"/>
+                <path d="M385 128 L372 208" stroke="var(--warn)"/>
+                <path d="M600 128 L400 208" stroke="var(--warn)"/>
+                <path d="M130 128 L560 210" stroke="var(--bad)"/>
+                <path d="M360 128 L586 208" stroke="var(--bad)"/>
+                <path d="M615 128 L612 208" stroke="var(--bad)"/>
+              </g>
+              <text x="370" y="178" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">SHUFFLE — kayıtlar anahtarına göre ağ üzerinden taşınır</text>
+              <!-- SONRA: anahtara göre ayrışmış -->
+              <g stroke-width="1.6" fill="var(--dg-box)">
+                <rect x="60" y="212" width="160" height="76" rx="10" stroke="var(--ok)"/>
+                <rect x="290" y="212" width="160" height="76" rx="10" stroke="var(--warn)"/>
+                <rect x="520" y="212" width="160" height="76" rx="10" stroke="var(--bad)"/>
+              </g>
+              <g font-size="10.5" fill="var(--muted)" text-anchor="middle">
+                <text x="140" y="228">Partition A (sonra)</text>
+                <text x="370" y="228">Partition B (sonra)</text>
+                <text x="600" y="228">Partition C (sonra)</text>
+              </g>
+              <g>
+                <rect x="76" y="240" width="18" height="18" rx="4" fill="var(--ok)"/><rect x="100" y="240" width="18" height="18" rx="4" fill="var(--ok)"/><rect x="124" y="240" width="18" height="18" rx="4" fill="var(--ok)"/><rect x="148" y="240" width="18" height="18" rx="4" fill="var(--ok)"/><rect x="172" y="240" width="18" height="18" rx="4" fill="var(--ok)"/>
+                <rect x="306" y="240" width="18" height="18" rx="4" fill="var(--warn)"/><rect x="330" y="240" width="18" height="18" rx="4" fill="var(--warn)"/><rect x="354" y="240" width="18" height="18" rx="4" fill="var(--warn)"/><rect x="378" y="240" width="18" height="18" rx="4" fill="var(--warn)"/><rect x="402" y="240" width="18" height="18" rx="4" fill="var(--warn)"/>
+                <rect x="536" y="240" width="18" height="18" rx="4" fill="var(--bad)"/><rect x="560" y="240" width="18" height="18" rx="4" fill="var(--bad)"/><rect x="584" y="240" width="18" height="18" rx="4" fill="var(--bad)"/><rect x="608" y="240" width="18" height="18" rx="4" fill="var(--bad)"/><rect x="632" y="240" width="18" height="18" rx="4" fill="var(--bad)"/>
+              </g>
+              <g font-size="10.5" fill="var(--muted)" text-anchor="middle">
+                <text x="140" y="278">artık toplam alınabilir</text>
+                <text x="370" y="278">her anahtar tek yerde</text>
+                <text x="600" y="278">sıra hesapta</text>
+              </g>
+              <text x="370" y="322" text-anchor="middle" fill="var(--faint)" font-size="10.5">Disk + ağ + serileştirme bir arada: shuffle, Spark işlerindeki yavaşlığın bir numaralı şüphelisidir.</text>
+            </g>
+          </svg>
+          <figcaption>Shuffle öncesi anahtarlar partition'lara karışmış hâlde; sonrasında her anahtar tek partition'da toplanır. Bu taşıma ağ üzerinden yapılır — pahalıdır.</figcaption>
+        </figure>
+
+        <p>Shuffle sonrası verinin kaç parçaya bölüneceğini <code>spark.sql.shuffle.partitions</code> ayarı belirler (varsayılan 200). Çok az partition → az paralellik ve şişen parçalar; gereksiz çok partition → her biri milisaniyelik binlerce task'ın yönetim yükü. Ama shuffle'ın asıl karanlık yüzü <strong>data skew (veri çarpıklığı)</strong>dır: anahtarlar eşit dağılmadıysa — örneğin kayıtların yarısı İstanbul'daysa ya da <code>musteri_id</code> alanı bolca NULL içeriyorsa — o anahtarın partition'ı devleşir. Belirtisi klasiktir: 199 task 2 dakikada biter, 1 task saatlerce çalışır ve bütün iş o tek task'ı bekler.</p>
+        <p>Join'lerde en etkili panzehir <strong>broadcast join</strong>'dir: küçük tabloyu (örn. 5 bin satırlık şehir listesi) shuffle etmek yerine her executor'a <em>komple kopyalarsın</em>; dev tablo yerinden hiç kınıldamaz, shuffle tamamen ortadan kalkar. Skew'lu groupBy'lar için ise anahtara rastgele ek ("salting") verip yükü parçalara bölmek yaygın bir tekniktir.</p>
+
+        <div class="tip"><b>Spark UI'yı arkadaş edin.</b> Driver, 4040 portunda bir izleme arayüzü açar: job'lar, stage'ler, task süreleri, shuffle boyutları hepsi orada. "Neden yavaş?" sorusunun cevabı neredeyse her zaman bu ekrandadır — task sürelerinin dağılımına bak; bir task diğerlerinden kat kat uzunsa teşhis büyük ihtimalle data skew'dur.</div>
+
+        <h2>PySpark pratiği: pandas'tan gelenlere</h2>
+        <p>İyi haber: bu mimarinin hiçbirini her gün düşünmezsin. <strong>PySpark</strong>, Spark'ın Python API'sidir ve DataFrame işlemleri pandas'a şaşırtıcı derecede benzer. Uçtan uca mini bir iş şöyle görünür:</p>
+
+        <figure class="codebox">
+          <figcaption>Python — PySpark ile uçtan uca mini iş: oku, dönüştür, yaz</figcaption>
+          <pre><code data-lang="python">from pyspark.sql import SparkSession, functions as F
+
+# 1) Oturum aç — Spark'la konuşmanın giriş kapısı
+spark = SparkSession.builder.appName("satis-ozeti").getOrCreate()
+
+# 2) CSV'yi oku (başlık satırı var, tipleri kendin çıkar)
+df = spark.read.csv("s3://veri/satislar/*.csv",
+                    header=True, inferSchema=True)
+
+# 3) Transformation'lar — sadece plan yazılır, hesap YAPILMAZ
+ozet = (df
+    .filter(F.col("tutar") &gt; 0)               # iadeleri ele
+    .groupBy("sehir")                          # dikkat: shuffle!
+    .agg(F.sum("tutar").alias("toplam_ciro"),
+         F.count("*").alias("siparis_sayisi")))
+
+# 4) Action — düğmeye bas: plan optimize edilir, cluster'da çalışır
+ozet.write.mode("overwrite").parquet("s3://veri/ozet/sehir_bazli/")</code></pre>
+        </figure>
+
+        <p>Peki bu işi neden pandas'la yapmadık? Cevap veri boyutunda saklı — aynı mantığın iki dünyadaki yazımını yan yana koyalım:</p>
+
+        <figure class="codebox">
+          <figcaption>Python — aynı iş: pandas mı, PySpark mı?</figcaption>
+          <pre><code data-lang="python"># --- pandas: tek makine, RAM'e sığan veri ---
+ozet = (df[df["tutar"] &gt; 0]
+        .groupby("sehir")["tutar"]
+        .agg(["sum", "count"]))
+
+# --- PySpark: cluster, RAM'e sığmayan veri ---
+ozet = (df.filter(F.col("tutar") &gt; 0)
+        .groupBy("sehir")
+        .agg(F.sum("tutar"), F.count("*")))
+
+# Karar kuralı:
+#   * Veri RAM'e rahat sığıyorsa (birkaç GB'a kadar) → pandas.
+#     Cluster koordinasyonu yok, kurulum yok, çoğu zaman daha hızlı.
+#   * RAM'i aşıyorsa / hızla büyüyorsa / zaten data lake'teyse → Spark.
+# Aracı veriye göre seç; 300 MB CSV için cluster ayağa kaldırma.</code></pre>
+        </figure>
+
+        <p>Ve shuffle bölümünde konuştuğumuz broadcast join'in koddaki karşılığı tek bir fonksiyondur:</p>
+
+        <figure class="codebox">
+          <figcaption>Python — broadcast join ipucu: küçük tabloyu kopyala, shuffle'ı yok et</figcaption>
+          <pre><code data-lang="python">from pyspark.sql.functions import broadcast
+
+# buyuk: 2 milyar satırlık satış tablosu (cluster'a dağılmış)
+# dim:   5 bin satırlık şehir boyut tablosu (minicik)
+
+# Normal join → İKİ taraf da anahtara göre shuffle edilir (pahalı)
+sonuc = buyuk.join(dim, "sehir_id")
+
+# Broadcast join → küçük tablo her executor'a komple kopyalanır,
+# büyük tablo yerinden hiç oynamaz → shuffle yok, kat kat hızlı
+sonuc = buyuk.join(broadcast(dim), "sehir_id")
+
+# Not: Spark ~10 MB altındaki tabloları genelde kendisi broadcast
+# eder (spark.sql.autoBroadcastJoinThreshold). Emin değilsen
+# ipucunu açıkça sen ver — zararı yok, faydası büyük.</code></pre>
+        </figure>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Spark, veri mühendisliği yığınının kas gücüdür; şu kılıklarda karşına çıkacak:</p>
+        <ul>
+          <li><strong>Gece ETL işleri →</strong> <a href="m3-etl-elt.html">pipeline'ların</a> ağır dönüşüm adımları çoğu şirkette Spark job'ı olarak yazılır ve <a href="m3-orkestrasyon.html">Airflow'dan</a> tetiklenir.</li>
+          <li><strong>Lakehouse motoru →</strong> Databricks başta olmak üzere <a href="m3-warehouse-lake.html">lakehouse platformlarının</a> altında dönen motor Spark'tır; Delta Lake tabloları Spark'la okunup yazılır.</li>
+          <li><strong>ML için özellik üretimi →</strong> milyarlarca satırdan feature tablosu çıkarmak (feature engineering) tipik bir PySpark işidir; model eğitimine giden veri buradan geçer.</li>
+          <li><strong>Streaming →</strong> <a href="m3-streaming.html">önceki konuda</a> gördüğün Structured Streaming, aynı DataFrame API'siyle akış işler — Spark bilgin iki dünyada birden geçer.</li>
+          <li><strong>Mülakatlar →</strong> "Spark job'ın yavaş, ne yaparsın?" sorusunun beklenen cevap zinciri bu sayfadadır: Spark UI'da task dağılımına bak → shuffle'ı ölç → skew varsa broadcast/salting uygula.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>df.filter(...) satırı 1 TB veride bile neden anında dönüyor?</summary>
+            <div class="answer">Çünkü <code>filter</code> bir <b>transformation</b>'dır: hesap yapmaz, yalnızca işlem planına (DAG'e) düğüm ekler. Gerçek hesap, <code>count</code> ya da <code>write</code> gibi bir <b>action</b> çağrıldığında başlar. Bu lazy evaluation sayesinde Spark tüm planı görüp optimize edebilir — örneğin filtreyi okuma adımına iterek diskten daha az veri okur.</div>
+          </details>
+          <details class="quiz">
+            <summary>Shuffle nedir, hangi işlemler tetikler ve neden bu kadar pahalıdır?</summary>
+            <div class="answer">Shuffle, kayıtların <b>anahtarına göre ağ üzerinden yeniden dağıtılmasıdır</b> — aynı anahtarın tüm kayıtları aynı makinede buluşmalıdır. <code>groupBy</code>, <code>join</code>, <code>distinct</code>, <code>orderBy</code> tetikler. Pahalıdır çünkü üç yavaş işi birleştirir: diske yazma, ağda taşıma ve serileştirme; üstelik tüm cluster'ı senkronize eden bir bekleme noktası yaratır.</div>
+          </details>
+          <details class="quiz">
+            <summary>199 task 2 dakikada bitti, 1 task 2 saattir çalışıyor. Teşhisin ve çözümün ne?</summary>
+            <div class="answer">Klasik <b>data skew</b> tablosu: bir anahtar (çok büyük bir müşteri, bolca NULL değer…) diğerlerinden kat kat fazla kayda sahip; onun partition'ı tek task'a yığılmış. Çözümler: join'se küçük tabloyu <b>broadcast</b> et (shuffle tamamen kalkar), groupBy'sa anahtara rastgele ek vererek yükü böl (<b>salting</b>), NULL'lar anlamsızsa önceden filtrele.</div>
+          </details>
+          <details class="quiz">
+            <summary>300 MB'lık bir CSV'yi analiz edeceksin: pandas mı, Spark mı? Neden?</summary>
+            <div class="answer"><b>pandas.</b> 300 MB rahatça RAM'e sığar; Spark'ın driver–executor koordinasyonu, task planlama ve olası shuffle yükü bu boyutta kazandırdığından fazlasını götürür — tek makinede pandas büyük ihtimalle daha hızlı biter. Spark, veri RAM'i aştığında, hızla büyüdüğünde ya da zaten dağıtık depoda (S3, data lake) durduğunda devreye girer.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Dağıtık Hesaplama</span><span class="term-en">Distributed Computing</span><span class="lvl lvl-ileri">İleri</span></div><p>Tek makineye sığmayan işi birden çok makineye paylaştırma yaklaşımı; hız kazandırır, koordinasyon bedeli ödetir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Küme (Cluster)</span><span class="term-en">Cluster</span><span class="lvl lvl-orta">Orta</span></div><p>Birlikte tek sistem gibi çalışan makine grubu; dağıtık işleme ve depolamanın fiziksel zemini.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Hadoop</span><span class="term-en">Apache Hadoop</span><span class="lvl lvl-orta">Orta</span></div><p>Dağıtık depolama (HDFS) ve hesabı (MapReduce) ucuz makinelerde mümkün kılan öncü açık kaynak ekosistem.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">HDFS</span><span class="term-en">HDFS</span><span class="lvl lvl-ileri">İleri</span></div><p>Dosyaları 128 MB'lık bloklara bölüp 3 kopya hâlinde cluster'a dağıtan dosya sistemi; "hesabı veriye götür" ilkesinin evi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">MapReduce</span><span class="term-en">MapReduce</span><span class="lvl lvl-ileri">İleri</span></div><p>Map (dönüştür) + shuffle (anahtara göre topla) + reduce (özetle) adımlarından oluşan dağıtık hesap modeli; Spark'ın atası.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Spark</span><span class="term-en">Apache Spark</span><span class="lvl lvl-ileri">İleri</span></div><p>Ara sonuçları bellekte tutarak MapReduce'u 10–100 kat hızlandıran dağıtık işleme motoru; günümüzün fiili standardı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Driver</span><span class="term-en">Driver</span><span class="lvl lvl-ileri">İleri</span></div><p>Spark uygulamasının beyni: kodun çalıştığı, planın task'lara bölünüp dağıtıldığı ve sonuçların toplandığı süreç.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Executor</span><span class="term-en">Executor</span><span class="lvl lvl-ileri">İleri</span></div><p>Worker makinelerde çalışan işçi süreç; task'ları veri partition'ları üzerinde koşturur, ara veriyi bellekte tutabilir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">RDD</span><span class="term-en">Resilient Distributed Dataset</span><span class="lvl lvl-ileri">İleri</span></div><p>Spark'ın ilk soyutlaması: makinelere dağılmış, hataya dayanıklı kayıt koleksiyonu. Bugün DataFrame'lerin altındaki temel katmandır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Lazy Evaluation (Tembel Değerlendirme)</span><span class="term-en">Lazy Evaluation</span><span class="lvl lvl-ileri">İleri</span></div><p>Hesabı action anına erteleme stratejisi; Spark tüm planı görerek optimize etme şansı kazanır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Transformation &amp; Action</span><span class="term-en">Transformation &amp; Action</span><span class="lvl lvl-ileri">İleri</span></div><p>Plan yazan işlemler (filter, select, groupBy) ile düğmeye basan işlemler (count, write, collect) ayrımı — Spark'ın çalışma ritmi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Shuffle</span><span class="term-en">Shuffle</span><span class="lvl lvl-ileri">İleri</span></div><p>Kayıtların anahtara göre ağ üzerinden yeniden dağıtılması; groupBy ve join'in altında yatan, dağıtık dünyanın en pahalı işi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Data Skew (Veri Çarpıklığı)</span><span class="term-en">Data Skew</span><span class="lvl lvl-ileri">İleri</span></div><p>Anahtarların partition'lara eşit dağılmaması; bir task devleşir, tüm iş onu bekler. Belirtisi: 199 task bitti, 1 task saatlerdir çalışıyor.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Broadcast Join</span><span class="term-en">Broadcast Join</span><span class="lvl lvl-ileri">İleri</span></div><p>Küçük tabloyu her executor'a komple kopyalayarak join'deki shuffle'ı ortadan kaldıran optimizasyon; skew'a karşı ilk başvurulan silah.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m3-spark">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m3-streaming.html"><span>← Önceki</span><b>Streaming ve Event-Driven Mimari</b></a>
+          <a class="next" href="m3-warehouse-lake.html"><span>Sonraki →</span><b>Data Warehouse, Lake ve Lakehouse</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

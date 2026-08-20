@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diziler: RNN, LSTM ve GRU — Veri Atlası</title>
+<meta name="description" content="Dizi verisi, hidden state, vanishing gradient, LSTM kapıları, GRU ve seq2seq: sırayı anlayan sinir ağlarının fikri, sorunları ve bugünkü yeri.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m6" data-slug="m6-rnn">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m6">6. Derin Öğrenme</a><span class="sep">/</span>
+        <span>Diziler: RNN, LSTM ve GRU</span>
+      </nav>
+      <span class="mod-badge">Modül 6 · Derin Öğrenme</span>
+      <h1>Diziler: RNN, LSTM ve GRU</h1>
+      <p class="en-title">Sequences: RNN, LSTM &amp; GRU</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-ileri">İleri</span>
+        <span class="chip">⏱️ ~16 dk okuma</span>
+        <span class="chip">🔤 11 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Sıranın kendisi bilgidir</h2>
+        <p>"Adam köpeği ısırdı" ile "Köpek adamı ısırdı" aynı kelimelerden kurulur; farkları yalnızca <strong>sıra</strong>dır — ve anlam tamamen değişir. Sıranın anlam taşıdığı her veriye <strong>dizi verisi (sequence data)</strong> denir:</p>
+        <ul>
+          <li><strong>Metin</strong> — kelimelerin sırası cümleyi kurar.</li>
+          <li><strong>Zaman serisi</strong> — dünkü satış bugünkünü etkiler; sensör ölçümleri, borsa fiyatları, sunucu logları hep sıralıdır.</li>
+          <li><strong>Ses</strong> — bir sesi tanımlayan şey, dalganın zamandaki akışıdır.</li>
+        </ul>
+        <p><a href="m6-sinir-aglari.html">Sinir ağlarının temellerinde</a> kurduğumuz klasik ağın bu veriyle iki derdi var. Birincisi, girdiyi <em>sabit boyutlu, sırasız</em> bir özellik vektörü olarak görür: kolonların yerini değiştirsen (ve aynı şekilde eğitsen) hiçbir şey fark etmez, çünkü mimaride "önce–sonra" diye bir kavram yok. İkincisi, cümleler 3 kelime de olabilir 300 kelime de — sabit girdi boyutu buna esnemez. Bu bölümde, bu iki derdi çözmek için tasarlanmış ağ ailesini tanıyacaksın: RNN ve onun akıllı torunları LSTM ile GRU.</p>
+
+        <h2>RNN fikri: okurken aklında tutmak</h2>
+        <p>Bu cümleyi nasıl okuduğunu düşün: her kelimeye geldiğinde kafanda o ana kadarki anlamın bir <em>özeti</em> var; yeni kelimeyi okuyunca özeti güncelliyorsun. Cümlenin sonuna vardığında elinde kalan şey, tüm cümlenin sıkıştırılmış anlamı. <strong>RNN (Recurrent Neural Network — tekrarlayan sinir ağı)</strong> tam olarak bunu yapar.</p>
+        <p>Mekanizma tek cümlelik: <strong>aynı hücre her zaman adımında yeniden çalışır</strong>. Her adımda hücreye iki şey girer: o adımın girdisi <code>x_t</code> (örneğin sıradaki kelime) ve önceki adımdan devralınan özet <code>h_(t-1)</code>. Hücre bu ikisini birleştirip yeni özeti üretir: <code>h_t = tanh(W · [h_(t-1), x_t] + b)</code>. Bu özete <strong>hidden state (gizli durum)</strong> denir — ağın "aklında tuttuğu" şeydir ve adımdan adıma bir bayrak yarışı gibi elden ele taşınır.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 235" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Açılmış RNN: aynı hücre üç zaman adımında hidden state'i taşıyor">
+            <defs>
+              <marker id="rnnAcc" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              <marker id="rnnMut" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--muted)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="360" y="24" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Tek RNN hücresi, zaman adımlarına "açılmış" hâli — üç kutu da AYNI ağırlıkları kullanır</text>
+              <text x="44" y="124" text-anchor="middle" fill="var(--muted)" font-size="12" font-weight="600">h₀</text>
+              <path d="M62 120 L124 120" stroke="var(--acc)" stroke-width="2" marker-end="url(#rnnAcc)"/>
+              <rect x="130" y="90" width="120" height="60" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="190" y="114" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">RNN hücresi</text>
+              <text x="190" y="133" text-anchor="middle" fill="var(--muted)" font-size="11">t = 1</text>
+              <path d="M250 120 L294 120" stroke="var(--acc)" stroke-width="2" marker-end="url(#rnnAcc)"/>
+              <text x="274" y="110" text-anchor="middle" fill="var(--acc)" font-size="11" font-weight="700">h₁</text>
+              <rect x="300" y="90" width="120" height="60" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="360" y="114" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">RNN hücresi</text>
+              <text x="360" y="133" text-anchor="middle" fill="var(--muted)" font-size="11">t = 2</text>
+              <path d="M420 120 L464 120" stroke="var(--acc)" stroke-width="2" marker-end="url(#rnnAcc)"/>
+              <text x="444" y="110" text-anchor="middle" fill="var(--acc)" font-size="11" font-weight="700">h₂</text>
+              <rect x="470" y="90" width="120" height="60" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="530" y="114" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">RNN hücresi</text>
+              <text x="530" y="133" text-anchor="middle" fill="var(--muted)" font-size="11">t = 3</text>
+              <path d="M590 120 L636 120" stroke="var(--acc)" stroke-width="2" marker-end="url(#rnnAcc)"/>
+              <text x="614" y="110" text-anchor="middle" fill="var(--acc)" font-size="11" font-weight="700">h₃</text>
+              <text x="678" y="117" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">tahmin</text>
+              <text x="678" y="132" text-anchor="middle" fill="var(--muted)" font-size="10">örn. duygu</text>
+              <rect x="140" y="185" width="100" height="32" rx="8" fill="rgba(var(--acc-rgb),.10)" stroke="var(--dg-line)"/>
+              <text x="190" y="206" text-anchor="middle" fill="var(--ink)" font-size="11.5">Bugün</text>
+              <rect x="310" y="185" width="100" height="32" rx="8" fill="rgba(var(--acc-rgb),.10)" stroke="var(--dg-line)"/>
+              <text x="360" y="206" text-anchor="middle" fill="var(--ink)" font-size="11.5">hava</text>
+              <rect x="480" y="185" width="100" height="32" rx="8" fill="rgba(var(--acc-rgb),.10)" stroke="var(--dg-line)"/>
+              <text x="530" y="206" text-anchor="middle" fill="var(--ink)" font-size="11.5">güzel</text>
+              <path d="M190 181 L190 154" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#rnnMut)"/>
+              <text x="175" y="172" text-anchor="middle" fill="var(--muted)" font-size="10">x₁</text>
+              <path d="M360 181 L360 154" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#rnnMut)"/>
+              <text x="345" y="172" text-anchor="middle" fill="var(--muted)" font-size="10">x₂</text>
+              <path d="M530 181 L530 154" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#rnnMut)"/>
+              <text x="515" y="172" text-anchor="middle" fill="var(--muted)" font-size="10">x₃</text>
+            </g>
+          </svg>
+          <figcaption>Açılmış (unrolled) RNN: her adımda kelime girer, hidden state güncellenip sağa aktarılır. Son hidden state tüm cümlenin özetidir.</figcaption>
+        </figure>
+
+        <p>Bu tasarımın iki güzelliği var. Ağırlıklar paylaşıldığı için dizi 5 adım da sürse 500 adım da, <em>aynı</em> küçük hücre yeter — değişken uzunluk sorunu çözülür. Ve hidden state sayesinde ağın artık bir <em>sıra hafızası</em> vardır: 3. kelimeyi işlerken ilk iki kelimenin izini taşır. Eğitim de bildiğin backpropagation'dır; tek fark, gradyanın zaman adımları boyunca geriye doğru da akmasıdır (buna BPTT — backpropagation through time denir).</p>
+
+        <h2>RNN'in derdi: uzun cümlenin başını unutmak</h2>
+        <p>"Fransa'da doğdum, çocukluğum orada geçti, sonra iş için taşındım ama hâlâ akıcı ______ konuşurum." Boşluğu doldurmak için 15 kelime önceki "Fransa"yı hatırlamak gerekiyor. İşte sade RNN tam burada çuvallar — ve sebebi mimarinin kalbindeki o tekrardır.</p>
+        <p>Gradyan zaman içinde geriye akarken her adımda <strong>aynı ağırlık matrisiyle tekrar tekrar çarpılır</strong>. Kulaktan kulağa oyunundaki fısıltı gibi: mesaj her aktarımda biraz bozulur. Sayısal karşılığı çarpıcıdır: 0.9'u kendisiyle 100 kez çarparsan sonuç ≈ 0.00003 olur — sinyal yok olur. Buna <strong>vanishing gradient (sönen gradyan)</strong> denir: uzak geçmişe ait gradyan sıfıra iner, ağ dizinin başından hiçbir şey öğrenemez. Tersi de mümkün: 1.1'i 100 kez çarparsan yaklaşık 14 bin çıkar — <strong>exploding gradient (patlayan gradyan)</strong>, yani sayıların kontrolden çıkıp taşması.</p>
+        <p>İki soruna iki farklı ilaç: patlama, gradyanı bir eşikte kırpan <a href="m6-egitim-pratikleri.html">gradient clipping</a> ile kolayca dizginlenir. Sönme ise daha derindir; çarpım zincirinin kendisini değiştiren bir <em>mimari</em> çözüm ister. O çözümün adı LSTM.</p>
+
+        <div class="warn"><b>Belirtileri tanı.</b> Eğitim sırasında loss bir anda <code>NaN</code> oluyorsa şüpheli exploding gradient'tir; loss iniyor ama model uzun dizilerde dizinin sadece son birkaç adımına göre karar veriyorsa vanishing gradient'ten şüphelen. İkisi de RNN eğitiminin klasik arıza kayıtlarıdır.</div>
+
+        <h2>LSTM: unutmayı da öğrenen hücre</h2>
+        <p><strong>LSTM (Long Short-Term Memory)</strong>, 1997'de Hochreiter ve Schmidhuber'in önerdiği, vanishing gradient'e karşı tasarlanmış bir RNN hücresidir. Ana fikri şudur: hidden state'in yanına <strong>cell state (hücre durumu)</strong> denen ikinci bir hat ekle — fabrikadaki <em>konveyör bandı</em> gibi, bilginin üzerinde neredeyse hiç değişmeden akabildiği bir uzun vadeli hafıza şeridi. Gradyan bu bant üzerinden geriye akarken tekrar tekrar aynı çarpımdan geçmez; bu yüzden sinyal onlarca adım geriye taşınabilir.</p>
+        <p>Banda neyin konup neyin atılacağına <strong>kapılar (gate)</strong> karar verir. Kapı, 0 ile 1 arasında değer üreten öğrenilmiş bir vanadır: 0 "tamamen kapat", 1 "tamamen geçir" demektir. LSTM'de üç tane vardır:</p>
+        <ul>
+          <li><strong>Forget kapısı</strong> — banttaki bilgiden neyi silelim? (Yeni özne geldiyse eski özneyi unut.)</li>
+          <li><strong>Input kapısı</strong> — yeni girdiden neyi banda ekleyelim?</li>
+          <li><strong>Output kapısı</strong> — banttaki bilginin ne kadarını bu adımın çıktısı (yeni hidden state) olarak dışarı söyleyelim?</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 320" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sadeleştirilmiş LSTM hücresi: üstte cell state bandı, altta üç kapı">
+            <defs>
+              <marker id="lstmAcc" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              <marker id="lstmMut" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--muted)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="350" y="22" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">LSTM hücresi (sadeleştirilmiş): üstte konveyör bandı, altta üç vana</text>
+              <rect x="70" y="44" width="560" height="216" rx="14" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <path d="M20 96 L644 96" stroke="var(--acc)" stroke-width="3" marker-end="url(#lstmAcc)"/>
+              <text x="36" y="80" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="600">C(t-1)</text>
+              <text x="668" y="100" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="600">C(t)</text>
+              <text x="350" y="68" text-anchor="middle" fill="var(--muted)" font-size="10.5">cell state — uzun vadeli hafıza bandı</text>
+              <circle cx="200" cy="96" r="13" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="200" y="101" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="700">×</text>
+              <circle cx="390" cy="96" r="13" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="390" y="101" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="700">+</text>
+              <rect x="130" y="150" width="140" height="48" rx="9" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.2"/>
+              <text x="200" y="170" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Forget kapısı</text>
+              <text x="200" y="187" text-anchor="middle" fill="var(--muted)" font-size="10">neyi unutalım?</text>
+              <rect x="320" y="150" width="140" height="48" rx="9" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.2"/>
+              <text x="390" y="170" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Input kapısı</text>
+              <text x="390" y="187" text-anchor="middle" fill="var(--muted)" font-size="10">neyi ekleyelim?</text>
+              <rect x="470" y="150" width="140" height="48" rx="9" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.2"/>
+              <text x="540" y="170" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Output kapısı</text>
+              <text x="540" y="187" text-anchor="middle" fill="var(--muted)" font-size="10">dışarı ne söyleyelim?</text>
+              <path d="M200 148 L200 113" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#lstmAcc)"/>
+              <path d="M390 148 L390 113" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#lstmAcc)"/>
+              <path d="M540 96 L540 146" stroke="var(--dg-line)" stroke-width="1.8" marker-end="url(#lstmMut)"/>
+              <path d="M610 174 L656 174" stroke="var(--acc)" stroke-width="2" marker-end="url(#lstmAcc)"/>
+              <text x="674" y="178" text-anchor="middle" fill="var(--acc)" font-size="12" font-weight="700">h(t)</text>
+              <path d="M350 282 L204 204" stroke="var(--dg-line)" stroke-width="1.3" marker-end="url(#lstmMut)"/>
+              <path d="M350 282 L390 206" stroke="var(--dg-line)" stroke-width="1.3" marker-end="url(#lstmMut)"/>
+              <path d="M350 282 L534 204" stroke="var(--dg-line)" stroke-width="1.3" marker-end="url(#lstmMut)"/>
+              <text x="350" y="302" text-anchor="middle" fill="var(--muted)" font-size="11">h(t-1) önceki özet + x(t) yeni girdi → üç kapıya birden gider</text>
+            </g>
+          </svg>
+          <figcaption>Forget kapısı bandı çarparak siler (×), input kapısı banda ekler (+), output kapısı banttan okuyup h(t) çıktısını üretir.</figcaption>
+        </figure>
+
+        <p>Kapıların değerleri elle yazılmaz; ağırlıklardır, yani <strong>eğitimle öğrenilir</strong>. Model, "yeni cümle başladığında eski özneyi unut", "olumsuzluk eki gördüğünde bunu bantta sakla" gibi kararları veriden kendisi çıkarır. "Unutmak" kulağa kusur gibi gelir ama aslında özelliktir: sınırlı hafızayı yönetmenin yolu, işine yaramayanı bilinçli atmaktır.</p>
+
+        <div class="note"><b>GRU: LSTM'in sade kardeşi.</b> 2014'te önerilen <strong>GRU (Gated Recurrent Unit)</strong>, cell state ile hidden state'i tek hatta birleştirir ve üç kapıyı ikiye indirir (update + reset). Daha az parametre, daha hızlı eğitim; çoğu görevde LSTM ile başa baş sonuç. Veri azsa veya hız önemliyse GRU denemeye değer.</div>
+
+        <figure class="codebox">
+          <figcaption>Python — PyTorch ile LSTM tabanlı dizi sınıflandırma iskeleti</figcaption>
+          <pre><code data-lang="python">import torch
+import torch.nn as nn
+
+class DiziSiniflayici(nn.Module):
+    def __init__(self, girdi_boyut=8, gizli_boyut=64, sinif_sayisi=2):
+        super().__init__()
+        # batch_first=True → girdi şekli [batch, seq, feature] olur
+        self.lstm = nn.LSTM(girdi_boyut, gizli_boyut, batch_first=True)
+        self.fc = nn.Linear(gizli_boyut, sinif_sayisi)
+
+    def forward(self, x):
+        # x: [batch=32, seq=20, feature=8] ← şekil, 1 numaralı hata kaynağı!
+        cikti, (h_n, c_n) = self.lstm(x)
+        # cikti: [32, 20, 64] → HER adımın hidden state'i
+        # h_n:   [1, 32, 64]  → yalnız SON adımın hidden state'i (özet)
+        return self.fc(h_n[-1])          # [32, 2] → sınıf skorları
+
+model = DiziSiniflayici()
+ornek = torch.randn(32, 20, 8)           # 32 dizi, 20 adım, 8 özellik
+print(model(ornek).shape)                # torch.Size([32, 2])</code></pre>
+        </figure>
+
+        <div class="tip"><b>Şekil hatalarına karşı refleks.</b> RNN/LSTM kodunda hataların çoğu tensör şekillerindendir: <code>[batch, seq, feature]</code> mi, <code>[seq, batch, feature]</code> mi? Her katmandan sonra <code>print(x.shape)</code> koyup beklediğinle karşılaştır; <code>batch_first=True</code> kullanıp buna sadık kal. Bu alışkanlık sana saatler kazandırır.</div>
+
+        <h2>Seq2seq: oku, sıkıştır, yaz</h2>
+        <p>Sınıflandırmada dizi girer, tek etiket çıkar. Peki çeviri gibi <em>dizi girip dizi çıkan</em> işler? 2014'te önerilen <strong>seq2seq (sequence-to-sequence)</strong> yapısı bunu iki RNN'i sırt sırta vererek çözer — bu düzene <strong>encoder-decoder</strong> mimarisi denir:</p>
+        <ul>
+          <li><strong>Encoder</strong> kaynak cümleyi ("Ben okula gittim") adım adım okur ve tüm anlamı son hidden state'e sıkıştırır. Bu vektöre <em>context vektörü</em> denir.</li>
+          <li><strong>Decoder</strong> bu vektörden yola çıkıp hedef cümleyi ("I went to school") kelime kelime üretir; her adımda bir önceki ürettiği kelimeyi de girdi olarak kullanır.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 760 232" width="760" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Seq2seq: encoder kutuları, darboğaz olan context vektörü ve decoder kutuları">
+            <defs>
+              <marker id="s2sAcc" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              <marker id="s2sMut" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--muted)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="380" y="22" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Çeviri: encoder okur → tek vektöre sıkıştırır → decoder yazar</text>
+              <rect x="28" y="78" width="76" height="52" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="66" y="101" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">RNN</text>
+              <text x="66" y="118" text-anchor="middle" fill="var(--muted)" font-size="10">t1</text>
+              <rect x="126" y="78" width="76" height="52" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="164" y="101" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">RNN</text>
+              <text x="164" y="118" text-anchor="middle" fill="var(--muted)" font-size="10">t2</text>
+              <rect x="224" y="78" width="76" height="52" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="262" y="101" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">RNN</text>
+              <text x="262" y="118" text-anchor="middle" fill="var(--muted)" font-size="10">t3</text>
+              <path d="M104 104 L122 104" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#s2sAcc)"/>
+              <path d="M202 104 L220 104" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#s2sAcc)"/>
+              <text x="66" y="192" text-anchor="middle" fill="var(--ink)" font-size="11.5">Ben</text>
+              <text x="164" y="192" text-anchor="middle" fill="var(--ink)" font-size="11.5">okula</text>
+              <text x="262" y="192" text-anchor="middle" fill="var(--ink)" font-size="11.5">gittim</text>
+              <path d="M66 176 L66 136" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#s2sMut)"/>
+              <path d="M164 176 L164 136" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#s2sMut)"/>
+              <path d="M262 176 L262 136" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#s2sMut)"/>
+              <path d="M300 104 L324 104" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#s2sAcc)"/>
+              <rect x="328" y="76" width="112" height="56" rx="10" fill="rgba(var(--acc-rgb),.16)" stroke="var(--warn)" stroke-width="1.8"/>
+              <text x="384" y="99" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">context</text>
+              <text x="384" y="116" text-anchor="middle" fill="var(--muted)" font-size="10">tek sabit vektör</text>
+              <text x="384" y="156" text-anchor="middle" fill="var(--warn)" font-size="10.5" font-weight="700">darboğaz: koca cümle buraya sıkışır</text>
+              <path d="M440 104 L464 104" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#s2sAcc)"/>
+              <rect x="468" y="78" width="76" height="52" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="506" y="101" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">RNN</text>
+              <text x="506" y="118" text-anchor="middle" fill="var(--muted)" font-size="10">t1</text>
+              <rect x="566" y="78" width="76" height="52" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="604" y="101" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">RNN</text>
+              <text x="604" y="118" text-anchor="middle" fill="var(--muted)" font-size="10">t2</text>
+              <rect x="664" y="78" width="76" height="52" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="702" y="101" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">RNN</text>
+              <text x="702" y="118" text-anchor="middle" fill="var(--muted)" font-size="10">t3</text>
+              <path d="M544 104 L562 104" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#s2sAcc)"/>
+              <path d="M642 104 L660 104" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#s2sAcc)"/>
+              <path d="M506 74 L506 60" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#s2sMut)"/>
+              <path d="M604 74 L604 60" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#s2sMut)"/>
+              <path d="M702 74 L702 60" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#s2sMut)"/>
+              <text x="506" y="50" text-anchor="middle" fill="var(--ink)" font-size="11.5">I</text>
+              <text x="604" y="50" text-anchor="middle" fill="var(--ink)" font-size="11.5">went</text>
+              <text x="702" y="50" text-anchor="middle" fill="var(--ink)" font-size="11.5">to school</text>
+              <text x="164" y="218" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="600">Encoder (cümleyi okur)</text>
+              <text x="604" y="218" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="600">Decoder (çeviriyi üretir)</text>
+            </g>
+          </svg>
+          <figcaption>Seq2seq mimarisi. Decoder her adımda bir önceki çıktısını da girdi alır (sadelik için çizilmedi). Tüm yük tek context vektörünün omzundadır.</figcaption>
+        </figure>
+
+        <p>Şemadaki sarı çerçeveli kutu bu mimarinin Aşil topuğudur: cümle 5 kelime de olsa 50 kelime de olsa, decoder'a ulaşan tek şey <strong>sabit boyutlu bir vektördür</strong>. Uzun cümlelerde çeviri kalitesi bu yüzden hızla düşer — koca paragrafı tek karta özetleyip kartı kargoyla göndermek gibi. Peki decoder her kelimeyi üretirken kaynak cümlenin <em>tamamına dönüp bakabilseydi</em>? İşte bu soru, derin öğrenmenin en etkili fikirlerinden birini doğurdu: attention. Devamı <a href="m6-transformer.html">Transformer ve Attention</a> sayfasında.</p>
+
+        <h2>RNN bugün nerede? Dürüst bir durum tespiti</h2>
+        <p>Açık konuşalım: NLP tahtı artık RNN'de değil. 2017'de Transformer geldi; paralel eğitilebildiği ve uzun bağımlılıkları daha iyi yakaladığı için çeviriden sohbet botlarına dilin neredeyse tamamını devraldı. Bugün sıfırdan bir NLP projesine LSTM ile başlamak nadiren doğru tercihtir.</p>
+        <p>Ama RNN ailesi ölmedi; niş ama gerçek bir sahası var:</p>
+        <ul>
+          <li><strong>Zaman serisi tahmini</strong> — satış, enerji tüketimi, sensör verisi gibi tablosal dizilerde LSTM/GRU hâlâ güçlü ve zahmetsiz bir taban çizgisidir.</li>
+          <li><strong>Cihaz içi hafif modeller</strong> — klavye kelime tahmini, giyilebilir cihazlarda sinyal işleme: küçük bellek ayak izi ve adım adım (streaming) çalışabilme, RNN'in doğal avantajıdır.</li>
+          <li><strong>Kavramsal temel</strong> — hidden state, gating ve BPTT'yi anlamadan modern mimarilerin neyi <em>çözdüğünü</em> anlayamazsın. Bu sayfa biraz da Transformer'ı hak ederek okumak içindi.</li>
+        </ul>
+
+        <figure class="codebox">
+          <figcaption>Python — zaman serisini sliding window ile eğitim çiftlerine çevirme</figcaption>
+          <pre><code data-lang="python">import numpy as np
+
+def pencerele(seri, pencere=7):
+    """Diziyi gözetimli çiftlere çevir: son 7 gün → 8. günü tahmin et."""
+    X, y = [], []
+    for i in range(len(seri) - pencere):
+        X.append(seri[i : i + pencere])   # girdi: 7 günlük kayan dilim
+        y.append(seri[i + pencere])       # hedef: dilimden sonraki gün
+    return np.array(X), np.array(y)
+
+satis = np.array([12, 14, 13, 17, 19, 18, 22, 25, 24, 28, 31, 30])
+X, y = pencerele(satis, pencere=7)
+
+print(X.shape)             # (5, 7) → 5 örnek, her biri 7 adımlık dizi
+print(X[0], y[0])          # [12 14 13 17 19 18 22]  25
+
+# LSTM'e vermeden önce özellik boyutu eklenir:
+X = X.reshape(-1, 7, 1)    # [batch, seq, feature=1]</code></pre>
+        </figure>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <ul>
+          <li><strong>Talep tahmini pipeline'ı:</strong> <a href="m3-streaming.html">streaming</a> ile toplanan sensör/satış verisini pencereleyip LSTM'e vermek, üretimde hâlâ yaygın bir kurgudur.</li>
+          <li><strong>Anomali tespiti:</strong> "Normal diziyi öğren, tahminden sapınca alarm ver" deseni; sunucu metrikleri ve IoT sensörlerinde LSTM tabanlı çözümler yaşamaya devam ediyor.</li>
+          <li><strong>Legacy sistem bakımı:</strong> 2015–2019 arası kurulmuş çeviri/duygu analizi servislerinin çoğu LSTM'lidir; bakımını üstlenen mühendis bu mimariyi okuyabilmelidir.</li>
+          <li><strong>Şekil hataları:</strong> <code>[batch, seq, feature]</code> karmaşası, PyTorch'la çalışan herkesin ilk haftasının klasiğidir — yukarıdaki kod iskeletini referans al.</li>
+          <li><strong>Mülakat klasiği:</strong> "Vanishing gradient nedir, LSTM bunu nasıl çözer?" — cevabın anahtarı: tekrarlı çarpım zinciri ve cell state bandının bu zinciri kırması.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>RNN'e neden "tekrarlayan" (recurrent) ağ denir?</summary>
+            <div class="answer">Çünkü <b>aynı hücre ve aynı ağırlıklar</b> her zaman adımında yeniden çalışır. Hücre her adımda yeni girdiyle birlikte kendi önceki çıktısını (hidden state) da alır — yani çıktısı kendisine geri döner. Bu döngü sayesinde ağ, değişken uzunluktaki dizileri sabit sayıda parametreyle işler.</div>
+          </details>
+          <details class="quiz">
+            <summary>Vanishing gradient neden özellikle uzun dizilerde ortaya çıkar?</summary>
+            <div class="answer">Gradyan zaman içinde geriye yayılırken her adımda <b>aynı ağırlık matrisiyle tekrar çarpılır</b>. Çarpılan değerlerin büyüklüğü 1'in altındaysa sonuç adım sayısıyla üstel küçülür (0.9¹⁰⁰ ≈ 0.00003). Dizi uzadıkça çarpım zinciri uzar; dizinin başına ulaşan öğrenme sinyali pratikte sıfırlanır.</div>
+          </details>
+          <details class="quiz">
+            <summary>LSTM'deki forget kapısının görevi nedir ve neden faydalıdır?</summary>
+            <div class="answer">Cell state bandındaki bilgiden <b>neyin silineceğine</b> karar verir: 0–1 arası öğrenilmiş bir vanayla bandı çarpar. Sayesinde model, artık geçersiz bilgiyi (örn. biten cümlenin öznesini) bilinçli olarak atıp sınırlı hafızasını önemli bilgiye ayırır — "unutmak" burada bir özellik, kusur değil.</div>
+          </details>
+          <details class="quiz">
+            <summary>Seq2seq mimarisinin darboğazı nedir, hangi fikir bunu çözdü?</summary>
+            <div class="answer">Encoder, cümlenin tamamını <b>tek bir sabit boyutlu context vektörüne</b> sıkıştırır; cümle uzadıkça bu vektör yetmez ve kalite düşer. Çözüm <b>attention</b>: decoder her kelimeyi üretirken kaynak cümlenin tüm adımlarına ağırlıklı biçimde geri bakar — bu fikir Transformer'ın da temelidir.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Dizi Verisi</span><span class="term-en">Sequence Data</span><span class="lvl lvl-orta">Orta</span></div><p>Eleman sırasının anlam taşıdığı veri: metin, zaman serisi, ses. Sırayı bozmak bilgiyi bozar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">RNN</span><span class="term-en">Recurrent Neural Network</span><span class="lvl lvl-ileri">İleri</span></div><p>Aynı hücreyi her zaman adımında çalıştırıp hidden state ile geçmişi taşıyan sinir ağı ailesi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Hidden State (Gizli Durum)</span><span class="term-en">Hidden State</span><span class="lvl lvl-ileri">İleri</span></div><p>RNN'in adımdan adıma elden ele taşıdığı özet vektörü — ağın "aklında tuttuğu" şey.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Vanishing Gradient (Sönen Gradyan)</span><span class="term-en">Vanishing Gradient</span><span class="lvl lvl-ileri">İleri</span></div><p>Gradyanın tekrarlı çarpımlarla üstel küçülüp yok olması; ağ uzak geçmişten öğrenemez hâle gelir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Exploding Gradient (Patlayan Gradyan)</span><span class="term-en">Exploding Gradient</span><span class="lvl lvl-ileri">İleri</span></div><p>Gradyanın tekrarlı çarpımlarla üstel büyüyüp taşması; loss'un NaN olmasının klasik sebebi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">LSTM</span><span class="term-en">Long Short-Term Memory</span><span class="lvl lvl-ileri">İleri</span></div><p>Cell state bandı ve üç kapıyla vanishing gradient'i aşan, uzun bağımlılıkları öğrenebilen RNN hücresi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Kapı (Gate)</span><span class="term-en">Gate</span><span class="lvl lvl-ileri">İleri</span></div><p>0–1 arası değer üreten öğrenilmiş vana; bilginin ne kadarının geçeceğini kontrol eder.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Cell State (Hücre Durumu)</span><span class="term-en">Cell State</span><span class="lvl lvl-ileri">İleri</span></div><p>LSTM'in konveyör bandı: bilginin az değişimle aktığı uzun vadeli hafıza hattı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">GRU</span><span class="term-en">Gated Recurrent Unit</span><span class="lvl lvl-ileri">İleri</span></div><p>LSTM'in iki kapılı, tek hatlı sade sürümü; daha az parametreyle çoğu görevde benzer başarı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Seq2seq</span><span class="term-en">Sequence-to-Sequence</span><span class="lvl lvl-ileri">İleri</span></div><p>Dizi girip dizi çıkaran görevlerin (çeviri, özet) encoder-decoder ile çözülen genel çerçevesi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Encoder-Decoder</span><span class="term-en">Encoder-Decoder</span><span class="lvl lvl-ileri">İleri</span></div><p>Bir ağın girdiyi temsile sıkıştırdığı (encoder), diğerinin bu temsilden çıktı ürettiği (decoder) ikili mimari.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m6-rnn">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m6-cnn.html"><span>← Önceki</span><b>CNN: Görüntü İşleyen Ağlar</b></a>
+          <a class="next" href="m6-transformer.html"><span>Sonraki →</span><b>Transformer ve Attention</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

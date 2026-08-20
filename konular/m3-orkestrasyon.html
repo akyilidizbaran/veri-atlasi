@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orkestrasyon: Airflow ve DAG'ler — Veri Atlası</title>
+<meta name="description" content="Cron neden yetmez, DAG nedir, Airflow'un scheduler-worker mimarisi, cron ifadeleri, data interval tuzağı, retry, sensor, SLA ve XCom: pipeline orkestrasyonunun temelleri.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m3" data-slug="m3-orkestrasyon">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m3">3. Veri Mühendisliği</a><span class="sep">/</span>
+        <span>Orkestrasyon: Airflow ve DAG'ler</span>
+      </nav>
+      <span class="mod-badge">Modül 3 · Veri Mühendisliği</span>
+      <h1>Orkestrasyon: Airflow ve DAG'ler</h1>
+      <p class="en-title">Orchestration: Airflow &amp; DAGs</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~15 dk okuma</span>
+        <span class="chip">🔤 12 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Otuz pipeline, tek şef</h2>
+        <p><a href="m3-etl-elt.html">Bir önceki konuda</a> tek bir pipeline kurmayı öğrendin. Gerçek bir şirkette ise onlarcası yan yana yaşar ve her birinin kendi kuralı vardır: satış verisi her sabah 06:00'da çekilmeli; döviz kurları o <em>bittikten sonra</em> işlenmeli; yönetim raporu ikisi de hazır olmadan <em>asla</em> koşmamalı; kalite testi patlarsa rapor hiç gönderilmemeli. Bu, tek tek çalgıcıları değil bütün orkestrayı yönetme işidir — adı da oradan gelir: <strong>orkestrasyon (orchestration)</strong>.</p>
+        <p>İlk akla gelen araç, <a href="m1-linux-git.html">Linux konusundan</a> tanıdığın zamanlanmış görev aracı <strong>cron</strong> olur: "şu komutu her gün 06:00'da çalıştır". Küçük işler için harikadır ama orkestra yönetemez, çünkü üç şeyi bilmez:</p>
+        <ul>
+          <li><strong>Bağımlılık</strong> — cron yalnızca saate bakar. "Rapor, yükleme bittikten sonra başlasın" diyemezsin; ancak "yükleme herhalde 20 dakikada biter" diye tahmin edip raporu 06:20'ye kurarsın. Yükleme bir gün 25 dakika sürerse rapor eksik veriyle çıkar.</li>
+          <li><strong>Retry (yeniden deneme)</strong> — komut hata verirse cron omuz silker; bir sonraki güne kadar kimse denemez.</li>
+          <li><strong>İzleme</strong> — dün gece hangi işler çalıştı, hangisi kaç dakika sürdü, hangisi patladı? Cron'da bunun cevabı dağınık log dosyalarında saklıdır; bir tarihçe ekranı yoktur.</li>
+        </ul>
+        <p>Orkestratör, bu üç boşluğu dolduran sistemdir: işleri <em>bağımlılık sırasına göre</em> tetikler, hata alanı otomatik yeniden dener ve her koşunun kaydını bir arayüzde gösterir. Bu alanın fiili standardı da <strong>Apache Airflow</strong>'dur.</p>
+
+        <h2>DAG: bağımlılıkların haritası</h2>
+        <p>Orkestratöre "işlerim ve sıraları" bilgisini bir <strong>DAG (Directed Acyclic Graph — yönlü çevrimsiz graf)</strong> olarak verirsin. <a href="m1-veri-yapilari-algoritmalar.html">Veri yapıları konusundaki</a> graf kavramının özel bir hâlidir; iki sıfatı tek tek açalım:</p>
+        <ul>
+          <li><strong>Directed (yönlü)</strong> — oklar tek yönlüdür: "extract bitince transform başlar" ilişkisi, tersi değil.</li>
+          <li><strong>Acyclic (çevrimsiz)</strong> — okları takip ederek başladığın düğüme geri dönemezsin. Bu şart estetik değil, hayati: A, B'yi bekleseydi ve B de A'yı bekleseydi, ikisi de sonsuza dek birbirini beklerdi. Döngü yoksa her düğümün "önce kim?" sorusunun net bir cevabı vardır ve graf her zaman çalıştırılabilir bir sıraya dizilebilir.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 740 300" width="740" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Örnek DAG: iki extract task'ı transform'a, transform load ve kalite testine, load rapora bağlanıyor">
+            <defs>
+              <marker id="arr1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="370" y="24" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Bir günlük satış DAG'i — ok: "bu bitince şu başlayabilir"</text>
+              <!-- extract'ler -->
+              <rect x="30" y="55" width="130" height="48" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="95" y="76" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">extract_api</text>
+              <text x="95" y="93" text-anchor="middle" fill="var(--muted)" font-size="10.5">CRM verisi</text>
+              <rect x="30" y="195" width="130" height="48" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="95" y="216" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">extract_db</text>
+              <text x="95" y="233" text-anchor="middle" fill="var(--muted)" font-size="10.5">sipariş replikası</text>
+              <!-- transform -->
+              <rect x="255" y="125" width="130" height="48" rx="10" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="320" y="146" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">transform</text>
+              <text x="320" y="163" text-anchor="middle" fill="var(--muted)" font-size="10.5">ikisini de bekler</text>
+              <!-- load + kalite -->
+              <rect x="460" y="55" width="120" height="48" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="520" y="76" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">load_dwh</text>
+              <text x="520" y="93" text-anchor="middle" fill="var(--muted)" font-size="10.5">warehouse'a yaz</text>
+              <rect x="460" y="195" width="130" height="48" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="525" y="216" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">kalite_testi</text>
+              <text x="525" y="233" text-anchor="middle" fill="var(--muted)" font-size="10.5">paralel koşar</text>
+              <!-- rapor -->
+              <rect x="630" y="55" width="95" height="48" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="677" y="76" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">rapor</text>
+              <text x="677" y="93" text-anchor="middle" fill="var(--muted)" font-size="10.5">e-posta</text>
+              <!-- oklar -->
+              <path d="M160 79 C210 79 210 133 249 140" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#arr1)"/>
+              <path d="M160 219 C210 219 210 165 249 158" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#arr1)"/>
+              <path d="M385 140 C425 133 425 86 454 80" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#arr1)"/>
+              <path d="M385 158 C425 165 425 212 454 218" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#arr1)"/>
+              <path d="M580 79 L624 79" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#arr1)"/>
+              <text x="370" y="284" text-anchor="middle" fill="var(--muted)" font-size="10.5">iki extract paralel başlar; transform ikisini bekler; load ile kalite_testi yine paralel — sırayı saat değil, oklar belirler</text>
+            </g>
+          </svg>
+          <figcaption>DAG, "saat kaçta?" sorusunu "kimden sonra?" sorusuna çevirir. Orkestratörün işi bu haritayı gerçeğe dönüştürmektir.</figcaption>
+        </figure>
+
+        <p>Bu haritanın güzelliği şudur: extract_db bir gün 25 dakika sürerse hiçbir şey bozulmaz — transform sadece 5 dakika daha bekler. Cron'daki "tahmini saat aralıkları" kumarının yerini kesin bağımlılıklar alır.</p>
+
+        <h2>Airflow'un yapı taşları</h2>
+        <p>Airflow'da bir orkestra kurarken şu parçalarla çalışırsın:</p>
+        <ul>
+          <li><strong>DAG dosyası</strong> — orkestranın notası: sıradan bir Python dosyasında DAG'i ve içindeki işleri tanımlarsın. Kod olduğu için Git'te versiyonlanır, gözden geçirilir, test edilir.</li>
+          <li><strong>Task (görev)</strong> — DAG'deki tek bir düğüm; çalıştırılabilir en küçük iş birimi ("API'den çek", "tabloyu yükle").</li>
+          <li><strong>Operator</strong> — task'ın şablonu, "bu iş <em>nasıl</em> yapılır"ın hazır kalıbı: <code>PythonOperator</code> bir Python fonksiyonu, <code>BashOperator</code> bir kabuk komutu, SQL operatörleri bir sorgu çalıştırır. Yüzlerce hazır operator sayesinde çoğu entegrasyonu sıfırdan yazmazsın.</li>
+          <li><strong>Scheduler (zamanlayıcı)</strong> — Airflow'un kalbi: DAG dosyalarını sürekli tarar, "zamanı gelen ve bağımlılığı tamamlanan" task'ları bulup çalıştırma kuyruğuna atar.</li>
+          <li><strong>Worker</strong> — kuyruktan task kapıp gerçekten çalıştıran süreç. İş yükü artınca worker sayısını artırarak ölçeklenirsin.</li>
+          <li><strong>Web UI</strong> — orkestranın kontrol paneli: hangi DAG ne zaman koştu, hangi task yeşil/kırmızı, loglar ne diyor. Nöbetteki mühendisin sabah ilk baktığı ekran budur.</li>
+        </ul>
+        <p>Bu parçaları birbirine bağlayan bir de <strong>metadata veritabanı</strong> vardır: her koşunun, her task durumunun kaydı burada tutulur. Web UI'ın gösterdiği ve scheduler'ın bildiği her şey bu veritabanından gelir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 330" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Airflow mimarisi: DAG dosyaları, scheduler, kuyruk, worker'lar, metadata veritabanı ve web UI">
+            <defs>
+              <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+              <marker id="arr3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="360" y="22" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Airflow mimarisi — nota, şef, kuyruk ve çalgıcılar</text>
+              <!-- DAG dosyaları -->
+              <rect x="20" y="70" width="140" height="62" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="90" y="96" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">DAG dosyaları</text>
+              <text x="90" y="114" text-anchor="middle" fill="var(--muted)" font-size="10.5">Python (.py)</text>
+              <path d="M160 101 L209 101" stroke="var(--dg-line)" stroke-width="1.8" marker-end="url(#arr2)"/>
+              <text x="185" y="92" text-anchor="middle" fill="var(--muted)" font-size="10">tarar</text>
+              <!-- scheduler -->
+              <rect x="215" y="70" width="135" height="62" rx="10" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="282" y="96" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Scheduler</text>
+              <text x="282" y="114" text-anchor="middle" fill="var(--muted)" font-size="10.5">sırası geleni seçer</text>
+              <path d="M350 101 L399 101" stroke="var(--dg-line)" stroke-width="1.8" marker-end="url(#arr2)"/>
+              <text x="375" y="92" text-anchor="middle" fill="var(--muted)" font-size="10">kuyruğa atar</text>
+              <!-- queue -->
+              <rect x="405" y="70" width="105" height="62" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="457" y="96" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Kuyruk</text>
+              <text x="457" y="114" text-anchor="middle" fill="var(--muted)" font-size="10.5">bekleyen task'lar</text>
+              <!-- workers -->
+              <path d="M510 90 C535 80 535 60 559 52" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#arr3)"/>
+              <path d="M510 101 L559 116" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#arr3)"/>
+              <path d="M510 112 C535 122 535 172 559 180" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#arr3)"/>
+              <rect x="565" y="28" width="135" height="48" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="632" y="49" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Worker 1</text>
+              <text x="632" y="66" text-anchor="middle" fill="var(--muted)" font-size="10.5">task çalıştırır</text>
+              <rect x="565" y="94" width="135" height="48" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="632" y="115" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Worker 2</text>
+              <text x="632" y="132" text-anchor="middle" fill="var(--muted)" font-size="10.5">task çalıştırır</text>
+              <rect x="565" y="160" width="135" height="48" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="632" y="181" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Worker 3</text>
+              <text x="632" y="198" text-anchor="middle" fill="var(--muted)" font-size="10.5">task çalıştırır</text>
+              <!-- metadata db -->
+              <rect x="215" y="225" width="135" height="58" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="282" y="249" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Metadata DB</text>
+              <text x="282" y="267" text-anchor="middle" fill="var(--muted)" font-size="10.5">koşu ve durum kayıtları</text>
+              <path d="M275 132 L275 219" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arr2)"/>
+              <path d="M290 219 L290 138" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arr2)"/>
+              <text x="330" y="182" text-anchor="middle" fill="var(--muted)" font-size="10">yazar / okur</text>
+              <!-- web ui -->
+              <rect x="20" y="225" width="140" height="58" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="90" y="249" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Web UI</text>
+              <text x="90" y="267" text-anchor="middle" fill="var(--muted)" font-size="10.5">insanların ekranı</text>
+              <path d="M160 254 L209 254" stroke="var(--dg-line)" stroke-width="1.8" marker-end="url(#arr2)"/>
+              <text x="185" y="245" text-anchor="middle" fill="var(--muted)" font-size="10">gösterir</text>
+              <text x="360" y="316" text-anchor="middle" fill="var(--muted)" font-size="10.5">worker'lar da sonuçları metadata DB'ye yazar; yeşil/kırmızı kutucuklar oradan gelir</text>
+            </g>
+          </svg>
+          <figcaption>Scheduler karar verir, kuyruk taşır, worker'lar çalıştırır, metadata DB hatırlar, Web UI gösterir. Ölçek büyüyünce sadece worker eklersin.</figcaption>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Python — basit bir Airflow DAG'i: 3 task ve bağımlılık zinciri</figcaption>
+          <pre><code data-lang="python">from airflow import DAG
+from airflow.decorators import task
+from airflow.operators.bash import BashOperator
+import pendulum
+
+with DAG(
+    dag_id="gunluk_satis",
+    schedule="0 6 * * *",              # her gün 06:00 (cron ifadesi)
+    start_date=pendulum.datetime(2026, 1, 1, tz="Europe/Istanbul"),
+    catchup=False,                     # geçmiş koşuları otomatik başlatma
+    default_args={"retries": 2},       # hata alan task 2 kez daha denensin
+) as dag:
+
+    extract = BashOperator(
+        task_id="extract",
+        bash_command="python extract_api.py",   # kabuk komutu çalıştırır
+    )
+
+    @task                              # modern yol: fonksiyon = task
+    def transform():
+        ...                            # pandas/SQL dönüşüm kodun burada
+
+    load = BashOperator(
+        task_id="load",
+        bash_command="python load_dwh.py",
+    )
+
+    extract &gt;&gt; transform() &gt;&gt; load    # bağımlılık zinciri: extract → transform → load</code></pre>
+        </figure>
+
+        <p>Dikkat: <code>&gt;&gt;</code> operatörü "önce sol, sonra sağ" bağımlılığını kurar; listeyle dallanma da yapabilirsin: <code>transform &gt;&gt; [load, kalite_testi]</code>. DAG dosyası veriyi işlemez — <em>kimin ne zaman çalışacağını</em> tarif eder; asıl iş worker'larda koşar.</p>
+
+        <h2>Zamanlama: cron ifadesinden data interval'a</h2>
+        <p>Airflow'a "ne sıklıkla?" bilgisini çoğu zaman bir <strong>cron ifadesiyle</strong> verirsin. Beş alanlık bu mini dil ilk bakışta kriptik görünür ama anatomisi basittir:</p>
+
+        <figure class="codebox">
+          <figcaption>Text — cron ifadesinin anatomisi: 5 alan, soldan sağa</figcaption>
+          <pre><code data-lang="text">┌───────── dakika (0-59)
+│ ┌─────── saat (0-23)
+│ │ ┌───── ayın günü (1-31)
+│ │ │ ┌─── ay (1-12)
+│ │ │ │ ┌─ haftanın günü (0-7; 0 ve 7 = Pazar)
+│ │ │ │ │
+0 6 * * 1      →  her Pazartesi saat 06:00'da
+0 * * * *      →  her saat başında
+30 2 1 * *     →  her ayın 1'inde gece 02:30'da
+*/15 * * * *   →  15 dakikada bir  (*/n = her n birimde)</code></pre>
+        </figure>
+
+        <p>Buraya kadar tanıdık. Airflow'un yeni gelenleri en çok şaşırtan tarafı ise <strong>schedule'ın anlamıdır</strong>: Airflow bir koşuyu "şu an için" değil, <em>bir veri dilimi (data interval) için</em> çalıştırır. Günlük bir DAG'de 1 Ocak dilimi, 1 Ocak'ın <em>tamamı</em> demektir — e o gün ancak gece yarısı bittiğine göre, koşu da <strong>2 Ocak'ın hemen başında</strong> tetiklenir. Yani "1 Ocak koşusu" takvimde 2 Ocak'ta çalışır ve <em>dünün</em> verisini işler.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 260" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Zaman çizelgesi: 1 Ocak data interval'ı ile 2 Ocak 00:05'teki koşu anının ilişkisi">
+            <defs>
+              <marker id="arr4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+              <marker id="arr5" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="360" y="24" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">@daily bir DAG'de "1 Ocak koşusu" ne zaman çalışır?</text>
+              <!-- interval bloğu -->
+              <rect x="80" y="118" width="380" height="34" rx="6" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="270" y="140" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">data interval — işlenecek veri dilimi (1 Ocak)</text>
+              <!-- eksen -->
+              <line x1="50" y1="152" x2="660" y2="152" stroke="var(--dg-line)" stroke-width="2" marker-end="url(#arr4)"/>
+              <line x1="80" y1="145" x2="80" y2="159" stroke="var(--ink)" stroke-width="2"/>
+              <line x1="460" y1="145" x2="460" y2="159" stroke="var(--ink)" stroke-width="2"/>
+              <text x="80" y="176" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">1 Oca 00:00</text>
+              <text x="460" y="176" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">2 Oca 00:00</text>
+              <text x="80" y="193" text-anchor="middle" fill="var(--muted)" font-size="10">data_interval_start</text>
+              <text x="460" y="193" text-anchor="middle" fill="var(--muted)" font-size="10">data_interval_end</text>
+              <!-- koşu anı -->
+              <circle cx="478" cy="152" r="6" fill="var(--acc)"/>
+              <line x1="478" y1="146" x2="478" y2="84" stroke="var(--acc)" stroke-width="1.6" stroke-dasharray="4 4"/>
+              <text x="497" y="66" text-anchor="middle" fill="var(--acc)" font-size="11.5" font-weight="700">koşu anı: 2 Oca 00:05</text>
+              <!-- geri ok -->
+              <path d="M440 88 C360 60 290 78 268 108" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#arr5)"/>
+              <text x="330" y="50" text-anchor="middle" fill="var(--muted)" font-size="10.5">bu koşu DÜNÜN verisini işler</text>
+              <text x="360" y="232" text-anchor="middle" fill="var(--muted)" font-size="10.5">dilim ancak kapandığında ("gün bittiğinde") veri tamamlanır — koşu da o yüzden dilimin SONUNDA tetiklenir</text>
+            </g>
+          </svg>
+          <figcaption>Koşu tarihi ile işlenen verinin tarihi aynı değildir: koşu, temsil ettiği dilimin bitiminde çalışır. Bu tuzağı bilmeyen, "verim bir gün kayık" diye saatlerce hata arar.</figcaption>
+        </figure>
+
+        <div class="warn"><b>Klasik tuzak.</b> Task'ının içinde "bugünün tarihi" (<code>datetime.now()</code>) ile sorgu yazarsan hem bu kaymayı yanlış yönetirsin hem de <a href="m3-etl-elt.html">backfill</a> imkânsızlaşır: geçmiş bir gün için koşan task yine "bugünü" işler. Doğrusu, Airflow'un koşuya verdiği <code>data_interval_start/end</code> değişkenlerini kullanmaktır — o zaman her koşu kendi dilimini işler, tarih kim olursa olsun.</div>
+
+        <div class="note"><b>İsim değişikliği.</b> Eski Airflow belgelerinde bu kavramı <code>execution_date</code> adıyla görürsün — "çalışma tarihi" deyip kafa karıştıran talihsiz bir isimdi. Airflow 2.2'den beri resmi terminoloji <code>data_interval_start</code> / <code>data_interval_end</code>: adı, ne olduğunu artık doğru söylüyor.</div>
+
+        <h2>Dayanıklılık: retry, sensor, SLA ve XCom</h2>
+        <p>Orkestratörün asıl değeri her şey yolundayken değil, bir şeyler ters gittiğinde ortaya çıkar. Airflow'un dayanıklılık araç seti:</p>
+        <ul>
+          <li><strong>Retry</strong> — task'a "hata alırsan <code>retries=2</code>, aralarında <code>retry_delay=5dk</code> bekle" dersin. API'nin anlık nazlanması gibi geçici hatalar insan uyanmadan kendi kendine çözülür. Retry'ın güvenli olması, task'ların <a href="m3-etl-elt.html">idempotent</a> yazılmasına bağlıdır — iki konu burada kenetlenir.</li>
+          <li><strong>Timeout</strong> — <code>execution_timeout</code> ile "bu iş 30 dakikadan uzun sürüyorsa bir terslik var, kes" sınırı koyarsın; takılı kalan task sonsuza dek worker işgal etmez.</li>
+          <li><strong>SLA (service level agreement)</strong> — "sabah raporu 07:00'ye kadar bitmiş olmalı" sözüdür. Süre aşılırsa Airflow kayıt düşer ve uyarı gönderir; işi durdurmaz ama geç kalındığını <em>sen fark etmeden önce</em> haber verir.</li>
+          <li><strong>Sensor</strong> — "bir koşul sağlanana dek bekle" diyen özel task türü: SFTP'ye dosya düşmesini, bir tablonun oluşmasını, başka bir DAG'in bitmesini bekler. "Tedarikçi dosyayı kaça bırakır bilmiyoruz" gibi belirsizlikleri tahmin yerine gözlemle çözer.</li>
+          <li><strong>XCom (cross-communication)</strong> — task'lar ayrı süreçlerde, hatta ayrı makinelerde koştuğu için değişken paylaşamaz; XCom aralarındaki küçük mesaj kutusudur: bir task "bugün 12.480 satır çektim" ya da "çıktıyı şu path'e yazdım" notunu bırakır, sonraki okur.</li>
+        </ul>
+
+        <div class="tip"><b>XCom bir veri taşıma bandı değildir.</b> XCom metadata veritabanında saklanır; oraya DataFrame gibi büyük veri koyarsan veritabanını şişirir, orkestratörü yavaşlatırsın. Kural basit: <em>veri</em> depoda/warehouse'ta taşınır, XCom'da yalnızca <em>verinin adresi ve özeti</em> (path, satır sayısı, tarih) gezer.</div>
+
+        <h2>Ekosistem: Airflow tek seçenek değil</h2>
+        <p>Orkestrasyon fikri Airflow'dan büyüktür ve iki modern alternatifi duyman gerekir: <strong>Prefect</strong>, "DAG dosyası" törenini azaltıp sıradan Python fonksiyonlarını dekoratörlerle akışa çeviren, dinamik işlerde esneyen bir araçtır. <strong>Dagster</strong> ise task yerine ürettiğin <em>veri varlıklarını</em> (asset — tablolar, dosyalar) merkeze alır ve tazelik/soy ağacı takibini yerleşik getirir. Kavramlar — bağımlılık grafı, zamanlama, retry, izleme — üçünde de aynıdır; Airflow'u anlayan, diğerlerini bir hafta sonunda söker.</p>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Orkestrasyon, veri ekiplerinin günlük ritmini belirleyen katmandır:</p>
+        <ul>
+          <li><strong>Sabah ritüeli →</strong> veri mühendisinin günü Airflow UI'daki gece koşularına bakarak başlar: hepsi yeşilse kahve keyifli, kırmızı varsa loglara dalış.</li>
+          <li><strong>İş ilanlarında →</strong> "Airflow ile pipeline orkestrasyonu" neredeyse her data engineer ilanının standart maddesi; DAG yazabilmek mülakat sorusudur.</li>
+          <li><strong>Veri kalitesinde →</strong> kalite testleri DAG'e task olarak eklenir: test patlarsa rapor task'ı hiç koşmaz, yanlış rapor gitmez. Detayı <a href="m3-veri-kalitesi.html">veri kalitesi konusunda</a>.</li>
+          <li><strong>ML tarafında →</strong> model eğitimi de bir DAG'dir: veri hazırlama → eğitim → değerlendirme → yayına alma. MLOps araçlarının çoğu bu fikrin özelleşmiş hâlidir.</li>
+          <li><strong>Bulutta →</strong> AWS MWAA, Google Cloud Composer ve Astronomer, Airflow'un yönetilen sürümleridir — kurulum derdini <a href="m3-bulut.html">bulut platformları konusunda</a> göreceğin "yönetilen servis" modeli çözer.</li>
+          <li><strong>Sınırında →</strong> orkestrasyon "belirli aralıklarla koşan" batch işlerin dünyasıdır; olay olay akan veride ise <a href="m3-streaming.html">streaming mimarisi</a> devralır.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Cron da işleri zamanında çalıştırıyor; Airflow gibi bir orkestratöre neden ihtiyaç var?</summary>
+            <div class="answer">Cron yalnızca <b>saat</b> bilir; orkestratör <b>bağımlılık, retry ve izleme</b> bilir. Cron'da "rapor, yükleme bitince başlasın" diyemez, tahmini saat aralıklarıyla kumar oynarsın; hata alan iş kendiliğinden yeniden denenmez; "dün gece ne oldu?" sorusunun tek ekranda cevabı yoktur. Orkestratör bu üçünü de sağlar: DAG'e göre tetikler, hatada yeniden dener, her koşuyu kayıt altına alır.</div>
+          </details>
+          <details class="quiz">
+            <summary>DAG'in "acyclic" (çevrimsiz) olma şartı neden zorunludur?</summary>
+            <div class="answer">Oklar "bu bitmeden şu başlayamaz" demektir. Döngü olsaydı — A, B'yi ve B de A'yı bekleseydi — iki task birbirini <b>sonsuza dek</b> beklerdi; hiçbir geçerli çalışma sırası kurulamazdı. Çevrimsizlik, grafın her zaman baştan sona sıralanabilmesini (topolojik sıra) garanti eder: her task'ın "önce kim?" sorusunun net bir cevabı olur.</div>
+          </details>
+          <details class="quiz">
+            <summary>@daily bir DAG'de "1 Ocak koşusu" gerçekte ne zaman çalışır ve hangi veriyi işler?</summary>
+            <div class="answer"><b>2 Ocak'ın hemen başında</b> (örn. 00:05'te) çalışır ve <b>1 Ocak'ın verisini</b> işler. Çünkü Airflow koşuyu bir veri dilimi (data interval) için yapar: 1 Ocak dilimi ancak gün bittiğinde tamamlanır, koşu da dilimin sonunda tetiklenir. Bu yüzden task içinde "bugünün tarihi" yerine <code>data_interval_start/end</code> kullanılır — aksi hâlde veri bir gün kayık işlenir ve backfill bozulur.</div>
+          </details>
+          <details class="quiz">
+            <summary>Sensor ile sıradan bir operator arasındaki fark nedir? Bir kullanım örneği ver.</summary>
+            <div class="answer">Operator bir işi <b>yapar</b>; sensor bir koşulun sağlanmasını <b>bekler</b> ve sağlanınca akışın devamına izin verir. Örnek: tedarikçi her sabah belirsiz bir saatte SFTP'ye dosya bırakıyorsa, "dosya herhalde 05:00'te oradadır" diye tahmin etmek yerine bir dosya sensor'ü koyarsın — dosya düştüğü anda işleme task'ları başlar, düşmezse akış hiç yanlış veriyle koşmaz.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Orkestrasyon</span><span class="term-en">Orchestration</span><span class="lvl lvl-orta">Orta</span></div><p>Birden çok pipeline'ı bağımlılık, zamanlama, hata yönetimi ve izlemeyle merkezî biçimde yönetme işi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">DAG</span><span class="term-en">Directed Acyclic Graph</span><span class="lvl lvl-orta">Orta</span></div><p>Yönlü ve çevrimsiz bağımlılık grafı: işlerin "kimden sonra" çalışacağının haritası. Döngüsüzlük, her zaman geçerli bir sıra garantisidir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Airflow</span><span class="term-en">Apache Airflow</span><span class="lvl lvl-orta">Orta</span></div><p>Python ile DAG tanımlanan, fiili standart açık kaynak orkestratör; scheduler-worker mimarisi ve web arayüzüyle gelir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Task (Görev)</span><span class="term-en">Task</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>DAG'deki tek bir düğüm; çalıştırılabilir en küçük iş birimi ("API'den çek", "tabloyu yükle" gibi).</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Operator</span><span class="term-en">Operator</span><span class="lvl lvl-orta">Orta</span></div><p>Task'ın nasıl yapılacağını belirleyen hazır şablon: PythonOperator fonksiyon, BashOperator komut, SQL operatörleri sorgu çalıştırır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Scheduler (Zamanlayıcı)</span><span class="term-en">Scheduler</span><span class="lvl lvl-orta">Orta</span></div><p>DAG'leri sürekli tarayıp zamanı gelen ve bağımlılığı tamamlanan task'ları kuyruğa atan Airflow bileşeni; sistemin kalbi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Worker</span><span class="term-en">Worker</span><span class="lvl lvl-orta">Orta</span></div><p>Kuyruktan task alıp gerçekten çalıştıran süreç. İş yükü büyüyünce worker sayısı artırılarak ölçeklenilir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Cron</span><span class="term-en">Cron</span><span class="lvl lvl-orta">Orta</span></div><p>Beş alanlı zamanlama ifadesi dili ("0 6 * * 1" = her Pazartesi 06:00) ve bunu çalıştıran klasik Linux aracı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Retry (Yeniden Deneme)</span><span class="term-en">Retry</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Hata alan task'ın belirli aralıkla otomatik yeniden çalıştırılması; geçici hataları insansız çözer, idempotent task ister.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Sensor</span><span class="term-en">Sensor</span><span class="lvl lvl-ileri">İleri</span></div><p>Bir koşul (dosya düşmesi, tablonun hazır olması) sağlanana dek bekleyen özel task türü; tahmin yerine gözlem.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">SLA</span><span class="term-en">Service Level Agreement</span><span class="lvl lvl-orta">Orta</span></div><p>"Bu iş en geç şu saatte bitmiş olmalı" sözü; aşılırsa orkestratör kayıt düşüp uyarı gönderir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">XCom</span><span class="term-en">XCom</span><span class="lvl lvl-ileri">İleri</span></div><p>Task'lar arasında küçük mesaj/metadata paylaşım mekanizması. Veri değil, verinin adresi ve özeti taşınır.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m3-orkestrasyon">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m3-etl-elt.html"><span>← Önceki</span><b>ETL, ELT ve Data Pipeline Kavramı</b></a>
+          <a class="next" href="m3-streaming.html"><span>Sonraki →</span><b>Streaming ve Event-Driven Mimari</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

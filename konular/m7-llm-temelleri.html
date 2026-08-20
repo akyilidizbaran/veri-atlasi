@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM'lerin Temelleri — Veri Atlası</title>
+<meta name="description" content="Token, tokenization, embedding, pretraining, temperature ve hallucination: büyük dil modellerinin (LLM) nasıl çalıştığını temelden anlatan rehber.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m7" data-slug="m7-llm-temelleri">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m7">7. Üretken AI ve LLM'ler</a><span class="sep">/</span>
+        <span>LLM'lerin Temelleri</span>
+      </nav>
+      <span class="mod-badge">Modül 7 · Üretken AI ve LLM'ler</span>
+      <h1>LLM'lerin Temelleri</h1>
+      <p class="en-title">LLM Fundamentals</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~17 dk okuma</span>
+        <span class="chip">🔤 14 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Sohbet kutusunun arkasında ne var?</h2>
+        <p>ChatGPT'ye veya Claude'a bir soru yazıyorsun, saniyeler içinde akıcı bir Türkçe cevap akmaya başlıyor. Bu sayfanın amacı o sihir perdesini kaldırmak: içeride ne bir bilgi veritabanı ne de kurallar listesi var. İçeride, <a href="m6-transformer.html">Transformer ve Attention konusunda</a> mimarisini gördüğün türden, ama devasa ölçekte büyütülmüş bir sinir ağı var — ve yaptığı tek iş şaşırtıcı derecede basit.</p>
+        <p>Bu basit işi anladığında hem LLM'lerin neden bu kadar yetenekli olduğunu hem de neden bazen kendinden emin bir tavırla saçmaladığını aynı anda kavrayacaksın. İkisi de aynı mekanizmanın iki yüzü.</p>
+
+        <h2>Tek cümlelik tanım: sonraki token'ı tahmin et</h2>
+        <p><strong>LLM (Large Language Model — büyük dil modeli)</strong>, tek cümlede: <em>bir sonraki token'ı tahmin eden dev bir Transformer</em>. Modele "Bugün hava çok" verirsin; model, eğitimde gördüğü trilyonlarca kelimelik metne dayanarak sıradaki parçanın ne olabileceğine dair bir <strong>olasılık dağılımı</strong> üretir: "güzel" %42, "sıcak" %31, "kötü" %9… Bir tanesi seçilir, girdinin sonuna eklenir ve süreç baştan başlar. Gördüğün her cevap, bu döngünün yüzlerce kez dönmesinin ürünüdür.</p>
+        <p>Peki "sıradaki kelimeyi bil" oyunundan çeviri, kod yazma ve mantık yürütme nasıl çıkıyor? Çünkü sonraki token'ı <em>gerçekten iyi</em> tahmin etmek, dilbilgisini, dünya bilgisini ve neden-sonuç ilişkilerini örtük olarak öğrenmeyi gerektirir. Model belli bir ölçeği aştığında, açıkça öğretilmemiş bu becerilerin kendiliğinden ortaya çıkmasına <strong>emergent abilities (beliren yetenekler)</strong> denir; küçük modellerde hiç görünmeyen bir beceri, ölçek büyüyünce âdeta bir eşik atlayarak belirir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 760 260" width="760" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Next-token tahmin döngüsü">
+            <defs>
+              <marker id="arr1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+              <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="380" y="24" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Her turda tek token üretilir — cevap bu döngünün yüzlerce kez dönmesidir</text>
+              <!-- girdi -->
+              <rect x="20" y="85" width="180" height="66" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="110" y="112" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">"Bugün hava çok"</text>
+              <text x="110" y="134" text-anchor="middle" fill="var(--muted)" font-size="11">prompt (girdi)</text>
+              <path d="M200 118 L244 118" stroke="var(--dg-line)" stroke-width="2" marker-end="url(#arr1)"/>
+              <!-- model -->
+              <rect x="248" y="70" width="140" height="96" rx="12" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="318" y="108" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="700">LLM</text>
+              <text x="318" y="128" text-anchor="middle" fill="var(--muted)" font-size="11">dev Transformer</text>
+              <path d="M388 118 L432 118" stroke="var(--dg-line)" stroke-width="2" marker-end="url(#arr1)"/>
+              <!-- olasılıklar -->
+              <rect x="436" y="42" width="204" height="154" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="538" y="64" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">sonraki token olasılıkları</text>
+              <rect x="452" y="76" width="86" height="18" rx="4" fill="rgba(var(--acc-rgb),.3)"/>
+              <text x="456" y="90" fill="var(--ink)" font-size="11.5" font-weight="700">güzel</text>
+              <text x="628" y="90" text-anchor="end" fill="var(--acc)" font-size="11.5" font-weight="700">%42</text>
+              <rect x="452" y="102" width="64" height="18" rx="4" fill="rgba(var(--acc-rgb),.18)"/>
+              <text x="456" y="116" fill="var(--ink)" font-size="11.5">sıcak</text>
+              <text x="628" y="116" text-anchor="end" fill="var(--muted)" font-size="11.5">%31</text>
+              <rect x="452" y="128" width="24" height="18" rx="4" fill="rgba(var(--acc-rgb),.12)"/>
+              <text x="456" y="142" fill="var(--ink)" font-size="11.5">kötü</text>
+              <text x="628" y="142" text-anchor="end" fill="var(--muted)" font-size="11.5">%9</text>
+              <text x="456" y="172" fill="var(--muted)" font-size="11">… on binlerce diğer token</text>
+              <!-- döngü -->
+              <path d="M538 196 L538 228 L110 228 L110 157" fill="none" stroke="var(--acc)" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arr2)"/>
+              <text x="324" y="248" text-anchor="middle" fill="var(--acc)" font-size="11.5" font-weight="600">seçilen token ("güzel") girdinin sonuna eklenir, döngü yeniden başlar</text>
+            </g>
+          </svg>
+          <figcaption>Next-token prediction döngüsü: girdi → olasılık dağılımı → seçim → girdiye ekle → tekrar. LLM'in yaptığı tek şey budur.</figcaption>
+        </figure>
+
+        <h2>Token: modelin gördüğü dünya</h2>
+        <p>Model, metni ne harf harf ne kelime kelime görür; <strong>token</strong> adı verilen parçalar hâlinde görür. <strong>Tokenization</strong>, ham metni bu parçalara bölme işlemidir. Sık geçen kelimeler tek token olur ("the", "ve"), nadir kelimeler parçalanır ("dünyalı" → "dünya" + "lı"). En yaygın yöntem <strong>BPE (Byte-Pair Encoding)</strong>: eğitim metninde en sık yan yana geçen karakter çiftlerini adım adım birleştirerek bir sözlük inşa eder. Böylece model, hiç görmediği bir kelimeyi bile tanıdığı parçalardan okuyabilir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 640 215" width="640" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tokenization örneği">
+            <defs>
+              <marker id="arr3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <rect x="198" y="20" width="244" height="42" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="320" y="47" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="700">"Merhaba dünyalı!"</text>
+              <path d="M320 62 L320 92" stroke="var(--dg-line)" stroke-width="2" marker-end="url(#arr3)"/>
+              <!-- token kutuları -->
+              <rect x="133" y="98" width="60" height="44" rx="8" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="163" y="125" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Mer</text>
+              <rect x="205" y="98" width="76" height="44" rx="8" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="243" y="125" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">haba</text>
+              <rect x="293" y="98" width="100" height="44" rx="8" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="343" y="125" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">▁dünya</text>
+              <rect x="405" y="98" width="50" height="44" rx="8" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="430" y="125" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">lı</text>
+              <rect x="467" y="98" width="40" height="44" rx="8" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="487" y="125" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">!</text>
+              <!-- id'ler -->
+              <text x="163" y="158" text-anchor="middle" fill="var(--muted)" font-size="10">id 2841</text>
+              <text x="243" y="158" text-anchor="middle" fill="var(--muted)" font-size="10">id 907</text>
+              <text x="343" y="158" text-anchor="middle" fill="var(--muted)" font-size="10">id 15332</text>
+              <text x="430" y="158" text-anchor="middle" fill="var(--muted)" font-size="10">id 210</text>
+              <text x="487" y="158" text-anchor="middle" fill="var(--muted)" font-size="10">id 0</text>
+              <text x="320" y="192" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">16 karakter → 5 token · kabaca 1 token ≈ 3–4 karakter (▁ = boşluk, id'ler temsilî)</text>
+            </g>
+          </svg>
+          <figcaption>Cümle kelime sınırlarına değil, tokenizer sözlüğüne göre bölünür: "dünyalı" iki parçaya ayrılırken "!" tek başına bir token'dır.</figcaption>
+        </figure>
+
+        <div class="note"><b>Türkçe daha çok token harcar.</b> Tokenizer sözlükleri ağırlıklı olarak İngilizce metinle eğitildiği için Türkçe kelimeler — özellikle eklerle uzayanlar — daha çok parçaya bölünür. Aynı anlamdaki bir metin Türkçe'de İngilizce'ye göre çoğu zaman 1,5–2 kat token tutar; API'ler token başına ücretlendirdiği için bu doğrudan maliyet demektir.</div>
+
+        <p>Token'ların ikinci kritik rolü sınır çizmektir: <strong>context window (bağlam penceresi)</strong>, modelin bir seferde görebileceği toplam token sayısıdır — prompt'un, konuşma geçmişinin ve üretilen cevabın tamamı buna dahildir. Bunu modelin <em>çalışma masası</em> gibi düşün: masaya sığmayan belge, karar verilirken hesaba katılamaz. Masadan taşan en eski sayfalar sessizce yere düşer — modelin uzun sohbetlerde "başta söylediklerini unutması" tam olarak budur.</p>
+
+        <h2>Embedding: anlamın koordinatları</h2>
+        <p>Sinir ağları sayılarla çalışır; token id'si gibi kuru bir tam sayı ise anlam taşımaz. Bu yüzden her token, modele girerken <strong>embedding (gömme)</strong> adı verilen yüzlerce boyutlu bir vektöre çevrilir. Bu vektörler eğitim sırasında öyle şekillenir ki <em>benzer anlamlı kelimeler uzayda birbirine yakın düşer</em>: "kedi" ile "köpek" komşudur, "kedi" ile "karbüratör" arasında ise kilometreler vardır.</p>
+        <p>Klasik örnek: vektör aritmetiği anlam aritmetiğine dönüşür. <code>kral − erkek + kadın ≈ kraliçe</code> — model kimse öğretmeden, kelimeler arasındaki cinsiyet ilişkisini bir yön olarak kodlamıştır. İki vektörün ne kadar "aynı yöne baktığını" ölçmek için <a href="m1-matematik.html">Matematik Temelleri konusunda</a> gördüğün <strong>iç çarpım (dot product)</strong> ve kosinüs benzerliği kullanılır; bu hesap, birazdan modül sonunda göreceğin RAG sistemlerinin de kalbidir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 640 320" width="640" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Embedding uzayında anlam kümeleri">
+            <defs>
+              <marker id="arr4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <!-- eksenler -->
+              <path d="M60 275 L604 275" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arr4)"/>
+              <path d="M60 275 L60 36" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arr4)"/>
+              <text x="588" y="295" text-anchor="middle" fill="var(--muted)" font-size="11">boyut 1</text>
+              <text x="34" y="46" fill="var(--muted)" font-size="11">boyut 2</text>
+              <text x="320" y="24" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Gerçekte yüzlerce boyut vardır; burada 2 boyuta indirilmiş hâli</text>
+              <!-- hayvan kümesi -->
+              <ellipse cx="195" cy="125" rx="115" ry="78" fill="rgba(var(--acc-rgb),.08)" stroke="var(--acc)" stroke-width="1.4" stroke-dasharray="6 4"/>
+              <text x="195" y="66" text-anchor="middle" fill="var(--acc)" font-size="11.5" font-weight="700">hayvanlar</text>
+              <circle cx="152" cy="112" r="5" fill="var(--acc)"/>
+              <text x="152" y="98" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">kedi</text>
+              <circle cx="212" cy="150" r="5" fill="var(--acc)"/>
+              <text x="212" y="172" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">köpek</text>
+              <circle cx="248" cy="105" r="5" fill="var(--acc)"/>
+              <text x="252" y="92" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">aslan</text>
+              <!-- kedi-köpek yakınlık oku -->
+              <path d="M158 120 L204 144" stroke="var(--ok)" stroke-width="2" marker-end="url(#arr5)"/>
+              <defs><marker id="arr5" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--ok)"/></marker></defs>
+              <text x="130" y="145" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="700">yakın =</text>
+              <text x="130" y="158" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="700">benzer anlam</text>
+              <!-- taşıt kümesi -->
+              <ellipse cx="480" cy="205" rx="100" ry="62" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4" stroke-dasharray="6 4"/>
+              <text x="480" y="158" text-anchor="middle" fill="var(--muted)" font-size="11.5" font-weight="700">taşıtlar</text>
+              <circle cx="445" cy="200" r="5" fill="var(--warn)"/>
+              <text x="445" y="188" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">araba</text>
+              <circle cx="518" cy="222" r="5" fill="var(--warn)"/>
+              <text x="518" y="244" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">otobüs</text>
+              <!-- uzaklık -->
+              <path d="M300 150 L392 190" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="3 5"/>
+              <text x="346" y="158" text-anchor="middle" fill="var(--muted)" font-size="10.5">uzak = alakasız</text>
+            </g>
+          </svg>
+          <figcaption>Embedding uzayı: anlamca yakın kelimeler kümelenir. "Benzerlik" artık bir his değil, iki vektör arasında hesaplanabilir bir sayıdır.</figcaption>
+        </figure>
+
+        <h2>Eğitim aşamaları: okyanustan asistana</h2>
+        <p>Bir LLM iki büyük aşamada doğar. İlki <strong>pretraining (ön eğitim)</strong>: model, internet ölçeğinde bir metin okyanusuna — web sayfaları, kitaplar, makaleler, kod depoları — bırakılır ve tek görevi vardır: sonraki token'ı tahmin et. Haftalar süren ve binlerce GPU'nun çalıştığı bu aşamanın sonunda <strong>base model (taban model)</strong> ortaya çıkar. Base model dili ve dünyayı şaşırtıcı derecede iyi bilir ama bir asistan değildir; ona "Türkiye'nin başkenti neresidir?" yazarsan sana cevap vermek yerine "Fransa'nın başkenti neresidir?" diye devam edebilir — çünkü tek bildiği metni <em>sürdürmektir</em>.</p>
+        <p>İkinci aşama <strong>post-training (hizalama)</strong>: base model, soru-cevap ve talimat-yanıt örnekleriyle ince ayarlanır (<strong>instruction tuning</strong>), ardından insan değerlendiricilerin tercihleri kullanılarak <strong>RLHF</strong> (insan geri bildirimiyle pekiştirmeli öğrenme) ile "yardımcı, dürüst, zararsız" bir asistan davranışına yöneltilir. Bu tekniklerin mutfağını <a href="m7-fine-tuning.html">Fine-tuning ve Model Hizalama konusunda</a> ayrıntısıyla açacağız; şimdilik önemli olan şu: sohbet edebilen model, ham base modelin <em>terbiye edilmiş</em> hâlidir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 780 200" width="780" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LLM eğitim boru hattı">
+            <defs>
+              <marker id="arr6" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="390" y="26" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Ham metinden asistana: iki aşamalı eğitim boru hattı</text>
+              <rect x="14" y="58" width="140" height="84" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="84" y="88" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Ham metin</text>
+              <text x="84" y="105" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">okyanusu</text>
+              <text x="84" y="126" text-anchor="middle" fill="var(--muted)" font-size="10.5">web, kitap, kod (TB'lar)</text>
+              <path d="M154 100 L182 100" stroke="var(--dg-line)" stroke-width="2" marker-end="url(#arr6)"/>
+              <rect x="184" y="58" width="130" height="84" rx="10" fill="rgba(var(--acc-rgb),.14)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="249" y="94" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Pretraining</text>
+              <text x="249" y="115" text-anchor="middle" fill="var(--muted)" font-size="10.5">next-token hedefi,</text>
+              <text x="249" y="129" text-anchor="middle" fill="var(--muted)" font-size="10.5">binlerce GPU</text>
+              <path d="M314 100 L342 100" stroke="var(--dg-line)" stroke-width="2" marker-end="url(#arr6)"/>
+              <rect x="344" y="58" width="115" height="84" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="401" y="94" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Base model</text>
+              <text x="401" y="115" text-anchor="middle" fill="var(--muted)" font-size="10.5">dili bilir ama</text>
+              <text x="401" y="129" text-anchor="middle" fill="var(--muted)" font-size="10.5">sohbet edemez</text>
+              <path d="M459 100 L487 100" stroke="var(--dg-line)" stroke-width="2" marker-end="url(#arr6)"/>
+              <rect x="489" y="58" width="140" height="84" rx="10" fill="rgba(var(--acc-rgb),.14)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="559" y="88" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Instruction tuning</text>
+              <text x="559" y="105" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">+ RLHF</text>
+              <text x="559" y="126" text-anchor="middle" fill="var(--muted)" font-size="10.5">hizalama aşaması</text>
+              <path d="M629 100 L657 100" stroke="var(--dg-line)" stroke-width="2" marker-end="url(#arr6)"/>
+              <rect x="659" y="58" width="112" height="84" rx="10" fill="var(--dg-box)" stroke="var(--ok)" stroke-width="1.6"/>
+              <text x="715" y="94" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Asistan model</text>
+              <text x="715" y="115" text-anchor="middle" fill="var(--muted)" font-size="10.5">soruya cevap verir,</text>
+              <text x="715" y="129" text-anchor="middle" fill="var(--muted)" font-size="10.5">talimata uyar</text>
+              <text x="249" y="172" text-anchor="middle" fill="var(--muted)" font-size="10.5">1. aşama: ne söyleneceğini öğren</text>
+              <text x="559" y="172" text-anchor="middle" fill="var(--muted)" font-size="10.5">2. aşama: nasıl davranacağını öğren</text>
+            </g>
+          </svg>
+          <figcaption>Eğitim boru hattı: pretraining bilgiyi, post-training davranışı verir. Kullandığın her sohbet modeli bu iki aşamadan geçmiştir.</figcaption>
+        </figure>
+
+        <h2>Inference ayarları: temperature ve top-p</h2>
+        <p>Eğitilmiş modeli kullanma anına <strong>inference (çıkarım)</strong> denir ve burada elindeki en önemli ayar düğmesi <strong>temperature</strong>'dır. Model her adımda bir olasılık dağılımı üretiyordu; temperature bu dağılımın ne kadar "sivriltileceğini" belirler. <code>temperature=0</code>'a yaklaştıkça model neredeyse hep en yüksek olasılıklı token'ı seçer (<strong>greedy</strong> davranış): tutarlı, tekrarlanabilir, ama yavan. Değer 1'e yaklaştıkça düşük olasılıklı token'lar da şans bulur (<strong>sampling</strong>): yaratıcı, çeşitli, ama savrulmaya açık. Kısacası temperature bir <em>yaratıcılık musluğudur</em>.</p>
+        <p>İkinci düğme <strong>top-p (nucleus) sampling</strong>: her adımda tüm sözlükten değil, toplam olasılığı p'ye (örn. 0.9) ulaşan en olası token çekirdeğinden seçim yapılır. Böylece kuyruktaki gerçekten saçma adaylar hiç yarışa giremez. Pratikte temperature ile top-p birlikte kullanılır ve genelde ikisinden birini ayarlamak yeterlidir.</p>
+
+        <figure class="codebox">
+          <figcaption>Python — Anthropic API ile ilk LLM çağrın</figcaption>
+          <pre><code data-lang="python"># pip install anthropic
+import anthropic
+
+# API anahtarı koda yazılmaz; ortam değişkeninden okunur:
+# export ANTHROPIC_API_KEY="sk-ant-..."
+client = anthropic.Anthropic()   # anahtarı env'den otomatik alır
+
+yanit = client.messages.create(
+    model="claude-sonnet-4-6",   # kullanılacak model
+    max_tokens=500,              # üretilecek en fazla token sayısı
+    temperature=0.7,             # yaratıcılık musluğu (0 = tutucu, 1 = cesur)
+    messages=[
+        {"role": "user", "content": "Veri mühendisliği nedir? İki cümleyle anlat."}
+    ],
+)
+
+print(yanit.content[0].text)     # modelin ürettiği metin</code></pre>
+        </figure>
+
+        <p>Sık düşülen bir yanılgı: "temperature=0 verirsem her seferinde birebir aynı çıktıyı alırım." Pratikte bu <em>çoğunlukla</em> doğrudur ama garanti değildir — GPU'lardaki kayan nokta hesap sırası ve sunucu tarafı optimizasyonlar küçük farklar yaratabilir. LLM'i deterministik bir fonksiyon gibi değil, "büyük ölçüde kararlı ama olasılıksal" bir bileşen gibi düşünmelisin.</p>
+
+        <figure class="codebox">
+          <figcaption>Python — aynı prompt, iki farklı temperature</figcaption>
+          <pre><code data-lang="python">import anthropic
+
+client = anthropic.Anthropic()
+
+def sor(temp):
+    yanit = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=100,
+        temperature=temp,
+        messages=[{"role": "user", "content": "Kahveyi tek cümleyle tarif et."}],
+    )
+    return yanit.content[0].text
+
+print(sor(0.0))
+# Örnek çıktı: "Kahve, kavrulmuş kahve çekirdeklerinden demlenen,
+#               acımsı tadıyla bilinen uyarıcı bir içecektir."
+# temperature=0 → en olası, "güvenli" cümle; tekrar çalıştırınca
+# büyük olasılıkla aynısı gelir.
+
+print(sor(1.0))
+# Örnek çıktı: "Sabahın paslı zihnini kuran sıcak, kara bir zemberek."
+# temperature=1 → her çalıştırmada farklı, daha cesur kelime seçimleri.</code></pre>
+        </figure>
+
+        <div class="tip"><b>Pipeline'da musluğu kıs.</b> Veri çıkarma, sınıflandırma ve JSON üretimi gibi programatik işlerde <code>temperature=0</code> kullan: çıktı ne kadar kararlıysa, sonraki adımların o kadar az kırılır. Yüksek temperature'ı beyin fırtınası ve metin üretimi gibi "çeşitlilik iyidir" senaryolarına sakla.</div>
+
+        <h2>Sınırlar: halüsinasyon, kesim tarihi, bağlam</h2>
+        <p>Aynı mekanizmanın karanlık yüzü: model doğruyu söylemek için değil, <em>olası metni üretmek</em> için eğitildi. Bilmediği bir konuda bile en akıcı devamı üretir — kulağa tamamen inandırıcı gelen ama uydurma bir makale adı, var olmayan bir fonksiyon, yanlış bir tarih. Buna <strong>hallucination (halüsinasyon)</strong> denir. Model yalan söylemiyor; "bilmiyorum" demenin eğitim hedefinde özel bir yeri olmadığı için olasılık uzayındaki en makul cümleyi dokuyor. Bilgi ile doğruluk aynı şey değildir.</p>
+        <p>İkinci sınır <strong>knowledge cutoff (bilgi kesim tarihi)</strong>: model, eğitim verisinin toplandığı tarihte donmuş bir dünya fotoğrafına sahiptir. O tarihten sonra çıkan kütüphane sürümünü, olayı veya ürünü bilemez — ama sorarsan yine de bir cevap üretebilir, işte orası tehlikelidir. Üçüncü sınır zaten tanıştığın context window: pencereye sığmayan bilgi, o an model için yok hükmündedir. Bu üç sınırla mühendislik yoluyla baş etmenin yolları — güncel ve doğrulanabilir bilgiyi prompt'a taşımak gibi — <a href="m7-rag.html">RAG konusunun</a> ana meselesi olacak.</p>
+        <p>Peki modeller neden sürekli büyüyor? <strong>Scaling laws (ölçekleme yasaları)</strong>, model parametre sayısı, eğitim verisi miktarı ve harcanan hesaplama gücü arttıkça modelin hata oranının şaşırtıcı derecede düzenli, öngörülebilir bir eğriyle düştüğünü gösteren deneysel bulgulardır. "Daha büyük model + daha çok veri + daha çok GPU = daha yetenekli model" denkleminin arkasındaki bu düzenlilik, son yılların dev model yarışının da bilimsel gerekçesidir; emergent yetenekler çoğu zaman bu eğrinin üzerinde belli eşikler aşıldığında ortaya çıkar.</p>
+
+        <div class="warn"><b>LLM çıktısı kaynak değildir.</b> Modelin verdiği istatistiği, API adını veya hukuki bilgiyi doğrulamadan rapora, koda ya da production pipeline'ına koyma. Halüsinasyon bir hata (bug) değil, olasılıksal üretimin doğal yan ürünüdür — savunma hattını sen kurmak zorundasın: kaynak göster(t), test yaz, kritik alanları insana onaylat.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Bu sayfadaki kavramlar, LLM'lerle çalışan bir veri mühendisinin günlük diline şöyle sızar:</p>
+        <ul>
+          <li><strong>Token ekonomisi →</strong> API faturaları token başına kesilir; prompt'ları kısaltmak, Türkçe metnin token maliyetini bilmek ve <code>max_tokens</code>'ı doğru seçmek doğrudan para tasarrufudur.</li>
+          <li><strong>Context window planlaması →</strong> "Bu 200 sayfalık PDF'i modele nasıl okuturum?" sorusunun cevabı chunking ve <a href="m7-rag.html">RAG</a>'dir; pencere sınırını bilmeden mimari kurulamaz.</li>
+          <li><strong>Embedding →</strong> semantik arama, öneri sistemleri ve vektör veritabanlarının temeli; "benzer kayıtları bul" gördüğün her yerde embedding vardır.</li>
+          <li><strong>Temperature=0 →</strong> LLM'i ETL adımı olarak kullanırken (veri çıkarma, sınıflandırma) determinizme en yakın ayar; test edilebilirliğin ön şartı.</li>
+          <li><strong>Hallucination savunması →</strong> LLM çıktısını doğrulayan şema kontrolleri ve <a href="m3-veri-kalitesi.html">veri kalitesi</a> yaklaşımları, artık AI pipeline'larının da standart parçası.</li>
+          <li><strong>Prompt tasarımı →</strong> modelden istikrarlı çıktı almanın asıl kaldıracı bir sonraki konu: <a href="m7-prompt-engineering.html">Prompt Engineering</a>.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Bir LLM'in eğitimdeki tek hedefi nedir ve bu basit hedef neden çeviri, kod yazma gibi becerilere yol açar?</summary>
+            <div class="answer">Hedef, <b>bir sonraki token'ı tahmin etmektir.</b> Bu tahmini gerçekten iyi yapmak; dilbilgisini, dünya bilgisini ve mantık ilişkilerini örtük olarak öğrenmeyi gerektirir. Model yeterince büyüdüğünde açıkça öğretilmemiş beceriler kendiliğinden belirir — buna <b>emergent abilities</b> denir.</div>
+          </details>
+          <details class="quiz">
+            <summary>Aynı içerikli bir metin Türkçe yazıldığında neden İngilizce'sinden daha çok token harcar?</summary>
+            <div class="answer">Tokenizer sözlükleri ağırlıklı olarak <b>İngilizce metinle</b> inşa edildiği için İngilizce kelimeler çoğunlukla tek token olur; Türkçe kelimeler — özellikle ek almış hâlleri — sözlükte bütün olarak bulunmadığından <b>daha çok parçaya bölünür</b>. Sonuç: aynı anlam için daha fazla token, daha yüksek API maliyeti ve context window'un daha hızlı dolması.</div>
+          </details>
+          <details class="quiz">
+            <summary>temperature=0 vermek çıktının her seferinde birebir aynı olacağını garanti eder mi?</summary>
+            <div class="answer"><b>Hayır.</b> temperature=0 modeli en olası token'ı seçmeye (greedy) çok yaklaştırır ve çıktıyı büyük ölçüde kararlı yapar; ama GPU'lardaki kayan nokta hesap sırası ve sunucu tarafı optimizasyonlar küçük farklar üretebilir. LLM'i "tamamen deterministik" değil, "büyük ölçüde kararlı, özünde olasılıksal" bir bileşen olarak tasarla.</div>
+          </details>
+          <details class="quiz">
+            <summary>Hallucination neden olur — model "yalan mı söylüyor"?</summary>
+            <div class="answer">Hayır; model <b>doğruluk için değil, olası metin üretmek için</b> eğitilmiştir. Bilmediği konuda da en akıcı devamı dokur, çünkü "bilmiyorum" demek eğitim hedefinde ödüllendirilen özel bir davranış değildir. Bu yüzden LLM çıktısındaki olgusal iddialar (kaynak, sayı, API adı) her zaman bağımsız doğrulama gerektirir.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">LLM</span><span class="term-en">Large Language Model</span><span class="lvl lvl-orta">Orta</span></div><p>Bir sonraki token'ı tahmin etmek üzere dev metin kümeleriyle eğitilmiş, Transformer tabanlı büyük dil modeli.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Token</span><span class="term-en">Token</span><span class="lvl lvl-orta">Orta</span></div><p>Modelin metni gördüğü en küçük parça; kelime, kelime parçası ya da işaret olabilir. Kabaca 3–4 karaktere denk gelir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Tokenization</span><span class="term-en">Tokenization</span><span class="lvl lvl-orta">Orta</span></div><p>Ham metni tokenizer sözlüğüne göre token dizisine bölme işlemi; modele giden her metnin ilk durağı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">BPE</span><span class="term-en">Byte-Pair Encoding</span><span class="lvl lvl-ileri">İleri</span></div><p>En sık geçen karakter çiftlerini adım adım birleştirerek token sözlüğü inşa eden algoritma; modern tokenizer'ların temeli.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Context Window (Bağlam Penceresi)</span><span class="term-en">Context Window</span><span class="lvl lvl-orta">Orta</span></div><p>Modelin bir seferde görebildiği toplam token sınırı — prompt, geçmiş ve cevap dahil. Modelin çalışma masası.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Embedding (Gömme)</span><span class="term-en">Embedding</span><span class="lvl lvl-orta">Orta</span></div><p>Kelime/token'ları anlam uzayında vektörlere çeviren temsil; benzer anlamlar uzayda yakın düşer.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Pretraining (Ön Eğitim)</span><span class="term-en">Pretraining</span><span class="lvl lvl-orta">Orta</span></div><p>Modelin internet ölçeğindeki metinle next-token hedefiyle eğitildiği ilk ve en pahalı aşama.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Base Model (Taban Model)</span><span class="term-en">Base Model</span><span class="lvl lvl-ileri">İleri</span></div><p>Pretraining sonrası ham model; dili bilir ama talimat izlemez, yalnızca metni sürdürür. Hizalama ile asistana dönüşür.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Next-Token Prediction</span><span class="term-en">Next-Token Prediction</span><span class="lvl lvl-orta">Orta</span></div><p>Verilen diziden sonra gelecek token'ın olasılık dağılımını üretme görevi; LLM'lerin tek eğitim hedefi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Temperature</span><span class="term-en">Temperature</span><span class="lvl lvl-orta">Orta</span></div><p>Üretimdeki rastgeleliği ayarlayan parametre: 0'a yakın tutucu ve kararlı, 1'e yakın yaratıcı ve çeşitli çıktı verir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Top-p (Nucleus) Sampling</span><span class="term-en">Top-p Sampling</span><span class="lvl lvl-ileri">İleri</span></div><p>Seçimi, toplam olasılığı p'ye ulaşan en olası token çekirdeğiyle sınırlayan örnekleme yöntemi; saçma kuyruğu eler.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Hallucination (Halüsinasyon)</span><span class="term-en">Hallucination</span><span class="lvl lvl-orta">Orta</span></div><p>Modelin akıcı ama olgusal olarak yanlış/uydurma içerik üretmesi; olasılıksal üretimin doğal yan ürünü.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Knowledge Cutoff (Bilgi Kesim Tarihi)</span><span class="term-en">Knowledge Cutoff</span><span class="lvl lvl-orta">Orta</span></div><p>Eğitim verisinin toplandığı son tarih; model bu tarihten sonraki gelişmeleri bilmez ama sorulunca cevap uydurabilir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Scaling Laws (Ölçekleme Yasaları)</span><span class="term-en">Scaling Laws</span><span class="lvl lvl-ileri">İleri</span></div><p>Model boyutu, veri ve hesaplama arttıkça performansın öngörülebilir biçimde iyileştiğini gösteren deneysel yasalar.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m7-llm-temelleri">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m6-egitim-pratikleri.html"><span>← Önceki</span><b>Derin Öğrenme Eğitim Pratikleri</b></a>
+          <a class="next" href="m7-prompt-engineering.html"><span>Sonraki →</span><b>Prompt Engineering</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

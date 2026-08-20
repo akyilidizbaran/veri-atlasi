@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matematik Temelleri — Veri Atlası</title>
+<meta name="description" content="Lineer cebir, kalkülüs, olasılık ve istatistik: AI ve makine öğrenmesi için gerçekten gereken matematiğin dürüst, uygulamalı özeti — vektörlerden Bayes teoremine.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m1" data-slug="m1-matematik">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m1">1. Temeller ve Hazırlık</a><span class="sep">/</span>
+        <span>Matematik Temelleri</span>
+      </nav>
+      <span class="mod-badge">Modül 1 · Temeller ve Hazırlık</span>
+      <h1>Matematik Temelleri</h1>
+      <p class="en-title">Math Foundations</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~19 dk okuma</span>
+        <span class="chip">🔤 14 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Ne kadar matematik lazım?</h2>
+        <p>Dürüst cevap: <strong>sandığından az, ama sandığından önemli.</strong> AI alanına girmek için teorem ispatlamana gerek yok; ama modelin neden öğrendiğini (ya da öğrenemediğini) anlamak için dört alanın <em>sezgisine</em> ihtiyacın var. Bu dört alan ve ML'deki tam karşılıkları şöyle:</p>
+        <ul>
+          <li><strong>Lineer cebir</strong> — verinin kendisi. Bir kullanıcı profili bir <em>vektör</em>, bir veri tablosu bir <em>matris</em>, bir sinir ağı katmanı bir <em>matris çarpımı</em>dır. Embedding'ler, görüntüler, LLM ağırlıkları: hepsi lineer cebir nesnesi.</li>
+          <li><strong>Kalkülüs</strong> — öğrenmenin mekanizması. Model, hatasını azaltmak için "hangi yöne gitmeliyim?" sorusunu <em>türev</em> ile cevaplar. Gradient descent bunun üstüne kuruludur.</li>
+          <li><strong>Olasılık</strong> — belirsizliğin dili. Bir spam filtresi "bu e-posta %84 ihtimalle spam" der; bir LLM her adımda "bir sonraki kelimenin olasılığı"nı hesaplar.</li>
+          <li><strong>İstatistik</strong> — veriyi anlama aracı. Keşifsel analiz, A/B testleri, veri kalitesi kontrolleri ve model metrikleri istatistik olmadan yorumlanamaz.</li>
+        </ul>
+        <p>Bu sayfada dördünü de "formül ezberi" olarak değil, <strong>kodda dokunabileceğin nesneler</strong> olarak göreceksin. Amaç: ileriki modüllerde "loss düşmüyor", "embedding benzerliği" ya da "dağılım kaymış" gibi cümleler duyduğunda zihninde bir resim oluşması.</p>
+
+        <div class="note"><b>Formül değil kod.</b> Bu sayfadaki her kavramın NumPy'da tek satırlık bir karşılığı var: iç çarpım <code>np.dot</code>, matris çarpımı <code>@</code>, standart sapma <code>.std()</code>. Sembollerden gözün korkarsa aynı fikri kodda çalıştırıp görebilirsin — matematik sezgisi pratikle gelişir.</div>
+
+        <h2>Lineer cebir: verinin dili</h2>
+        <p>Bir <strong>vektör (vector)</strong>, en yalın haliyle sıralı bir sayı listesidir. Ama ML'deki asıl anlamı şu: <strong>bir şeyi sayılarla tarif etmek.</strong> Bir kullanıcıyı <code>[yaş, aylık harcama, üyelik yılı]</code> = <code>[28, 450, 3]</code> diye yazarsan, o kullanıcıyı 3 boyutlu uzayda bir noktaya (ya da kökenden çıkan bir oka) dönüştürmüş olursun. Buna <strong>özellik vektörü (feature vector)</strong> denir. Modern AI'daki "embedding" kavramı da budur: bir kelimeyi, cümleyi ya da görseli yüzlerce boyutlu bir vektörle temsil etmek.</p>
+        <p>Vektörleri ok olarak düşünmenin büyük bir ödülü var: <strong>iki şeyin benzerliği, oklar arasındaki açıya dönüşür.</strong> Aynı yönü gösteren vektörler benzer şeyleri, dik vektörler ilgisiz şeyleri temsil eder:</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 310" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="İki özellik vektörü, aralarındaki açı ve kosinüs benzerliği">
+            <defs>
+              <marker id="arr_ax" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--muted)"/></marker>
+              <marker id="arr_a" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              <marker id="arr_b" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--ok)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="360" y="25" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">İki özellik vektörü arasındaki açı, benzerliği söyler</text>
+
+              <!-- sol panel: eksenler ve iki vektör -->
+              <path d="M70 270 L70 45" stroke="var(--muted)" stroke-width="1.4" marker-end="url(#arr_ax)"/>
+              <path d="M45 250 L330 250" stroke="var(--muted)" stroke-width="1.4" marker-end="url(#arr_ax)"/>
+              <text x="84" y="54" text-anchor="start" fill="var(--muted)" font-size="10.5">özellik 2</text>
+              <text x="300" y="267" text-anchor="middle" fill="var(--muted)" font-size="10.5">özellik 1</text>
+
+              <path d="M70 250 L255 95" stroke="var(--acc)" stroke-width="2.4" marker-end="url(#arr_a)"/>
+              <path d="M70 250 L300 195" stroke="var(--ok)" stroke-width="2.4" marker-end="url(#arr_b)"/>
+              <text x="264" y="88" text-anchor="middle" fill="var(--acc)" font-size="14" font-weight="700">a</text>
+              <text x="268" y="106" text-anchor="middle" fill="var(--muted)" font-size="10.5">[1.9, 1.6]</text>
+              <text x="313" y="190" text-anchor="middle" fill="var(--ok)" font-size="14" font-weight="700">b</text>
+              <text x="316" y="211" text-anchor="middle" fill="var(--muted)" font-size="10.5">[2.3, 0.6]</text>
+
+              <path d="M123.5 237.3 A 55 55 0 0 0 112.1 214.6" stroke="var(--ink)" stroke-width="1.4" fill="none"/>
+              <text x="141" y="226" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">θ</text>
+              <text x="195" y="294" text-anchor="middle" fill="var(--acc)" font-size="11.5" font-weight="700">açı küçük → vektörler benzer</text>
+
+              <!-- sağ panel: üç kosinüs durumu -->
+              <text x="545" y="70" text-anchor="middle" fill="var(--muted)" font-size="11.5" font-weight="600">kosinüs benzerliği: açının tek sayılık özeti</text>
+
+              <path d="M410 150 L464 102" stroke="var(--acc)" stroke-width="2" marker-end="url(#arr_a)"/>
+              <path d="M410 150 L472 126" stroke="var(--ok)" stroke-width="2" marker-end="url(#arr_b)"/>
+              <text x="443" y="190" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">cos θ ≈ 1</text>
+              <text x="443" y="207" text-anchor="middle" fill="var(--ok)" font-size="11">çok benzer</text>
+
+              <path d="M525 150 L525 98" stroke="var(--acc)" stroke-width="2" marker-end="url(#arr_a)"/>
+              <path d="M525 150 L578 150" stroke="var(--ok)" stroke-width="2" marker-end="url(#arr_b)"/>
+              <text x="551" y="190" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">cos θ = 0</text>
+              <text x="551" y="207" text-anchor="middle" fill="var(--muted)" font-size="11">ilgisiz</text>
+
+              <path d="M633 150 L689 150" stroke="var(--acc)" stroke-width="2" marker-end="url(#arr_a)"/>
+              <path d="M633 150 L577 150" stroke="var(--ok)" stroke-width="2" marker-end="url(#arr_b)"/>
+              <text x="633" y="190" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">cos θ = −1</text>
+              <text x="633" y="207" text-anchor="middle" fill="var(--bad)" font-size="11">zıt</text>
+
+              <text x="545" y="250" text-anchor="middle" fill="var(--muted)" font-size="10.5">RAG sistemleri "en benzer belgeyi" tam olarak bu açıyla bulur</text>
+            </g>
+          </svg>
+          <figcaption>Vektörler kökenden çıkan oklardır; aradaki açının kosinüsü benzerliği tek sayıya indirger. Bu fikir, embedding aramasının kalbidir.</figcaption>
+        </figure>
+
+        <p>Bir <strong>matris (matrix)</strong> ise vektörlerin üst üste dizilmiş hâlidir — yani senin zaten çok iyi tanıdığın şey: <strong>bir veri tablosu.</strong> Satırlar gözlemleri (kullanıcılar, filmler, işlemler), sütunlar özellikleri temsil eder. "1000 satır × 20 sütunluk bir DataFrame" ile "1000×20'lik bir matris" aynı nesnedir; pandas'ta <code>df.values</code> dediğin anda elinde NumPy matrisi vardır.</p>
+        <p>Sıra en kritik işlemde: <strong>matris çarpımı (matrix multiplication)</strong>. İki matrisi çarpmak, birinin her <em>satırı</em> ile diğerinin her <em>sütununun</em> iç çarpımını almaktır. Tek kural: içteki boyutlar eşleşmeli — (2×3) bir matris ancak (3×k) bir matrisle çarpılabilir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 265" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="2x3 ve 3x2 matrisin çarpımı: satır-sütun eşleşmesi">
+            <defs>
+              <marker id="arr_mm" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              <marker id="arr_mm2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--ok)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="350" y="30" text-anchor="middle" fill="var(--muted)" font-size="11.5" font-weight="600">içteki boyutlar eşleşmeli: (2×3) · (3×2) → sonuç (2×2)</text>
+
+              <!-- A matrisi (2x3), 1. satır vurgulu -->
+              <rect x="60" y="80" width="46" height="36" fill="rgba(var(--acc-rgb),.25)" stroke="var(--dg-line)"/>
+              <rect x="106" y="80" width="46" height="36" fill="rgba(var(--acc-rgb),.25)" stroke="var(--dg-line)"/>
+              <rect x="152" y="80" width="46" height="36" fill="rgba(var(--acc-rgb),.25)" stroke="var(--dg-line)"/>
+              <rect x="60" y="116" width="46" height="36" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+              <rect x="106" y="116" width="46" height="36" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+              <rect x="152" y="116" width="46" height="36" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+              <text x="83" y="103" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="600">2</text>
+              <text x="129" y="103" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="600">1</text>
+              <text x="175" y="103" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="600">3</text>
+              <text x="83" y="139" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="600">0</text>
+              <text x="129" y="139" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="600">4</text>
+              <text x="175" y="139" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="600">1</text>
+              <text x="129" y="175" text-anchor="middle" fill="var(--muted)" font-size="11.5">A (2×3)</text>
+
+              <text x="225" y="124" text-anchor="middle" fill="var(--ink)" font-size="20" font-weight="700">·</text>
+
+              <!-- B matrisi (3x2), 1. sütun vurgulu -->
+              <rect x="260" y="62" width="46" height="36" fill="var(--ok)" fill-opacity=".16" stroke="var(--dg-line)"/>
+              <rect x="260" y="98" width="46" height="36" fill="var(--ok)" fill-opacity=".16" stroke="var(--dg-line)"/>
+              <rect x="260" y="134" width="46" height="36" fill="var(--ok)" fill-opacity=".16" stroke="var(--dg-line)"/>
+              <rect x="306" y="62" width="46" height="36" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+              <rect x="306" y="98" width="46" height="36" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+              <rect x="306" y="134" width="46" height="36" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+              <text x="283" y="85" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="600">1</text>
+              <text x="283" y="121" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="600">0</text>
+              <text x="283" y="157" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="600">2</text>
+              <text x="329" y="85" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="600">2</text>
+              <text x="329" y="121" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="600">1</text>
+              <text x="329" y="157" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="600">0</text>
+              <text x="306" y="192" text-anchor="middle" fill="var(--muted)" font-size="11.5">B (3×2)</text>
+
+              <text x="393" y="124" text-anchor="middle" fill="var(--ink)" font-size="18" font-weight="700">=</text>
+
+              <!-- C matrisi (2x2), sonuç hücresi vurgulu -->
+              <rect x="430" y="80" width="46" height="36" fill="rgba(var(--acc-rgb),.3)" stroke="var(--acc)" stroke-width="1.8"/>
+              <rect x="476" y="80" width="46" height="36" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+              <rect x="430" y="116" width="46" height="36" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+              <rect x="476" y="116" width="46" height="36" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+              <text x="453" y="103" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="700">8</text>
+              <text x="499" y="103" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="600">5</text>
+              <text x="453" y="139" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="600">2</text>
+              <text x="499" y="139" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="600">4</text>
+              <text x="476" y="175" text-anchor="middle" fill="var(--muted)" font-size="11.5">C (2×2)</text>
+
+              <!-- satır ve sütunun sonuca akışı -->
+              <path d="M202 90 C 290 35, 390 38, 445 76" stroke="var(--acc)" stroke-width="1.6" fill="none" stroke-dasharray="4 3" marker-end="url(#arr_mm)"/>
+              <path d="M285 56 C 310 24, 420 22, 456 74" stroke="var(--ok)" stroke-width="1.6" fill="none" stroke-dasharray="4 3" marker-end="url(#arr_mm2)"/>
+
+              <text x="350" y="225" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="600">C[1,1] = (2·1) + (1·0) + (3·2) = 8  →  1. satır ile 1. sütunun iç çarpımı</text>
+              <text x="350" y="248" text-anchor="middle" fill="var(--muted)" font-size="11.5">sinir ağı katmanı tam olarak budur: girdi matrisi × ağırlık matrisi</text>
+            </g>
+          </svg>
+          <figcaption>Sonuç matrisinin her hücresi, bir satır ile bir sütunun iç çarpımıdır. GPU'ların derin öğrenmede kral olmasının sebebi bu işlemi paralelleştirebilmeleridir.</figcaption>
+        </figure>
+
+        <p>Bu işlem neden bu kadar önemli? Çünkü <strong>bir sinir ağı katmanı, matris çarpımının ta kendisidir:</strong> girdi verisi <code>X</code> (satırlar = örnekler) ile öğrenilen ağırlık matrisi <code>W</code> çarpılır, çıktı bir sonraki katmana akar. "GPT'nin 175 milyar parametresi" dediğinde, kastedilen şey devasa <code>W</code> matrislerinin içindeki sayılardır. Bir LLM'in çalışması, art arda dizilmiş matris çarpımlarından ibarettir.</p>
+        <p>Satır–sütun eşleşmesinin yapı taşı olan <strong>iç çarpım (dot product)</strong> ise kendi başına da yıldızdır: iki vektörün karşılıklı elemanlarını çarpıp toplarsın, tek bir sayı çıkar. Bu sayı, vektörler aynı yönü gösteriyorsa büyük, dikse sıfırdır. İç çarpımı vektör uzunluklarına bölersen yukarıdaki diyagramdaki <strong>kosinüs benzerliğini</strong> elde edersin — <a href="m7-rag.html">RAG ve vektör veritabanları konusunda</a> "sorguya en benzer belgeyi bul" işlemi, milyonlarca kez tekrarlanan bu hesaptır.</p>
+
+        <figure class="codebox">
+          <figcaption>Python — NumPy ile vektör ve matris işlemleri</figcaption>
+          <pre><code data-lang="python">import numpy as np
+
+# Özellik vektörleri: [süre_dk, aksiyon_skoru, komedi_skoru]
+film_a = np.array([120, 0.9, 0.1])
+film_b = np.array([115, 0.8, 0.2])
+
+# İç çarpım (dot product): benzerliğin ham ölçüsü
+print(np.dot(film_a, film_b))    # 13800.74
+
+# Veri tablosu = matris: 3 film × 3 özellik
+X = np.array([[120, 0.9, 0.1],
+              [115, 0.8, 0.2],
+              [ 95, 0.1, 0.9]])
+print(X.shape)                   # (3, 3) → (satır, sütun)
+
+# Matris çarpımı: her filmi 2 boyuta indiren bir "katman"
+W = np.random.rand(3, 2)         # ağırlık matrisi (3×2)
+print((X @ W).shape)             # (3, 2) → iç boyutlar eşleşti
+
+# Sütun bazında istatistik: her özelliğin ortalaması ve sapması
+print(X.mean(axis=0))            # [110.  0.6  0.4]
+print(X.std(axis=0))             # her sütunun standart sapması</code></pre>
+        </figure>
+
+        <h2>Kalkülüs: değişimin matematiği</h2>
+        <p><strong>Türev (derivative)</strong>, bir şeyin <em>anlık değişim hızıdır</em>. Arabanın konumunun türevi hızıdır; hızın türevi ivmesidir. Grafik diliyle: bir eğrinin herhangi bir noktasındaki türev, o noktadaki <strong>eğimdir</strong>. Eğim pozitifse fonksiyon artıyor, negatifse azalıyor, sıfırsa bir tepede ya da çukurda duruyorsun demektir.</p>
+        <p>ML'de bunun kullanıldığı yer çok nettir. Modelin bir <strong>hata fonksiyonu (loss)</strong> vardır: tahminlerinin gerçekten ne kadar saptığını ölçen tek bir sayı. Eğitimin tüm amacı bu sayıyı küçültmektir. Peki nasıl? Her ağırlık için şu soruyu sorarak: <em>"Bu ağırlığı birazcık artırırsam hata ne yapar?"</em> Bu sorunun matematiksel cevabı türevdir.</p>
+        <p>Model milyonlarca ağırlığa sahip olduğu için, her birine göre ayrı ayrı türev alınır ve bu türevler bir vektörde toplanır. İşte bu vektöre <strong>gradyan (gradient)</strong> denir: çok boyutlu türev. Gradyan her zaman <em>hatanın en hızlı arttığı yönü</em> gösterir — dolayısıyla tersine yürürsen hata en hızlı şekilde azalır. Sisli bir dağda kaybolmuş gibisin: haritayı göremiyorsun ama ayaklarının altındaki eğimi hissediyorsun; hep en dik iniş yönüne küçük adımlar atarsan vadiye ulaşırsın.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 660 320" width="660" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Parabol üzerinde gradyan inişi adımları minimuma iniyor">
+            <defs>
+              <marker id="arr_gdax" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--muted)"/></marker>
+              <marker id="arr_gd" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="345" y="28" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Gradyan inişi (gradient descent): eğimi izleyerek minimuma in</text>
+
+              <path d="M70 40 L70 280" stroke="var(--muted)" stroke-width="1.4"/>
+              <path d="M70 280 L620 280" stroke="var(--muted)" stroke-width="1.4" marker-end="url(#arr_gdax)"/>
+              <text x="40" y="165" text-anchor="middle" fill="var(--muted)" font-size="11" transform="rotate(-90 40 165)">Hata (loss)</text>
+              <text x="580" y="302" text-anchor="middle" fill="var(--muted)" font-size="11">parametre w</text>
+
+              <!-- hata eğrisi (parabol) -->
+              <path d="M110 70 Q 355 430 600 70" stroke="var(--acc)" stroke-width="2.2" fill="none" opacity=".85"/>
+
+              <!-- iniş adımları -->
+              <circle cx="159" cy="135" r="6" fill="var(--acc)"/>
+              <circle cx="218" cy="194" r="6" fill="var(--acc)"/>
+              <circle cx="277" cy="232" r="6" fill="var(--acc)"/>
+              <circle cx="326" cy="247" r="6" fill="var(--acc)"/>
+              <circle cx="355" cy="250" r="7.5" fill="var(--ok)"/>
+
+              <path d="M167 143 L209 186" stroke="var(--acc)" stroke-width="2" marker-end="url(#arr_gd)"/>
+              <path d="M226 202 L268 226" stroke="var(--acc)" stroke-width="2" marker-end="url(#arr_gd)"/>
+              <path d="M286 236 L317 245" stroke="var(--acc)" stroke-width="2" marker-end="url(#arr_gd)"/>
+              <path d="M335 249 L345 250" stroke="var(--acc)" stroke-width="2" marker-end="url(#arr_gd)"/>
+
+              <text x="152" y="112" text-anchor="middle" fill="var(--muted)" font-size="11">başlangıç: rastgele w</text>
+              <line x1="367" y1="253" x2="420" y2="264" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="500" y="268" text-anchor="middle" fill="var(--ok)" font-size="11.5" font-weight="700">minimum: en düşük hata</text>
+
+              <text x="500" y="95" text-anchor="middle" fill="var(--acc)" font-size="13" font-weight="700">w ← w − η · eğim</text>
+              <text x="500" y="117" text-anchor="middle" fill="var(--muted)" font-size="11">η (öğrenme hızı): adım büyüklüğü</text>
+              <text x="500" y="160" text-anchor="middle" fill="var(--muted)" font-size="11">eğim dikken adımlar büyük,</text>
+              <text x="500" y="177" text-anchor="middle" fill="var(--muted)" font-size="11">minimuma yaklaştıkça küçülür</text>
+            </g>
+          </svg>
+          <figcaption>Her adımda eğime bak, tersi yönde yürü. Sinir ağı eğitiminin özü bu döngüdür — milyonlarca boyutta ama aynı fikirle.</figcaption>
+        </figure>
+
+        <p>Bu fikrin tohumunu şimdi atıyoruz çünkü <a href="m6-sinir-aglari.html">sinir ağlarının temelleri konusunda</a> aynı diyagramın büyüğüyle karşılaşacaksın: backpropagation, gradyanı katman katman geriye taşımanın; Adam gibi optimizer'lar ise adım büyüklüğünü akıllıca ayarlamanın yöntemidir. Hepsinin çekirdeği bu parabol.</p>
+
+        <div class="tip"><b>Türevi elle hesaplamayacaksın.</b> PyTorch ve TensorFlow, gradyanları otomatik hesaplar (autograd). Senin işin türev formülü ezberlemek değil; "gradyan büyükse model o parametreye çok duyarlı", "gradyan sıfırlanmışsa öğrenme durmuş" gibi cümleleri okuyabilmek.</div>
+
+        <h2>Olasılık: belirsizliğin matematiği</h2>
+        <p>Olasılık, sonucundan emin olamadığımız durumları sayıya dökme aracıdır. Bir <strong>olay (event)</strong> — "zar 6 gelir", "e-posta spam'dir" — 0 ile 1 arasında bir olasılık taşır: P(zar 6) = 1/6 ≈ 0.17. Tüm olası sonuçların olasılıkları toplamı 1'dir.</p>
+        <p>İşler, <strong>koşullu olasılık (conditional probability)</strong> ile ilginçleşir: P(A|B), "B'nin gerçekleştiğini <em>bildiğimizde</em> A'nın olasılığı" demektir. Yeni bilgi, olasılığı değiştirir: yarın yağmur olasılığı %20 olabilir; ama "bu akşam gökyüzü kapalı" bilgisi geldiyse aynı soru %60'a çıkabilir. ML modellerinin çoğu aslında koşullu olasılık makinesidir: P(spam | e-postanın içeriği), P(hastalık | test sonucu), P(sonraki kelime | önceki kelimeler).</p>
+        <p><strong>Bayes teoremi</strong>, koşullu olasılığı <em>tersine çevirmenin</em> formülüdür ve pratikte paha biçilmezdir çünkü genellikle elimizde ters yönün verisi vardır. Spam örneğiyle: geçmiş verilerden P(kelime | spam)'i saymak kolaydır ("spam e-postaların %60'ında 'kazandınız' geçiyor"); ama asıl merak ettiğimiz P(spam | kelime)'dir ("içinde 'kazandınız' geçen şu e-posta spam mı?"). Bayes ikisini birbirine bağlar:</p>
+        <p style="text-align:center"><code>P(spam | kelime) = P(kelime | spam) · P(spam) / P(kelime)</code></p>
+
+        <figure class="codebox">
+          <figcaption>Python — Bayes teoremi ile elle spam hesabı</figcaption>
+          <pre><code data-lang="python"># Soru: içinde "kazandınız" geçen bir e-posta spam mı?
+
+p_spam = 0.30             # P(spam): tüm e-postaların %30'u spam
+p_normal = 0.70           # P(normal): geri kalanı
+
+p_kelime_spam = 0.60      # P("kazandınız" | spam): spam'lerin %60'ında var
+p_kelime_normal = 0.05    # P("kazandınız" | normal): normallerin %5'inde
+
+# Payda: kelimenin herhangi bir e-postada görülme olasılığı
+p_kelime = p_kelime_spam * p_spam + p_kelime_normal * p_normal
+print(p_kelime)           # 0.60*0.30 + 0.05*0.70 = 0.215
+
+# Bayes: P(spam | kelime) = P(kelime | spam) * P(spam) / P(kelime)
+p_spam_kelime = p_kelime_spam * p_spam / p_kelime
+print(round(p_spam_kelime, 3))   # 0.837 → %84 ihtimalle spam!
+
+# Kelimeyi görmeden önce %30 olan inanç, kanıtla %84'e güncellendi.
+# Naive Bayes sınıflandırıcısı bunu binlerce kelimeyle yapar.</code></pre>
+        </figure>
+
+        <p>Son parça: <strong>dağılım (distribution)</strong>, bir değişkenin hangi değerleri hangi sıklıkla aldığının haritasıdır. Üçünü tanıman yeterli:</p>
+        <ul>
+          <li><strong>Uniform (düzgün)</strong> — her sonuç eşit olasılıkta: adil zar, rastgele sayı üreteci.</li>
+          <li><strong>Binomial (binom)</strong> — n bağımsız denemede kaç "başarı" çıkar: 100 kullanıcıya gönderilen e-postadan kaçı açılır?</li>
+          <li><strong>Normal (Gauss)</strong> — doğanın favorisi: boy, ölçüm hatası, çok sayıda küçük etkenin toplamı hep bu çan eğrisine yaklaşır. Merkezde yoğun, uçlarda seyrek.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 680 340" width="680" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Normal dağılım çanı: mü ve sigma bölgeleri, yüzde 68 ve yüzde 95">
+            <defs>
+              <marker id="arr_nd" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--ink)"/></marker>
+              <marker id="arr_nd2" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto"><path d="M0 0L5 2.5L0 5Z" fill="var(--muted)"/></marker>
+              <clipPath id="bellclip">
+                <path d="M90 248 C 200 244, 250 70, 340 70 C 430 70, 480 244, 590 248 L 590 250 L 90 250 Z"/>
+              </clipPath>
+            </defs>
+            <g font-family="inherit">
+              <text x="340" y="28" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Normal dağılım: veri, ortalama (μ) etrafında kümelenir</text>
+
+              <!-- çan altı bölgeler (kırpılmış) -->
+              <rect x="200" y="60" width="70" height="190" fill="rgba(var(--acc-rgb),.12)" clip-path="url(#bellclip)"/>
+              <rect x="410" y="60" width="70" height="190" fill="rgba(var(--acc-rgb),.12)" clip-path="url(#bellclip)"/>
+              <rect x="270" y="60" width="140" height="190" fill="rgba(var(--acc-rgb),.28)" clip-path="url(#bellclip)"/>
+
+              <!-- eksen ve çan eğrisi -->
+              <path d="M70 250 L610 250" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <path d="M90 248 C 200 244, 250 70, 340 70 C 430 70, 480 244, 590 248" stroke="var(--acc)" stroke-width="2.2" fill="none"/>
+
+              <!-- dikey kılavuzlar -->
+              <path d="M340 248 L340 76" stroke="var(--acc)" stroke-width="1.3" stroke-dasharray="4 3"/>
+              <path d="M270 248 L270 112" stroke="var(--muted)" stroke-width="1.1" stroke-dasharray="4 3"/>
+              <path d="M410 248 L410 112" stroke="var(--muted)" stroke-width="1.1" stroke-dasharray="4 3"/>
+              <path d="M200 248 L200 182" stroke="var(--muted)" stroke-width="1.1" stroke-dasharray="4 3"/>
+              <path d="M480 248 L480 182" stroke="var(--muted)" stroke-width="1.1" stroke-dasharray="4 3"/>
+
+              <!-- kuyruk notu -->
+              <text x="145" y="140" text-anchor="middle" fill="var(--muted)" font-size="11">kuyruk: nadir uç değerler</text>
+              <path d="M140 150 C 128 180, 118 205, 112 230" stroke="var(--muted)" stroke-width="1.2" fill="none" marker-end="url(#arr_nd2)"/>
+
+              <!-- eksen etiketleri -->
+              <text x="200" y="270" text-anchor="middle" fill="var(--muted)" font-size="11">μ−2σ</text>
+              <text x="270" y="270" text-anchor="middle" fill="var(--muted)" font-size="11">μ−σ</text>
+              <text x="340" y="270" text-anchor="middle" fill="var(--acc)" font-size="12" font-weight="700">μ</text>
+              <text x="410" y="270" text-anchor="middle" fill="var(--muted)" font-size="11">μ+σ</text>
+              <text x="480" y="270" text-anchor="middle" fill="var(--muted)" font-size="11">μ+2σ</text>
+
+              <!-- %68 ölçü çizgisi -->
+              <path d="M322 292 L271 292" stroke="var(--acc)" stroke-width="1.4" marker-end="url(#arr_nd)"/>
+              <path d="M358 292 L409 292" stroke="var(--acc)" stroke-width="1.4" marker-end="url(#arr_nd)"/>
+              <text x="340" y="296" text-anchor="middle" fill="var(--acc)" font-size="12" font-weight="700">%68</text>
+
+              <!-- %95 ölçü çizgisi -->
+              <path d="M314 318 L201 318" stroke="var(--ink)" stroke-width="1.4" marker-end="url(#arr_nd)"/>
+              <path d="M366 318 L479 318" stroke="var(--ink)" stroke-width="1.4" marker-end="url(#arr_nd)"/>
+              <text x="340" y="322" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">%95</text>
+            </g>
+          </svg>
+          <figcaption>Verinin ~%68'i ortalamanın ±1σ, ~%95'i ±2σ içinde kalır. "μ'den 3σ uzaktaki değer" pratikte anomali adayıdır.</figcaption>
+        </figure>
+
+        <h2>İstatistik: veriyi özetleme sanatı</h2>
+        <p>Elinde bir milyon satırlık maaş verisi var; tek tek bakamazsın. İstatistik, bu yığını birkaç anlamlı sayıya indirger. Merkez ölçüleriyle başlayalım:</p>
+        <ul>
+          <li><strong>Ortalama (mean)</strong> — toplamı say'ya böl. Tanıdık ama kırılgan: uç değerlere çok duyarlıdır.</li>
+          <li><strong>Medyan (median)</strong> — sıralayınca ortadaki değer. Uç değerlere dayanıklıdır.</li>
+          <li><strong>Mod (mode)</strong> — en sık görülen değer. Kategorik veride tek seçenektir.</li>
+        </ul>
+        <p>Klasik örnek: 9 çalışanın maaşı 40 bin, patronunki 1 milyon olsun. Ortalama maaş 136 bin çıkar — kimsenin gerçeğini yansıtmaz. Medyan ise 40 bindir ve tabloyu dürüstçe anlatır. Bu yüzden gelir, ev fiyatı, gecikme süresi gibi çarpık dağılımlarda hep medyana da bak.</p>
+        <p>Merkez yetmez; <strong>yayılım</strong> da gerekir. İki şubenin günlük satış ortalaması aynı (100 adet) olabilir; ama biri her gün 95–105 bandında, öbürü 20 ile 300 arasında savruluyorsa bu iki işletme aynı değildir. Yayılımı ölçen iki kardeş sayı: <strong>varyans (variance)</strong> — değerlerin ortalamadan sapmalarının karelerinin ortalaması — ve onun karekökü olan <strong>standart sapma (standard deviation)</strong>. Standart sapmayı severiz çünkü verinin kendi birimindedir: "günlük satış 100 ± 5 adet" gibi okunur ve yukarıdaki normal dağılım diyagramındaki σ'nın ta kendisidir.</p>
+        <p>Son kavram, iki değişkenin ilişkisi: <strong>korelasyon (correlation)</strong>. −1 ile +1 arasında bir sayıdır: +1'e yakınsa birlikte artıyorlar (boy–kilo), −1'e yakınsa biri artarken öbürü azalıyor (fiyat–satış adedi), 0 civarındaysa doğrusal bir ilişki görünmüyor demektir.</p>
+
+        <div class="warn"><b>Korelasyon ≠ nedensellik.</b> Dondurma satışıyla boğulma vakaları güçlü pozitif korelasyon gösterir; ama dondurma kimseyi boğmaz — ikisini de artıran gizli değişken <em>sıcaklıktır</em>. Veride ilişki bulmak kolay, nedeni kanıtlamak zordur; "A, B'ye yol açıyor" demeden önce deney (ör. A/B testi) ya da alan bilgisi gerekir. Bu cümleyi mülakatlarda da duyacaksın.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Bu dört alan, ilerleyen modüllerde şu kılıklarda geri gelecek:</p>
+        <ul>
+          <li><strong>İç çarpım ve kosinüs benzerliği →</strong> embedding araması, "en yakın belgeyi bul" (<a href="m7-rag.html">RAG ve vektör veritabanları</a>).</li>
+          <li><strong>Matris çarpımı →</strong> her sinir ağı katmanı; GPU'nun varlık sebebi (<a href="m6-sinir-aglari.html">sinir ağlarının temelleri</a>).</li>
+          <li><strong>Gradyan →</strong> gradient descent, backpropagation, "learning rate'i düşür" tartışmaları (Modül 6).</li>
+          <li><strong>Bayes →</strong> Naive Bayes sınıflandırıcısı hâlâ güçlü bir spam/metin taban çizgisidir (<a href="m5-supervised.html">supervised learning</a>).</li>
+          <li><strong>Ortalama ve standart sapma →</strong> feature scaling/standardizasyon: modele girmeden önce her sütunu μ=0, σ=1'e çekmek (<a href="m5-feature-engineering.html">feature engineering</a>).</li>
+          <li><strong>Normal dağılım →</strong> μ±3σ dışına düşen değerleri yakalayan anomali tespiti (<a href="m5-unsupervised.html">unsupervised learning</a>) ve veri kalitesi alarmları.</li>
+          <li><strong>Korelasyon →</strong> keşifsel analizde özellik eleme; "bu iki sütun aynı bilgiyi taşıyor" kararları.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Bir sinir ağı katmanı, matematiksel olarak hangi işlemi yapar ve boyut kuralı nedir?</summary>
+            <div class="answer"><b>Matris çarpımı:</b> girdi matrisi <code>X</code> ile ağırlık matrisi <code>W</code> çarpılır. Kural: içteki boyutlar eşleşmeli — (örnek×özellik) boyutlu <code>X</code>, (özellik×çıktı) boyutlu <code>W</code> ile çarpılabilir. Sonucun her hücresi bir satır–sütun iç çarpımıdır.</div>
+          </details>
+          <details class="quiz">
+            <summary>Gradient descent'te adımlar neden gradyanın <em>tersi</em> yönünde atılır?</summary>
+            <div class="answer">Gradyan, hatanın <b>en hızlı arttığı</b> yönü gösterir. Amacımız hatayı azaltmak olduğu için tam tersine yürürüz: <code>w ← w − η·gradyan</code>. Minimuma yaklaştıkça eğim sıfıra yaklaşır, bu yüzden adımlar kendiliğinden küçülür.</div>
+          </details>
+          <details class="quiz">
+            <summary>P(kelime | spam) = 0.60 iken P(spam | kelime) neden farklı çıkar (örneğimizde 0.84)?</summary>
+            <div class="answer">İkisi <b>farklı sorulardır</b>: ilki "spam'lerin ne kadarında bu kelime var?", ikincisi "bu kelimeyi gören biri spam'le mi karşılaştı?" Bayes teoremi ikisini P(spam) ön bilgisi ve P(kelime) paydası üzerinden bağlar: 0.60·0.30 / 0.215 ≈ 0.84. Yönü karıştırmak, tıpta ve hukukta bile yapılan meşhur bir hatadır.</div>
+          </details>
+          <details class="quiz">
+            <summary>Bir analist "dondurma satışı ile boğulma vakaları arasında 0.9 korelasyon buldum, dondurma satışını kısıtlayalım" diyor. Sorun ne?</summary>
+            <div class="answer"><b>Korelasyon nedensellik değildir.</b> İkisini birden artıran gizli değişken (confounder) sıcaklıktır: yazın hem dondurma satılır hem yüzmeye gidilir. Neden-sonuç iddiası için korelasyon yetmez; kontrollü deney (A/B testi) ya da gizli değişkenleri dışlayan bir analiz gerekir.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Vektör</span><span class="term-en">Vector</span><span class="lvl lvl-orta">Orta</span></div><p>Sıralı sayı listesi; ML'de bir varlığı sayılarla temsil eden özellik vektörü. Embedding'lerin temel yapısı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Matris</span><span class="term-en">Matrix</span><span class="lvl lvl-orta">Orta</span></div><p>Satır ve sütunlardan oluşan sayı tablosu. Veri kümeleri ve model ağırlıkları matris olarak tutulur.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Matris Çarpımı</span><span class="term-en">Matrix Multiplication</span><span class="lvl lvl-orta">Orta</span></div><p>Satır–sütun iç çarpımlarıyla iki matrisi birleştirme; sinir ağı katmanının matematiksel karşılığı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">İç Çarpım</span><span class="term-en">Dot Product</span><span class="lvl lvl-orta">Orta</span></div><p>İki vektörün karşılıklı elemanlarını çarpıp toplama; benzerlik ölçümünün ve kosinüs benzerliğinin temeli.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Türev</span><span class="term-en">Derivative</span><span class="lvl lvl-orta">Orta</span></div><p>Bir fonksiyonun anlık değişim hızı; grafikte eğim. "Ağırlığı artırırsam hata ne yapar?" sorusunun cevabı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Gradyan</span><span class="term-en">Gradient</span><span class="lvl lvl-orta">Orta</span></div><p>Tüm parametrelere göre türevlerin vektörü; hatanın en hızlı arttığı yönü gösterir. Tersine yürüyerek model eğitilir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Olasılık</span><span class="term-en">Probability</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Bir olayın gerçekleşme ihtimalinin 0–1 arası sayısal ölçüsü; belirsizliği hesaplanabilir kılar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Koşullu Olasılık</span><span class="term-en">Conditional Probability</span><span class="lvl lvl-orta">Orta</span></div><p>P(A|B): B bilgisi verildiğinde A'nın olasılığı. Sınıflandırma modellerinin çıktısı özünde budur.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Bayes Teoremi</span><span class="term-en">Bayes' Theorem</span><span class="lvl lvl-orta">Orta</span></div><p>Koşullu olasılığı tersine çeviren formül; kanıt geldikçe inancı güncelleme matematiği. Spam filtrelerinin klasiği.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Dağılım</span><span class="term-en">Distribution</span><span class="lvl lvl-orta">Orta</span></div><p>Bir değişkenin hangi değerleri hangi sıklıkla aldığının haritası: uniform, binomial, normal en sık görülenleri.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Normal Dağılım</span><span class="term-en">Normal Distribution</span><span class="lvl lvl-orta">Orta</span></div><p>Ortalama etrafında simetrik çan eğrisi; %68'i ±1σ içinde. Doğal ölçümlerin ve ölçüm hatalarının tipik şekli.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Varyans</span><span class="term-en">Variance</span><span class="lvl lvl-orta">Orta</span></div><p>Değerlerin ortalamadan sapmalarının karelerinin ortalaması; yayılımın kare birimli ölçüsü.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Standart Sapma</span><span class="term-en">Standard Deviation</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Varyansın karekökü; verinin kendi biriminde yayılım. "100 ± 5" gibi okunur, normal dağılımın σ'sıdır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Korelasyon</span><span class="term-en">Correlation</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>İki değişkenin birlikte hareketinin −1..+1 arası ölçüsü. Güçlü korelasyon bile nedensellik kanıtı değildir.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m1-matematik">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m1-veri-yapilari-algoritmalar.html"><span>← Önceki</span><b>Veri Yapıları ve Algoritmalar</b></a>
+          <a class="next" href="m1-linux-git.html"><span>Sonraki →</span><b>Linux, Terminal ve Git</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

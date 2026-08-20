@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bulut Platformları — Veri Atlası</title>
+<meta name="description" content="IaaS/PaaS/SaaS katmanları, AWS-GCP-Azure eşdeğer servisleri, S3 ve bucket mantığı, serverless Lambda, IAM ve least privilege, region/AZ, egress maliyetleri ve Terraform ile altyapı kodu.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m3" data-slug="m3-bulut">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m3">3. Veri Mühendisliği</a><span class="sep">/</span>
+        <span>Bulut Platformları</span>
+      </nav>
+      <span class="mod-badge">Modül 3 · Veri Mühendisliği</span>
+      <h1>Bulut Platformları</h1>
+      <p class="en-title">Cloud Platforms</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~17 dk okuma</span>
+        <span class="chip">🔤 14 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Başkasının bilgisayarını dakikayla kiralamak</h2>
+        <p>Bütün pazarlama cilasını kazırsan <strong>bulut bilişim (cloud computing)</strong> şudur: dev veri merkezleri işleten şirketlerin bilgisayarlarını, internet üzerinden, dakika (hatta saniye) bazlı kiralamak. Eskiden bir sunucu istiyorsan satın alırdın: aylar süren tedarik, peşin yatırım (<strong>CAPEX</strong>), soğutmalı sistem odası ve "üç yıl sonra ne kadar kapasite lazım olur?" falcılığı. Bulutta aynı makine üç dakikada açılır, kullandığın süre kadar ödersin (<strong>OPEX</strong>), işin bitince kapatırsın ve fatura durur.</p>
+        <p>Asıl sihir ise <strong>elastikiyet</strong>: kapasite ihtiyacınla birlikte büyüyüp küçülebilmek. Kampanya gecesi 50 makine, ertesi sabah 2 makine. Veri işleri doğası gereği "patlamalı"dır — gece iki saat koşan ETL, ay sonu bir gün süren rapor, haftada bir eğitilen model — bu yüzden veri mühendisliği ile bulut neredeyse eş anlamlı hâle geldi: yılın 363 günü boş duracak donanımı kimse satın almak istemez.</p>
+        <div class="tip"><b>Bedavaya pratik yap.</b> Üç büyük sağlayıcının da ücretsiz katmanı (free tier) var; S3'e dosya atıp Lambda tetiklemeyi, BigQuery'de herkese açık veri setlerini sorgulamayı sıfır maliyetle deneyebilirsin. CV'ye "teoride biliyorum" değil "kurdum, çalıştırdım" yazdıran şey budur.</div>
+
+        <h2>Hizmet katmanları: IaaS, PaaS, SaaS</h2>
+        <p>Bulut hizmetleri, "ne kadarını sen yönetiyorsun?" sorusuna göre üç katmana ayrılır. Pizza analojisiyle:</p>
+        <ul>
+          <li><strong>IaaS (Infrastructure as a Service):</strong> mutfak kiralarsın, pizzayı sen yaparsın. Sağlayıcı sana çıplak sanal makine, disk ve ağ verir (EC2 gibi); işletim sisteminden uygulamaya üstü senindir. En çok kontrol, en çok iş.</li>
+          <li><strong>PaaS (Platform as a Service):</strong> hamur ve fırın hazırdır, sen malzemeyi dizersin. Platform (veritabanı, sorgu motoru, çalışma ortamı) sağlayıcının işidir; sen yalnızca kodunu ve verini getirirsin. BigQuery'ye sunucu kurmazsın — SQL'ini yazarsın.</li>
+          <li><strong>SaaS (Software as a Service):</strong> restorana gidersin, sadece yersin. Hazır uygulamayı tarayıcıdan kullanırsın: Gmail, Slack, Tableau Cloud.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 350" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="IaaS, PaaS ve SaaS sorumluluk merdiveni">
+            <g font-family="inherit">
+              <text x="360" y="22" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Sorumluluk merdiveni: her katmanı kim yönetir?</text>
+              <text x="140" y="50" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">IaaS</text>
+              <text x="360" y="50" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">PaaS</text>
+              <text x="580" y="50" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">SaaS</text>
+              <rect x="40" y="65" width="200" height="40" rx="8" fill="rgba(var(--acc-rgb),.20)" stroke="var(--acc)" stroke-width="1.3"/>
+              <text x="140" y="89" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="600">Uygulama &amp; veri</text>
+              <rect x="40" y="111" width="200" height="40" rx="8" fill="rgba(var(--acc-rgb),.20)" stroke="var(--acc)" stroke-width="1.3"/>
+              <text x="140" y="135" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="600">Runtime &amp; kütüphaneler</text>
+              <rect x="40" y="157" width="200" height="40" rx="8" fill="rgba(var(--acc-rgb),.20)" stroke="var(--acc)" stroke-width="1.3"/>
+              <text x="140" y="181" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="600">İşletim sistemi</text>
+              <rect x="40" y="203" width="200" height="40" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="140" y="227" text-anchor="middle" fill="var(--muted)" font-size="10.5">Sunucu &amp; sanallaştırma</text>
+              <rect x="40" y="249" width="200" height="40" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="140" y="273" text-anchor="middle" fill="var(--muted)" font-size="10.5">Ağ &amp; fiziksel güvenlik</text>
+              <rect x="260" y="65" width="200" height="40" rx="8" fill="rgba(var(--acc-rgb),.20)" stroke="var(--acc)" stroke-width="1.3"/>
+              <text x="360" y="89" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="600">Uygulama &amp; veri</text>
+              <rect x="260" y="111" width="200" height="40" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="360" y="135" text-anchor="middle" fill="var(--muted)" font-size="10.5">Runtime &amp; kütüphaneler</text>
+              <rect x="260" y="157" width="200" height="40" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="360" y="181" text-anchor="middle" fill="var(--muted)" font-size="10.5">İşletim sistemi</text>
+              <rect x="260" y="203" width="200" height="40" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="360" y="227" text-anchor="middle" fill="var(--muted)" font-size="10.5">Sunucu &amp; sanallaştırma</text>
+              <rect x="260" y="249" width="200" height="40" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="360" y="273" text-anchor="middle" fill="var(--muted)" font-size="10.5">Ağ &amp; fiziksel güvenlik</text>
+              <rect x="480" y="65" width="200" height="40" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="580" y="89" text-anchor="middle" fill="var(--muted)" font-size="10.5">Uygulama &amp; veri</text>
+              <rect x="480" y="111" width="200" height="40" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="580" y="135" text-anchor="middle" fill="var(--muted)" font-size="10.5">Runtime &amp; kütüphaneler</text>
+              <rect x="480" y="157" width="200" height="40" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="580" y="181" text-anchor="middle" fill="var(--muted)" font-size="10.5">İşletim sistemi</text>
+              <rect x="480" y="203" width="200" height="40" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="580" y="227" text-anchor="middle" fill="var(--muted)" font-size="10.5">Sunucu &amp; sanallaştırma</text>
+              <rect x="480" y="249" width="200" height="40" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="580" y="273" text-anchor="middle" fill="var(--muted)" font-size="10.5">Ağ &amp; fiziksel güvenlik</text>
+              <text x="140" y="312" text-anchor="middle" fill="var(--faint)" font-size="10">ör. EC2, Compute Engine</text>
+              <text x="360" y="312" text-anchor="middle" fill="var(--faint)" font-size="10">ör. BigQuery, Cloud Run</text>
+              <text x="580" y="312" text-anchor="middle" fill="var(--faint)" font-size="10">ör. Gmail, Tableau Cloud</text>
+              <rect x="205" y="328" width="12" height="12" rx="3" fill="rgba(var(--acc-rgb),.20)" stroke="var(--acc)" stroke-width="1.2"/>
+              <text x="224" y="338" fill="var(--ink)" font-size="10.5" font-weight="600">sen yönetirsin</text>
+              <rect x="340" y="328" width="12" height="12" rx="3" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="359" y="338" fill="var(--muted)" font-size="10.5">sağlayıcı yönetir</text>
+            </g>
+          </svg>
+          <figcaption>Sağa gittikçe sorumluluk sağlayıcıya devrolur. Veri mühendisleri günlerinin çoğunu PaaS katmanında geçirir: sunucu değil, veri yönetirler.</figcaption>
+        </figure>
+
+        <h2>Üç büyük sağlayıcı ve eşdeğer servisleri</h2>
+        <p>Pazarın büyük kısmını üç sağlayıcı paylaşır: <strong>AWS</strong> (Amazon Web Services — en eski ve en geniş katalog), <strong>GCP</strong> (Google Cloud Platform — veri ve ML servisleriyle öne çıkar, BigQuery'nin evi) ve <strong>Azure</strong> (Microsoft — kurumsal dünyayla ve Office ekosistemiyle iç içe). İyi haber: üçü de aynı kavramları farklı isimlerle satar. Birinde temeli öğrenince diğerine geçiş, yeni bir dil değil yeni bir sözlük öğrenmektir:</p>
+        <table>
+          <thead>
+            <tr><th>Katman</th><th>AWS</th><th>GCP</th><th>Azure</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Compute (sanal makine)</td><td>EC2</td><td>Compute Engine</td><td>Virtual Machines</td></tr>
+            <tr><td>Object storage</td><td>S3</td><td>Cloud Storage (GCS)</td><td>Blob Storage</td></tr>
+            <tr><td>Data warehouse</td><td>Redshift</td><td>BigQuery</td><td>Synapse Analytics</td></tr>
+            <tr><td>ETL / veri işleme</td><td>Glue</td><td>Dataflow</td><td>Data Factory</td></tr>
+            <tr><td>ML platformu</td><td>SageMaker</td><td>Vertex AI</td><td>Azure ML</td></tr>
+          </tbody>
+        </table>
+        <p>İş ilanlarında "AWS bilen" yazsa da mülakatta asıl aranan şey servis adları ezberi değil, bu tablodaki <em>katmanların ne işe yaradığını</em> anlamış olmandır.</p>
+
+        <h2>Veri mühendisinin çekirdek servisleri</h2>
+        <p>Katalogda yüzlerce servis var ama veri işinin yüzde doksanı birkaç yapı taşıyla döner:</p>
+        <p><strong>Object storage — verinin ana yurdu.</strong> S3'te dosyalar <strong>bucket</strong> (kova) adı verilen kapsayıcılarda, <strong>key</strong> (anahtar) denen adreslerle durur: <code>s3://sirket-lake/bronze/satis/dt=2026-08-19/part-0.parquet</code>. Klasör gibi görünen şey aslında key'in içindeki <code>/</code> karakterleridir — S3 düz bir anahtar-nesne sözlüğüdür ama bu yanılsama, <a href="m3-warehouse-lake.html">partitioning düzeninin</a> temelini oluşturur. <strong>Lifecycle kuralları</strong> ile eski nesneleri otomatik yönetirsin: 30 gün sonra ucuz erişim sınıfına taşı, 1 yıl sonra arşive indir ya da sil. Dayanıklılığı uç düzeydedir; "verim S3'te" cümlesi pratikte "verim güvende" demektir.</p>
+        <p><strong>Serverless fonksiyonlar — olay tetikli küçük işler.</strong> <strong>AWS Lambda</strong> (GCP'de Cloud Functions) sunucusuz çalışan kod parçasıdır: "S3'e yeni dosya düştüğünde şu Python fonksiyonunu çalıştır" dersin; sağlayıcı makineyi açar, kodu koşar, kapatır. Sunucu yönetimi yok, boşta maliyet yok — yalnız çalıştığı milisaniyeler faturalanır. Küçük dönüşümler, format kontrolleri ve "dosya geldi, pipeline'ı uyandır" tetikleyicileri için biçilmiş kaftandır.</p>
+        <p><strong>Managed (yönetilen) servisler.</strong> <a href="m3-streaming.html">Kafka</a> ve <a href="m3-orkestrasyon.html">Airflow</a> gibi araçları kendi makinelerinde işletmek ciddi operasyon yüküdür; bulut bunları "yönetilen" paket olarak satar: AWS MSK / Confluent Cloud (Kafka), MWAA / Cloud Composer (Airflow). Aynı aracı kullanırsın ama yama, ölçekleme ve gece nöbetleri sağlayıcıya kalır.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 780 300" width="780" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tipik bulut veri mimarisi ve IAM şemsiyesi">
+            <g font-family="inherit">
+              <rect x="20" y="42" width="740" height="216" rx="14" fill="none" stroke="var(--acc)" stroke-width="1.4" stroke-dasharray="6 4"/>
+              <text x="390" y="68" text-anchor="middle" fill="var(--acc)" font-size="11.5" font-weight="700">IAM şemsiyesi: kim, neye, hangi yetkiyle erişir?</text>
+              <rect x="40" y="100" width="124" height="110" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="102" y="122" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Kaynaklar</text>
+              <text x="102" y="145" text-anchor="middle" fill="var(--muted)" font-size="10.5">uygulama DB</text>
+              <text x="102" y="165" text-anchor="middle" fill="var(--muted)" font-size="10.5">API'ler</text>
+              <text x="102" y="185" text-anchor="middle" fill="var(--muted)" font-size="10.5">loglar</text>
+              <rect x="196" y="115" width="124" height="80" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="258" y="145" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Data lake</text>
+              <text x="258" y="167" text-anchor="middle" fill="var(--muted)" font-size="10.5">S3 — ham veri</text>
+              <rect x="352" y="115" width="124" height="80" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="414" y="145" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">İşleme / ETL</text>
+              <text x="414" y="167" text-anchor="middle" fill="var(--muted)" font-size="10.5">Glue · Lambda</text>
+              <rect x="508" y="115" width="124" height="80" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="570" y="145" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Warehouse</text>
+              <text x="570" y="167" text-anchor="middle" fill="var(--muted)" font-size="10">BigQuery · Redshift</text>
+              <rect x="664" y="115" width="88" height="80" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="708" y="145" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">BI</text>
+              <text x="708" y="167" text-anchor="middle" fill="var(--muted)" font-size="10.5">dashboard</text>
+              <path d="M164 155 L192 155" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrbl1)"/>
+              <path d="M320 155 L348 155" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrbl1)"/>
+              <path d="M476 155 L504 155" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrbl1)"/>
+              <path d="M632 155 L660 155" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrbl1)"/>
+              <text x="390" y="240" text-anchor="middle" fill="var(--muted)" font-size="10.5">Her ok bir yetki gerektirir: ör. Lambda'nın rolü yalnız bronze bucket'ını okuyabilir, gold'a yazamaz.</text>
+              <defs>
+                <marker id="arrbl1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              </defs>
+            </g>
+          </svg>
+          <figcaption>Tipik bulut veri mimarisi: kaynaklardan lake'e, oradan işlenerek warehouse ve BI'a. Tüm akış IAM'in yetki şemsiyesi altında yaşar.</figcaption>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Bash — aws cli ile S3'ün günlük dili (kurulum: aws configure)</figcaption>
+          <pre><code data-lang="bash"># Yerel dosyayı bucket'a yükle (cp = kopyala)
+aws s3 cp satis_2026-08.parquet s3://sirket-lake/bronze/satis/
+
+# Bucket'taki "klasörü" listele
+aws s3 ls s3://sirket-lake/bronze/satis/
+
+# Yerel klasörü bucket ile eşitle — yalnız değişen dosyalar gider
+aws s3 sync ./gunluk_ciktilar s3://sirket-lake/bronze/gunluk/
+
+# Bucket toplamda ne kadar tutuyor? (özet + okunur birimler)
+aws s3 ls s3://sirket-lake --recursive --summarize --human-readable
+
+# Terminal alışkanlıkların (Modül 1) burada aynen işe yarar:
+aws s3 ls s3://sirket-lake/bronze/ | grep "2026-08-19"</code></pre>
+        </figure>
+
+        <h2>IAM, region ve availability zone</h2>
+        <p><strong>IAM (Identity and Access Management)</strong>, buluttaki kimlik ve yetki sistemidir: <em>kim</em> (kullanıcı, ekip, ya da bir servisin rolü) <em>neye</em> (şu bucket, şu tablo) <em>ne yapabilir</em> (okuma, yazma, silme)? Temel ilke <strong>least privilege (en az yetki)</strong>: herkese ve her servise, işini yapmaya yetecek en dar yetkiyi ver. ETL job'ının rolü bronze bucket'ı okuyup silver'a yazabilsin; production veritabanını silme yetkisi olmasın. Bu yalnızca güvenlik değil, <a href="m3-veri-kalitesi.html">governance konusunda</a> gördüğün PII erişim kontrolünün de teknik altyapısıdır: "maaş tablosunu kim görebilir?" sorusunun cevabı bir IAM politikasıdır.</p>
+        <p>Coğrafya tarafında iki kavram var: <strong>region</strong>, sağlayıcının bir coğrafyadaki veri merkezi kümesidir (<code>eu-central-1</code> = Frankfurt); <strong>availability zone (AZ)</strong> ise aynı region içindeki, bağımsız elektrik ve ağa sahip ayrı veri merkezleridir. Kritik sistemler en az iki AZ'ye yayılır: biri yanarsa öbürü devam eder. Region seçimini üç şey belirler: kullanıcıya yakınlık (gecikme), fiyat farkları ve <strong>hukuk</strong> — KVKK/GDPR bazı verilerin belirli sınırlar içinde kalmasını gerektirebilir, bu yüzden "veri hangi region'da duruyor?" sorusu hukuk ekibinin de sorusudur.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 300" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Region, availability zone ve servis yerleşimi">
+            <g font-family="inherit">
+              <rect x="30" y="40" width="430" height="225" rx="12" fill="none" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="245" y="64" text-anchor="middle" fill="var(--acc)" font-size="12.5" font-weight="700">Region: eu-central-1 (Frankfurt)</text>
+              <rect x="55" y="85" width="185" height="155" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3" stroke-dasharray="5 3"/>
+              <text x="147" y="108" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">AZ: eu-central-1a</text>
+              <rect x="75" y="125" width="145" height="30" rx="6" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width=".9"/>
+              <text x="147" y="144" text-anchor="middle" fill="var(--ink)" font-size="10.5">sunucular (VM)</text>
+              <rect x="75" y="165" width="145" height="30" rx="6" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width=".9"/>
+              <text x="147" y="184" text-anchor="middle" fill="var(--ink)" font-size="10.5">veritabanı (birincil)</text>
+              <text x="147" y="225" text-anchor="middle" fill="var(--muted)" font-size="9.5">bağımsız güç + ağ</text>
+              <rect x="255" y="85" width="185" height="155" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3" stroke-dasharray="5 3"/>
+              <text x="347" y="108" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">AZ: eu-central-1b</text>
+              <rect x="275" y="125" width="145" height="30" rx="6" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width=".9"/>
+              <text x="347" y="144" text-anchor="middle" fill="var(--ink)" font-size="10.5">sunucular (VM)</text>
+              <rect x="275" y="165" width="145" height="30" rx="6" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width=".9"/>
+              <text x="347" y="184" text-anchor="middle" fill="var(--ink)" font-size="10.5">veritabanı (kopya)</text>
+              <text x="347" y="225" text-anchor="middle" fill="var(--muted)" font-size="9.5">bağımsız güç + ağ</text>
+              <path d="M220 180 L275 180" stroke="var(--ok)" stroke-width="1.5" stroke-dasharray="3 3"/>
+              <text x="247" y="173" text-anchor="middle" fill="var(--ok)" font-size="9">eşzamanlı kopya</text>
+              <rect x="500" y="40" width="190" height="225" rx="12" fill="none" stroke="var(--dg-line)" stroke-width="1.4" stroke-dasharray="6 4"/>
+              <text x="595" y="64" text-anchor="middle" fill="var(--muted)" font-size="11.5" font-weight="600">Region: eu-west-1</text>
+              <rect x="525" y="110" width="140" height="60" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="595" y="135" text-anchor="middle" fill="var(--muted)" font-size="10.5">felaket kurtarma</text>
+              <text x="595" y="152" text-anchor="middle" fill="var(--muted)" font-size="10.5">yedeği (DR)</text>
+              <path d="M464 150 L496 150" stroke="var(--dg-line)" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrbl2)"/>
+              <text x="479" y="138" text-anchor="middle" fill="var(--muted)" font-size="9">asenkron</text>
+              <text x="360" y="290" text-anchor="middle" fill="var(--muted)" font-size="11">AZ = aynı bölgede bağımsız veri merkezi · Region = ayrı coğrafya. Kritik sistemler en az 2 AZ'ye yayılır.</text>
+              <defs>
+                <marker id="arrbl2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+              </defs>
+            </g>
+          </svg>
+          <figcaption>Kutunun içinde kutu: region, birden çok AZ barındırır; veritabanı bir AZ'de birincil, diğerinde kopya olarak yaşar. Uzak region'a da felaket yedeği gider.</figcaption>
+        </figure>
+
+        <div class="note"><b>Veri nerede "oturuyor"?</b> KVKK ve GDPR bağlamında region seçimi hukuki bir karardır: kişisel verinin hangi ülkede saklandığı ve hangi ülkelere aktarıldığı düzenlemeye tabidir. Mimaride region'ı belirlemeden önce "bu veride PII var mı?" sorusunu sor — <a href="m3-veri-kalitesi.html">bir önceki konu</a> bunun araç setiydi.</div>
+
+        <h2>Maliyet okuryazarlığı ve altyapı kodu</h2>
+        <p>Bulut faturası üç ana kalemden oluşur: <strong>depolama</strong> (GB × ay), <strong>compute</strong> (makine × saat ya da taranan veri) ve çoğu yeni başlayanın unuttuğu <strong>ağ çıkışı (egress)</strong>. Veri buluta <em>girerken</em> genelde ücretsizdir ama <em>dışarı çıkarken</em> — internete inerken ya da region değiştirirken — GB başına ücretlendirilir. "10 TB'lık lake'i başka region'daki warehouse'a taşıyalım" cümlesi, farkında olmadan yazılmış bir çek olabilir; mimaride veriyle compute'u aynı region'da tutmak bu yüzden refleks hâline gelmelidir.</p>
+        <div class="warn"><b>"Unutulan cluster" faciası.</b> Cuma günü deneme için açılan 8 makinelik Spark cluster'ı pazartesi hatırlanırsa, hafta sonu boyunca boşta çalışmış ve saat başı faturalanmıştır. Panzehirleri basittir: bütçe alarmı kur (harcama X'i aşarsa e-posta), kaynaklara sahip/proje etiketi (tag) zorunlu tut, geçici kaynaklara otomatik kapanma (auto-terminate) süresi ver.</div>
+        <p>Bu disiplinin en güçlü aracı <strong>IaC — Infrastructure as Code (altyapı kodu)</strong>: bucket'ları, IAM rollerini ve cluster'ları konsolda tıklayarak değil, <strong>Terraform</strong> gibi araçlarla kod olarak tanımlamak. Kod versiyon kontrolünde yaşar, değişiklik PR review'ından geçer, aynı ortam test ve prod için birebir yeniden kurulabilir ve işi biten her şey <code>terraform destroy</code> ile iz bırakmadan silinir. "Kim, ne zaman, hangi kaynağı açtı?" sorusunun cevabı git geçmişidir — tıklamayla kurulan altyapıda ise kimsenin hatırlamadığı bir efsanedir.</p>
+
+        <figure class="codebox">
+          <figcaption>Terraform — altyapı tıklamayla değil, kodla: S3 bucket + lifecycle kuralı</figcaption>
+          <pre><code data-lang="text"># main.tf — bu dosya ALTYAPININ kendisidir; git'te yaşar, review edilir
+resource "aws_s3_bucket" "lake" {
+  bucket = "sirket-veri-lake"
+
+  tags = {
+    ekip  = "veri-muhendisligi"   # etiket yoksa sahipsiz kaynak olur
+    ortam = "prod"
+  }
+}
+
+# 30 gün dokunulmayan nesneleri ucuz erişim sınıfına taşı
+resource "aws_s3_bucket_lifecycle_configuration" "arsiv" {
+  bucket = aws_s3_bucket.lake.id
+
+  rule {
+    id     = "eski-veriyi-ucuzlat"
+    status = "Enabled"
+    transition {
+      days          = 30
+      storage_class = "STANDARD_IA"
+    }
+  }
+}
+
+# terraform plan  -&gt; önce "ne değişecek?" listesini gösterir
+# terraform apply -&gt; onaylarsan uygular; kod = altyapının tek gerçeği</code></pre>
+        </figure>
+
+        <h2>Sırlar nerede saklanır?</h2>
+        <p>Bulutta çalışan her pipeline'ın bir veritabanı parolası, API anahtarı ya da servis hesabı sertifikası vardır. Bunları nasıl sakladığın altyapının en kritik güvenlik kararıdır — ve en sık yapılan hata bellidir: <strong>koda gömmek.</strong></p>
+        <p>Kodda duran bir anahtar Git geçmişine yazılır. Depo özel olsa bile geçmişten temizlenmesi zordur, ekipteki herkes görebilir ve depo bir gün yanlışlıkla herkese açık hâle gelirse bulunması saniyeler sürer — botlar herkese açık depoları sürekli tarar. Doğru yaklaşım katmanlıdır:</p>
+        <ul>
+          <li><strong>Yerel geliştirmede:</strong> <code>.env</code> dosyası ve mutlaka <code>.gitignore</code>. Kod anahtarı ortam değişkeninden okur (<code>os.environ["DB_PAROLA"]</code>). Depoya yalnızca alan adlarını gösteren bir <code>.env.example</code> konur, gerçek değerler asla.</li>
+          <li><strong>Üretimde:</strong> yönetilen sır kasaları — AWS Secrets Manager, GCP Secret Manager, Azure Key Vault ya da HashiCorp Vault. Uygulama sırrı çalışma anında çeker; sır şifreli durur, erişimi IAM ile sınırlanır ve her okuma denetim kaydına düşer.</li>
+          <li><strong>Daha da iyisi: hiç parola olmasın.</strong> Bulut içindeki servisler birbirine kimlik rolleriyle bağlanabilir (IAM role, workload identity). Hiç saklanmayan bir sır sızdırılamaz.</li>
+          <li><strong>Rotasyon ve sızıntı taraması:</strong> anahtarlar düzenli olarak yenilenmeli, depoya sır kaçmasını engelleyen tarayıcılar (git-secrets, pre-commit kancaları) <a href="m8-cicd-tracking.html">CI hattına</a> bağlanmalıdır.</li>
+        </ul>
+
+        <div class="warn"><b>Bir anahtar bir kez sızdıysa, o anahtar yanmıştır.</b> Commit'i geri almak yetmez — anahtar Git geçmişinde ve muhtemelen birinin yerel klonunda durmaya devam eder. Tek doğru tepki sırayla şudur: <b>anahtarı hemen iptal et</b>, yenisini üret, sonra sızıntının ne kadar süredir açıkta olduğunu ve nelere erişildiğini incele.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Bulut, bu modüldeki her konunun zeminidir; günlük hayatta şöyle görünür:</p>
+        <ul>
+          <li><strong>İlk iş gününde:</strong> sana bir IAM kullanıcısı/rolü açılır; neye erişebildiğin, o rolün politikasıyla sınırlıdır. "Permission denied" hatası gördüğünde artık nereye bakacağını biliyorsun.</li>
+          <li><strong>Pipeline kurarken:</strong> <a href="m3-etl-elt.html">ETL akışın</a> S3 bucket'larına, <a href="m3-orkestrasyon.html">Airflow'un</a> managed sürümüne (MWAA/Composer), <a href="m3-warehouse-lake.html">warehouse'un</a> ise BigQuery ya da Snowflake'e oturur.</li>
+          <li><strong>Maliyet toplantısında:</strong> "bu ayın faturası neden %30 arttı?" sorusuna depolama/compute/egress kırılımıyla cevap vermen beklenir; etiketleme düzgünse cevap bir sorgu uzaklığındadır.</li>
+          <li><strong>PR review'ında:</strong> yeni bucket, yeni rol, yeni cluster — hepsi Terraform dosyası olarak önüne gelir; altyapı değişikliği artık kod değişikliğidir.</li>
+          <li><strong>Mülakatta:</strong> "S3'e dosya düşünce çalışan bir işleme hattı tasarla" klasiği: cevabın Lambda tetikleyicisi, IAM rolleri ve region seçimi gerekçesiyle birlikte bu sayfadadır.</li>
+          <li><strong>ML tarafında:</strong> Modül 8'de göreceğin model eğitim ve deployment altyapıları (SageMaker/Vertex) aynı IAM, aynı object storage, aynı maliyet mantığı üzerinde koşar.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>EC2 üzerine kendi Airflow'unu kurmak ile Cloud Composer kullanmak arasındaki fark hangi hizmet katmanı farkıdır?</summary>
+            <div class="answer">EC2'ye kurulum <b>IaaS</b>: makineyi kiralarsın; işletim sistemi, kurulum, yama ve ölçekleme senindir. Cloud Composer <b>PaaS / managed servis</b>: aynı Airflow'u kullanırsın ama platform işletimini sağlayıcı üstlenir. Kontrol azalır, operasyon yükü de azalır — ekipler çoğunlukla PaaS'ı seçer, çünkü değer üreten şey Airflow'u işletmek değil DAG'lerin kendisidir.</div>
+          </details>
+          <details class="quiz">
+            <summary>Egress nedir ve neden "sürpriz fatura" kaynağıdır?</summary>
+            <div class="answer"><b>Egress, verinin buluttan dışarı (internete ya da başka region'a) çıkarken ödenen ağ ücretidir.</b> Veri içeri girerken genelde bedava olduğu için insanlar çıkışın da bedava olduğunu varsayar. Terabaytlarca veriyi region'lar arası taşıyan bir kopyalama işi ya da dışarıya sürekli veri servis eden bir API, fark edilmeden büyük kalemler yazar. Kural: compute'u verinin yanına götür, veriyi compute'a değil.</div>
+          </details>
+          <details class="quiz">
+            <summary>Least privilege ilkesi ne der; ETL job'ının rolü için somut örneği nedir?</summary>
+            <div class="answer">Her kimliğe (kullanıcı ya da servis rolü) <b>işini yapmaya yetecek en dar yetkiyi</b> ver. Örnek: ETL job'ının rolü bronze bucket'ından <b>okuyabilir</b>, silver bucket'ına <b>yazabilir</b> — ama production veritabanını silemez, maaş tablosunu okuyamaz. Rol ele geçirilse bile hasar, yetkinin dar sınırıyla kısıtlı kalır.</div>
+          </details>
+          <details class="quiz">
+            <summary>Altyapıyı Terraform'la tanımlamak, konsoldan tıklayarak kurmaya göre hangi üç somut avantajı sağlar?</summary>
+            <div class="answer"><b>1) Tekrarlanabilirlik:</b> aynı ortam test/prod için birebir yeniden kurulur. <b>2) İzlenebilirlik:</b> her değişiklik git geçmişinde ve PR review'ındadır; "bu bucket'ı kim açtı?" sorusunun cevabı vardır. <b>3) Temiz yaşam döngüsü:</b> <code>plan</code> ile değişiklik önceden görülür, <code>destroy</code> ile geçici kaynaklar iz bırakmadan silinir — unutulan cluster faciası zorlaşır.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Bulut Bilişim</span><span class="term-en">Cloud Computing</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Hesaplama, depolama ve ağ kaynaklarını internet üzerinden, kullandıkça öde modeliyle kiralama.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">IaaS</span><span class="term-en">Infrastructure as a Service</span><span class="lvl lvl-orta">Orta</span></div><p>Çıplak sanal makine, disk ve ağın kiralandığı katman; işletim sisteminden yukarısı senin sorumluluğundadır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">PaaS</span><span class="term-en">Platform as a Service</span><span class="lvl lvl-orta">Orta</span></div><p>Platformun (veritabanı, sorgu motoru, runtime) hazır sunulduğu katman; sen yalnızca kodunu ve verini getirirsin.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">SaaS</span><span class="term-en">Software as a Service</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Tarayıcıdan kullanılan hazır uygulama; kurulum ve işletim tamamen sağlayıcıdadır (Gmail, Tableau Cloud).</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">AWS</span><span class="term-en">Amazon Web Services</span><span class="lvl lvl-orta">Orta</span></div><p>En eski ve en geniş kataloglu bulut sağlayıcı; S3, EC2, Lambda ve Redshift gibi servislerin evi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">GCP</span><span class="term-en">Google Cloud Platform</span><span class="lvl lvl-orta">Orta</span></div><p>Google'ın bulutu; BigQuery, Dataflow ve Vertex AI ile özellikle veri ve ML tarafında güçlüdür.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Azure</span><span class="term-en">Microsoft Azure</span><span class="lvl lvl-orta">Orta</span></div><p>Microsoft'un bulutu; kurumsal dünyayla ve Office/Active Directory ekosistemiyle sıkı entegredir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">S3 &amp; Bucket</span><span class="term-en">S3 &amp; Bucket</span><span class="lvl lvl-orta">Orta</span></div><p>AWS'nin object storage servisi ve kapsayıcı birimi; nesneler bucket içinde key adreslerinde durur, data lake'lerin zeminidir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Serverless</span><span class="term-en">Serverless</span><span class="lvl lvl-orta">Orta</span></div><p>Sunucu yönetimini tamamen sağlayıcıya bırakan model; kaynak yalnız iş çalışırken var olur ve faturalanır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Lambda Fonksiyonu</span><span class="term-en">AWS Lambda</span><span class="lvl lvl-orta">Orta</span></div><p>Olay tetikli serverless kod: "S3'e dosya düşünce şu fonksiyonu çalıştır" gibi küçük işlerin standart aracı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">IAM</span><span class="term-en">Identity and Access Management</span><span class="lvl lvl-orta">Orta</span></div><p>Buluttaki kimlik ve yetki sistemi: kim, neye, ne yapabilir? Least privilege ilkesinin uygulandığı yer.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Region &amp; Availability Zone</span><span class="term-en">Region &amp; AZ</span><span class="lvl lvl-orta">Orta</span></div><p>Region bir coğrafyadaki veri merkezi kümesi, AZ onun içindeki bağımsız veri merkezi; dayanıklılık ve veri lokasyonunun temeli.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">IaC (Altyapı Kodu)</span><span class="term-en">Infrastructure as Code</span><span class="lvl lvl-ileri">İleri</span></div><p>Altyapıyı Terraform gibi araçlarla kod olarak tanımlama; tekrarlanabilir, review edilebilir, silinebilir altyapı demektir.</p></div>
+
+          <div class="term"><div class="term-head"><span class="term-tr">Secrets Yönetimi</span><span class="term-en">Secrets Management</span><span class="lvl lvl-orta">Orta</span></div><p>Parola, API anahtarı ve sertifikaların koddan ayrı, şifreli ve erişimi denetlenen kasalarda saklanması; sızan anahtar derhal iptal edilir.</p></div>        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m3-bulut">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m3-veri-kalitesi.html"><span>← Önceki</span><b>Veri Kalitesi, Governance ve Lineage</b></a>
+          <a class="next" href="m4-eda.html"><span>Sonraki →</span><b>Keşifsel Veri Analizi ve pandas</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

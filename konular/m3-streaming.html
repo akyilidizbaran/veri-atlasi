@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Streaming ve Event-Driven Mimari — Veri Atlası</title>
+<meta name="description" content="Kafka, topic, partition, offset, consumer group, teslimat garantileri, windowing ve watermark: gerçek zamanlı veri işlemenin ve event-driven mimarinin temelleri.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m3" data-slug="m3-streaming">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m3">3. Veri Mühendisliği</a><span class="sep">/</span>
+        <span>Streaming ve Event-Driven Mimari</span>
+      </nav>
+      <span class="mod-badge">Modül 3 · Veri Mühendisliği</span>
+      <h1>Streaming ve Event-Driven Mimari</h1>
+      <p class="en-title">Streaming &amp; Event-Driven Architecture</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-ileri">İleri</span>
+        <span class="chip">⏱️ ~18 dk okuma</span>
+        <span class="chip">🔤 13 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Yarın sabah öğrenmek yetmediğinde</h2>
+        <p><a href="m3-orkestrasyon.html">Orkestrasyon konusunda</a> kurduğumuz dünya batch dünyasıydı: veri gün boyu birikir, Airflow gece 02:00'de pipeline'ı çalıştırır, sabah raporlar hazırdır. Çoğu iş için bu ritim gayet yeterli. Ama şu senaryoyu düşün: birinin kredi kartı çalındı ve şu anda art arda alışveriş yapılıyor. <strong>Dolandırıcılık tespitini yarın sabahki batch raporundan öğrenmek işe yaramaz</strong> — para çoktan gitmiş olur. Kararın değeri, verinin tazeliğine bağlıysa saatlerce bekleyemezsin.</p>
+        <p>Bu noktada bakış açısı değişir: veriyi "günde bir işlenecek yığın" olarak değil, <strong>olay (event) akışı</strong> olarak görmeye başlarsın. Olay, gerçekleşmiş bir gerçeğin kaydıdır: "kullanıcı X butona tıkladı", "sensör 74.2°C ölçtü", "42 numaralı sipariş verildi". Olan biten her şey bir olaydır; zaman damgası taşır ve geçmişe dönük değiştirilmez. <strong>Event-driven (olay güdümlü) mimari</strong>de sistemler bu olaylara gerçekleştikleri anda tepki verir; <strong>streaming (akış işleme)</strong> ise bu sonsuz olay akışını sürekli işleme tekniğidir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 740 250" width="740" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Batch ve streaming işleme ritimlerinin zaman çizgisi karşılaştırması">
+            <defs>
+              <marker id="arr1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="370" y="22" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Aynı olaylar, iki farklı işleme ritmi</text>
+              <!-- BATCH şeridi -->
+              <text x="52" y="78" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Batch</text>
+              <line x1="100" y1="100" x2="694" y2="100" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arr1)"/>
+              <g fill="var(--muted)">
+                <circle cx="255" cy="90" r="3"/><circle cx="290" cy="90" r="3"/><circle cx="318" cy="90" r="3"/><circle cx="365" cy="90" r="3"/><circle cx="398" cy="90" r="3"/><circle cx="446" cy="90" r="3"/><circle cx="482" cy="90" r="3"/><circle cx="521" cy="90" r="3"/><circle cx="577" cy="90" r="3"/><circle cx="612" cy="90" r="3"/>
+              </g>
+              <rect x="120" y="48" width="106" height="40" rx="8" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="173" y="66" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">02:00 gece işi</text>
+              <text x="173" y="81" text-anchor="middle" fill="var(--muted)" font-size="10.5">dünün TÜM verisi</text>
+              <g fill="var(--muted)" font-size="10.5">
+                <text x="110" y="118" text-anchor="middle">00:00</text>
+                <text x="255" y="118" text-anchor="middle">06:00</text>
+                <text x="400" y="118" text-anchor="middle">12:00</text>
+                <text x="545" y="118" text-anchor="middle">18:00</text>
+                <text x="680" y="118" text-anchor="middle">24:00</text>
+              </g>
+              <text x="712" y="78" text-anchor="end" fill="var(--warn)" font-size="10.5" font-weight="600">gecikme: saatler</text>
+              <!-- STREAMING şeridi -->
+              <text x="52" y="188" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Streaming</text>
+              <line x1="100" y1="210" x2="694" y2="210" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arr1)"/>
+              <g fill="var(--acc)">
+                <rect x="128" y="194" width="9" height="9" rx="2"/><rect x="160" y="194" width="9" height="9" rx="2"/><rect x="186" y="194" width="9" height="9" rx="2"/><rect x="228" y="194" width="9" height="9" rx="2"/><rect x="262" y="194" width="9" height="9" rx="2"/><rect x="291" y="194" width="9" height="9" rx="2"/><rect x="334" y="194" width="9" height="9" rx="2"/><rect x="371" y="194" width="9" height="9" rx="2"/><rect x="402" y="194" width="9" height="9" rx="2"/><rect x="447" y="194" width="9" height="9" rx="2"/><rect x="478" y="194" width="9" height="9" rx="2"/><rect x="512" y="194" width="9" height="9" rx="2"/><rect x="549" y="194" width="9" height="9" rx="2"/><rect x="588" y="194" width="9" height="9" rx="2"/><rect x="621" y="194" width="9" height="9" rx="2"/><rect x="652" y="194" width="9" height="9" rx="2"/>
+              </g>
+              <text x="397" y="236" text-anchor="middle" fill="var(--muted)" font-size="10.5">her olay geldiği anda işlenir — sürekli, küçük, durmayan bir akış</text>
+              <text x="712" y="188" text-anchor="end" fill="var(--ok)" font-size="10.5" font-weight="600">gecikme: saniyeler</text>
+            </g>
+          </svg>
+          <figcaption>Batch günün olaylarını biriktirip tek seferde işler; streaming her olayı doğduğu anda işler. İkisi rakip değil, farklı sorulara verilen cevaplardır.</figcaption>
+        </figure>
+
+        <h2>Message queue ve pub/sub: sistemleri birbirinden ayırmak</h2>
+        <p>Streaming'in altyapısına inmeden önce temel deseni anlamalısın. Sipariş servisi, her siparişte fatura servisini doğrudan çağırsaydı ne olurdu? Fatura servisi çökerse sipariş de alınamaz; fatura yavaşsa müşteri bekler. İki sistem birbirine <strong>sıkı sıkıya bağlanmış (coupled)</strong> olur. Çözüm, araya bir aracı koymaktır: sipariş servisi olayı aracıya bırakır ve <em>yoluna devam eder</em>; fatura servisi olayı kendi hızında alıp işler. Buna <strong>decoupling (ayrışma)</strong> denir — üreten ile tüketen birbirini tanımaz, birbirini beklemez.</p>
+        <p>Bu aracının iki klasik biçimi vardır:</p>
+        <ul>
+          <li><strong>Message queue (mesaj kuyruğu)</strong> — RabbitMQ, SQS gibi. Mesaj kuyruğa girer, <em>bir</em> tüketici alır, işleyince mesaj kuyruktan silinir. Postadaki taahhütlü mektup gibi: tek alıcıya gider. "Şu işi biri yapsın" (iş dağıtımı) senaryosu için idealdir.</li>
+          <li><strong>Pub/sub (publish-subscribe / yayınla-abone ol)</strong> — Yayıncı (publisher) olayı bir kanala yayınlar; o kanala abone olan <em>herkes</em> kendi kopyasını alır. Radyo yayını gibi: kaç kişinin dinlediği yayıncının umurunda değildir. "Bu olayı ilgilenen herkes duysun" senaryosu için idealdir.</li>
+        </ul>
+        <p>Rollerin adı her iki desende de aynıdır: olayı üreten taraf <strong>producer</strong> (üretici), olayı alıp işleyen taraf <strong>consumer</strong> (tüketici). Aynı sipariş olayını faturalama, stok, öneri motoru ve analitik ekiplerinin ayrı ayrı dinleyebilmesi — işte pub/sub'ın gücü budur: yeni bir tüketici eklemek için üreticinin kodunu değiştirmezsin.</p>
+
+        <h2>Kafka anatomisi: topic, partition, offset</h2>
+        <p><strong>Apache Kafka</strong>, bu desenlerin endüstri standardı hâline gelmiş uygulamasıdır — pub/sub esnekliğini kuyruk ölçeklenebilirliğiyle birleştirir ve saniyede milyonlarca olayı taşıyabilir. Kafka'yı anlamak için beş kavram yeter:</p>
+        <ul>
+          <li><strong>Topic</strong> — olayların kategorisi, adlandırılmış kanal: <code>siparisler</code>, <code>tiklamalar</code>, <code>sensor-verisi</code>. Producer'lar topic'e yazar, consumer'lar topic'ten okur.</li>
+          <li><strong>Partition (bölüm)</strong> — topic'in yan yana şeritlere bölünmüş hâli. Her partition kendi içinde <em>sıralı</em> bir kayıt defteridir. Partition, Kafka'nın <strong>paralellik birimidir</strong>: 3 partition'lık bir topic'i en fazla 3 consumer aynı anda okuyabilir. Aynı anahtarla (örn. aynı <code>musteri_id</code>) yazılan olaylar hep aynı partition'a düşer, böylece o müşterinin olayları sıralı kalır.</li>
+          <li><strong>Offset</strong> — partition içindeki sıra numarası. Consumer "P0'da 41. offset'e kadar okudum" diye kaydeder; çöküp yeniden başlayınca <strong>kaldığı yerden</strong> devam eder. Kitaptaki ayraç gibi.</li>
+          <li><strong>Broker</strong> — Kafka sunucusu. Partition'lar broker'lara dağıtılır ve kopyalanır (replication); bir broker çökse de veri kaybolmaz.</li>
+          <li><strong>Consumer group</strong> — birlikte çalışan consumer takımı. Grup içindeki üyeler topic'in partition'larını aralarında <strong>bölüşür</strong>; her partition'ı grupta yalnız bir üye okur.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 760 330" width="760" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kafka mimarisi: producer'lar, partition'lı topic ve consumer group'lar">
+            <defs>
+              <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <!-- Producer'lar -->
+              <text x="80" y="42" text-anchor="middle" fill="var(--faint)" font-size="11" font-weight="600">PRODUCER'LAR</text>
+              <rect x="20" y="60" width="120" height="44" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="80" y="86" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">Web uygulaması</text>
+              <rect x="20" y="130" width="120" height="44" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="80" y="156" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">Mobil uygulama</text>
+              <rect x="20" y="200" width="120" height="44" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="80" y="226" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">IoT sensörü</text>
+              <path d="M144 82 L192 130" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arr2)"/>
+              <path d="M144 152 L192 152" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arr2)"/>
+              <path d="M144 222 L192 176" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arr2)"/>
+              <!-- Broker / topic -->
+              <rect x="200" y="40" width="330" height="248" rx="12" fill="none" stroke="var(--dg-line)" stroke-width="1.5" stroke-dasharray="5 4"/>
+              <text x="365" y="62" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Kafka broker'ları — topic: "siparisler"</text>
+              <!-- P0 -->
+              <text x="232" y="105" text-anchor="middle" fill="var(--acc)" font-size="12" font-weight="700">P0</text>
+              <g stroke="var(--dg-line)" stroke-width="1.2">
+                <rect x="250" y="85" width="38" height="30" fill="var(--dg-box)"/><rect x="290" y="85" width="38" height="30" fill="var(--dg-box)"/><rect x="330" y="85" width="38" height="30" fill="var(--dg-box)"/><rect x="370" y="85" width="38" height="30" fill="var(--dg-box)"/><rect x="410" y="85" width="38" height="30" fill="var(--dg-box)"/>
+                <rect x="450" y="85" width="38" height="30" fill="rgba(var(--acc-rgb),.25)" stroke="var(--acc)"/>
+              </g>
+              <g fill="var(--muted)" font-size="11" text-anchor="middle">
+                <text x="269" y="104">0</text><text x="309" y="104">1</text><text x="349" y="104">2</text><text x="389" y="104">3</text><text x="429" y="104">4</text>
+              </g>
+              <text x="469" y="104" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">5</text>
+              <!-- P1 -->
+              <text x="232" y="170" text-anchor="middle" fill="var(--acc)" font-size="12" font-weight="700">P1</text>
+              <g stroke="var(--dg-line)" stroke-width="1.2">
+                <rect x="250" y="150" width="38" height="30" fill="var(--dg-box)"/><rect x="290" y="150" width="38" height="30" fill="var(--dg-box)"/><rect x="330" y="150" width="38" height="30" fill="var(--dg-box)"/><rect x="370" y="150" width="38" height="30" fill="var(--dg-box)"/>
+                <rect x="410" y="150" width="38" height="30" fill="rgba(var(--acc-rgb),.25)" stroke="var(--acc)"/>
+              </g>
+              <g fill="var(--muted)" font-size="11" text-anchor="middle">
+                <text x="269" y="169">0</text><text x="309" y="169">1</text><text x="349" y="169">2</text><text x="389" y="169">3</text>
+              </g>
+              <text x="429" y="169" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">4</text>
+              <!-- P2 -->
+              <text x="232" y="235" text-anchor="middle" fill="var(--acc)" font-size="12" font-weight="700">P2</text>
+              <g stroke="var(--dg-line)" stroke-width="1.2">
+                <rect x="250" y="215" width="38" height="30" fill="var(--dg-box)"/><rect x="290" y="215" width="38" height="30" fill="var(--dg-box)"/><rect x="330" y="215" width="38" height="30" fill="var(--dg-box)"/><rect x="370" y="215" width="38" height="30" fill="var(--dg-box)"/><rect x="410" y="215" width="38" height="30" fill="var(--dg-box)"/>
+                <rect x="450" y="215" width="38" height="30" fill="rgba(var(--acc-rgb),.25)" stroke="var(--acc)"/>
+              </g>
+              <g fill="var(--muted)" font-size="11" text-anchor="middle">
+                <text x="269" y="234">0</text><text x="309" y="234">1</text><text x="349" y="234">2</text><text x="389" y="234">3</text><text x="429" y="234">4</text>
+              </g>
+              <text x="469" y="234" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">5</text>
+              <text x="365" y="272" text-anchor="middle" fill="var(--muted)" font-size="10.5">hücrelerdeki sayılar = offset · vurgulu hücre = en yeni olay</text>
+              <!-- Consumer group'lar -->
+              <text x="655" y="42" text-anchor="middle" fill="var(--faint)" font-size="11" font-weight="600">CONSUMER GROUP'LAR</text>
+              <rect x="580" y="70" width="160" height="72" rx="9" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="660" y="99" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">Group: analitik</text>
+              <text x="660" y="118" text-anchor="middle" fill="var(--muted)" font-size="10.5">canlı dashboard besler</text>
+              <rect x="580" y="185" width="160" height="72" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="660" y="214" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">Group: faturalama</text>
+              <text x="660" y="233" text-anchor="middle" fill="var(--muted)" font-size="10.5">kendi hızında okur</text>
+              <path d="M534 130 L574 108" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arr2)"/>
+              <path d="M534 190 L574 214" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arr2)"/>
+              <text x="370" y="316" text-anchor="middle" fill="var(--faint)" font-size="10.5">Her group akışın TAMAMINI bağımsız okur; kendi offset'lerini ayrı tutar.</text>
+            </g>
+          </svg>
+          <figcaption>Producer'lar topic'e yazar; olaylar partition'lara dağılır ve offset sırasıyla birikir; her consumer group akışı bağımsız tüketir.</figcaption>
+        </figure>
+
+        <div class="note"><b>Kafka mesajı silmez, defter gibi tutar.</b> Klasik kuyruklarda mesaj okununca yok olur; Kafka'da ise olaylar okunsa da okunmasa da <em>retention</em> süresi (örn. 7 gün) boyunca partition'da kalır. Bu yüzden Kafka'ya "dağıtık kayıt defteri (log)" denir: offset'i geri sarıp geçmişi yeniden okuyabilirsin (replay). Kodunda bug bulduysan düzeltip aynı olayları baştan işlemek mümkündür — batch dünyasındaki backfill'in akış karşılığı.</div>
+
+        <p>Consumer group mekanizması, iş bölüşümünün anahtarıdır. Aynı gruptaki consumer'lar partition'ları paylaşır: 3 partition ve grupta 3 consumer varsa her biri 1 partition okur; consumer'lardan biri çökerse partition'ı otomatik olarak diğerlerine devredilir (rebalance). Farklı gruplar ise birbirinden tamamen bağımsızdır — pub/sub tarafı budur:</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 300" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Consumer group'ların partition bölüşümü">
+            <defs>
+              <marker id="arr3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              <marker id="arr4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <!-- Group A solda -->
+              <rect x="28" y="38" width="196" height="230" rx="12" fill="none" stroke="var(--acc)" stroke-width="1.5" stroke-dasharray="5 4"/>
+              <text x="126" y="60" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Group A — 3 consumer</text>
+              <rect x="52" y="78" width="148" height="42" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="126" y="103" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">Consumer A1</text>
+              <rect x="52" y="138" width="148" height="42" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="126" y="163" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">Consumer A2</text>
+              <rect x="52" y="198" width="148" height="42" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="126" y="223" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">Consumer A3</text>
+              <text x="126" y="258" text-anchor="middle" fill="var(--muted)" font-size="10.5">her birine 1'er partition</text>
+              <!-- Partition'lar ortada -->
+              <text x="360" y="60" text-anchor="middle" fill="var(--faint)" font-size="11" font-weight="600">topic: siparisler</text>
+              <rect x="308" y="78" width="104" height="42" rx="8" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="360" y="103" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">P0</text>
+              <rect x="308" y="138" width="104" height="42" rx="8" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="360" y="163" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">P1</text>
+              <rect x="308" y="198" width="104" height="42" rx="8" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="360" y="223" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">P2</text>
+              <!-- P -> A okları (1'e 1) -->
+              <path d="M304 99 L208 99" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arr3)"/>
+              <path d="M304 159 L208 159" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arr3)"/>
+              <path d="M304 219 L208 219" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arr3)"/>
+              <!-- Group B sağda -->
+              <rect x="496" y="38" width="196" height="230" rx="12" fill="none" stroke="var(--dg-line)" stroke-width="1.5" stroke-dasharray="5 4"/>
+              <text x="594" y="60" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Group B — 1 consumer</text>
+              <rect x="520" y="138" width="148" height="42" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="594" y="163" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">Consumer B1</text>
+              <text x="594" y="258" text-anchor="middle" fill="var(--muted)" font-size="10.5">3 partition'ın hepsini o okur</text>
+              <!-- P -> B okları (hepsi tek consumer'a) -->
+              <path d="M416 99 L514 148" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#arr4)"/>
+              <path d="M416 159 L514 159" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#arr4)"/>
+              <path d="M416 219 L514 170" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#arr4)"/>
+              <text x="360" y="290" text-anchor="middle" fill="var(--faint)" font-size="10.5">Grup İÇİNDE partition'lar bölüşülür; grupLAR arası tam bağımsızlık vardır.</text>
+            </g>
+          </svg>
+          <figcaption>Aynı topic'i Group A üç consumer'la paralel, Group B tek consumer'la okuyor. İkisi de akışın tamamını görür — kendi hızlarında.</figcaption>
+        </figure>
+
+        <div class="warn"><b>Partition sayısı paralelliğin tavanıdır.</b> 3 partition'lık topic'e 5 consumer'lık bir grup bağlarsan 2 consumer boşta oturur — bir partition'ı grupta aynı anda yalnız bir üye okuyabilir. Bu yüzden partition sayısı en baştan doğru planlanmalıdır; sonradan artırmak mümkündür ama anahtar→partition eşleşmesini bozar.</div>
+
+        <h2>Teslimat garantileri: kargo firması hangi sözü veriyor?</h2>
+        <p>Ağ üzerinde mesaj taşıyan her sistemin cevaplaması gereken soru şudur: bir mesaj yolda kaybolursa ya da alıcı tam işlerken çökerse ne olur? Üç seviye garanti vardır; üçünü de bir kargo firmasının sözleri gibi düşünebilirsin:</p>
+        <ul>
+          <li><strong>At-most-once (en fazla bir kez)</strong> — "Paketi kapıya bırakırım, imza almam." Hızlıdır ama paket kaybolabilir; buna karşılık asla iki kez teslim edilmez. Tek tük kayıp önemsizse (örn. saniyede yüzlerce gelen sıcaklık ölçümü) kabul edilebilir.</li>
+          <li><strong>At-least-once (en az bir kez)</strong> — "İmza alana kadar teslimatı tekrarlarım." Hiçbir mesaj kaybolmaz; ama imza yolda kaybolursa aynı paket <em>iki kez</em> gelebilir. Çoğu sistemin pratikteki varsayılanıdır: kayıp yok, ama duplicate (mükerrer kayıt) ihtimali var.</li>
+          <li><strong>Exactly-once (tam olarak bir kez)</strong> — "Her paket tam bir kez teslim edilir; ne kayıp ne tekrar." İdeal olan bu, ama en zoru.</li>
+        </ul>
+        <p>Exactly-once neden bu kadar zor? Consumer mesajı işledi ama tam "işledim" onayını gönderirken ağ koptu diyelim. Broker onayı görmedi; mesaj işlendi mi işlenmedi mi <em>bilemez</em>. Tekrar gönderirse duplicate, göndermezse kayıp riski doğar. Gerçek exactly-once, producer'ın tekrar denemelerinin tekilleştirilmesi (idempotent producer), yazma ve offset kaydetmenin tek transaction'da birleşmesi gibi mekanizmaların <em>uçtan uca</em> kurulmasını gerektirir — Kafka bunu destekler, ama akışın dışına çıktığın anda (örn. bir e-posta gönderdiğinde) garanti orada biter.</p>
+
+        <div class="tip"><b>Pratik reçete: at-least-once + idempotency.</b> Sahada en yaygın çözüm, teslimatı at-least-once bırakıp <em>işlemeyi</em> idempotent yapmaktır: aynı olayı iki kez işlemek sonucu değiştirmesin. Örneğin kaydı "ekle" yerine olay ID'siyle "yoksa ekle, varsa güncelle" (upsert) yazarsın. Duplicate gelse de tablo aynı kalır — ucuz ve dayanıklı bir exactly-once taklidi.</div>
+
+        <h2>Akışı işlemek: pencere, watermark ve durum</h2>
+        <p>Olaylar Kafka'da güvenle akıyor; şimdi üzerlerinde hesap yapmak istiyorsun: "dakikada kaç tıklama var?" Ama akış <em>sonsuzdur</em> — "toplam" diye bir şey yoktur, çünkü veri hiç bitmez. Bu yüzden soruyu zamana bölersin: <strong>windowing (pencereleme)</strong>, sonsuz akışı sonlu zaman dilimlerine ayırma tekniğidir. İki temel pencere türü var:</p>
+        <ul>
+          <li><strong>Tumbling window (yuvarlanan pencere)</strong> — bitişik ve örtüşmeyen dilimler: 00:00–00:05, 00:05–00:10… Her olay tam bir pencereye düşer. "5 dakikalık satış özetleri" gibi raporlar için.</li>
+          <li><strong>Sliding window (kayan pencere)</strong> — örtüşen dilimler: 5 dakikalık pencere 2 dakikada bir kayar. Bir olay birden çok pencerede sayılır. "Son 5 dakikadaki hata oranı her 2 dakikada güncellensin" gibi kayan bakışlar için.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 300" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tumbling ve sliding window karşılaştırması">
+            <defs>
+              <marker id="arr5" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <!-- zaman ekseni -->
+              <line x1="80" y1="58" x2="700" y2="58" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arr5)"/>
+              <g stroke="var(--dg-line)" stroke-width="1.2">
+                <line x1="100" y1="52" x2="100" y2="64"/><line x1="200" y1="52" x2="200" y2="64"/><line x1="300" y1="52" x2="300" y2="64"/><line x1="400" y1="52" x2="400" y2="64"/><line x1="500" y1="52" x2="500" y2="64"/><line x1="600" y1="52" x2="600" y2="64"/>
+              </g>
+              <g fill="var(--muted)" font-size="10.5" text-anchor="middle">
+                <text x="100" y="42">00:00</text><text x="200" y="42">00:05</text><text x="300" y="42">00:10</text><text x="400" y="42">00:15</text><text x="500" y="42">00:20</text><text x="600" y="42">00:25</text>
+              </g>
+              <g fill="var(--acc)">
+                <circle cx="126" cy="58" r="3.5"/><circle cx="171" cy="58" r="3.5"/><circle cx="238" cy="58" r="3.5"/><circle cx="287" cy="58" r="3.5"/><circle cx="333" cy="58" r="3.5"/><circle cx="402" cy="58" r="3.5"/><circle cx="451" cy="58" r="3.5"/><circle cx="527" cy="58" r="3.5"/><circle cx="561" cy="58" r="3.5"/>
+              </g>
+              <!-- tumbling -->
+              <text x="86" y="112" text-anchor="end" fill="var(--ink)" font-size="12" font-weight="700">Tumbling</text>
+              <text x="86" y="127" text-anchor="end" fill="var(--muted)" font-size="10.5">5 dk</text>
+              <g fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)" stroke-width="1.5">
+                <rect x="100" y="92" width="100" height="40" rx="6"/><rect x="200" y="92" width="100" height="40" rx="6"/><rect x="300" y="92" width="100" height="40" rx="6"/><rect x="400" y="92" width="100" height="40" rx="6"/><rect x="500" y="92" width="100" height="40" rx="6"/>
+              </g>
+              <g fill="var(--muted)" font-size="10.5" text-anchor="middle">
+                <text x="150" y="116">W1</text><text x="250" y="116">W2</text><text x="350" y="116">W3</text><text x="450" y="116">W4</text><text x="550" y="116">W5</text>
+              </g>
+              <text x="390" y="152" text-anchor="middle" fill="var(--muted)" font-size="10.5">bitişik, örtüşmez — her olay tam 1 pencerede sayılır</text>
+              <!-- sliding -->
+              <text x="86" y="196" text-anchor="end" fill="var(--ink)" font-size="12" font-weight="700">Sliding</text>
+              <text x="86" y="211" text-anchor="end" fill="var(--muted)" font-size="10.5">5 dk / 2 dk</text>
+              <g fill="rgba(var(--acc-rgb),.14)" stroke="var(--acc)" stroke-width="1.4">
+                <rect x="100" y="176" width="100" height="26" rx="6"/>
+                <rect x="140" y="206" width="100" height="26" rx="6"/>
+                <rect x="180" y="236" width="100" height="26" rx="6"/>
+                <rect x="220" y="266" width="100" height="26" rx="6"/>
+              </g>
+              <g fill="var(--muted)" font-size="10.5" text-anchor="middle">
+                <text x="150" y="193">W1</text><text x="190" y="223">W2</text><text x="230" y="253">W3</text><text x="270" y="283">W4</text>
+              </g>
+              <text x="500" y="230" text-anchor="middle" fill="var(--muted)" font-size="10.5">pencereler örtüşür — bir olay</text>
+              <text x="500" y="246" text-anchor="middle" fill="var(--muted)" font-size="10.5">birden çok pencerede sayılabilir</text>
+            </g>
+          </svg>
+          <figcaption>Tumbling pencereler zamanı dilimler; sliding pencereler zamanın üzerinde kayar. Soru "her 5 dakikanın özeti" ise tumbling, "son 5 dakikanın canlı görünümü" ise sliding.</figcaption>
+        </figure>
+
+        <p>Pencereleri açınca yeni bir dert doğar: <strong>geciken veri</strong>. Metrodaki kullanıcının telefonu 00:04'te üretilen tıklamayı ancak 00:09'da gönderebildi — 00:00–00:05 penceresi çoktan kapandıysa bu olay nereye yazılacak? <strong>Watermark</strong>, sistemin "geciken veriye ne kadar bekleyeceğini" bildiren eşiktir: "en yeni gördüğüm olayın 10 dakika gerisine kadar beklerim" dersen, pencere sonuçları o kadar süre açık tutulur, daha geç gelen olaylar ise elenir. Watermark bir dengedir: uzun beklersen sonuçlar daha doğru ama daha geç kesinleşir; kısa beklersen hızlı ama eksik kalabilir.</p>
+        <p>Pencere sayaçları tutmak, sistemin olaylar arasında hafıza taşıması demektir — buna <strong>stateful processing (durumlu işleme)</strong> denir. Bu durum (state) yalnız bellekte tutulursa çökme anında kaybolur; bu yüzden akış motorları state'i düzenli aralıklarla güvenilir depoya yazar (checkpoint) ve çökünce kaldığı yerden devam eder. Bu alanın iki büyük motoru var: <strong>Apache Flink</strong>, olayları geldiği anda tek tek işleyen, düşük gecikmeli ve state yönetimi güçlü bir akış motorudur; <strong>Spark Structured Streaming</strong> ise akışı küçük micro-batch'ler hâlinde işleyerek <a href="m3-spark.html">Spark</a> bilgini akış dünyasına taşımanı sağlar.</p>
+
+        <h2>Lambda mı, Kappa mı?</h2>
+        <p>"Hem geçmişin doğru özetine hem de anlık görünüme ihtiyacım var" diyen ekipler için iki mimari desen konuşulur. <strong>Lambda mimarisi</strong> iki paralel hat kurar: batch katmanı tüm veriyi periyodik olarak baştan işleyip kesin sonucu üretir, speed (hız) katmanı ise son dakikaların yaklaşık sonucunu anlık üretir; servis katmanı ikisini birleştirir. Sağlamdır ama aynı iş mantığını iki ayrı kod tabanında (batch + stream) yazıp bakmak zorundasındır — pratikte en çok şikâyet edilen yanı budur.</p>
+        <p><strong>Kappa mimarisi</strong> "madem Kafka olayları defter gibi tutuyor, batch katmanına ne gerek var?" der: her şey akış olarak işlenir; geçmişi yeniden hesaplamak gerektiğinde topic'in offset'i geri sarılıp aynı akış kodu baştan çalıştırılır (replay). Tek kod tabanı, tek işleme modeli. Bedeli, uzun retention'ın depolama maliyeti ve her problemin akışa çevrilebilir olmamasıdır. Modern eğilim Kappa'ya doğru; ama sahada ikisinin melezlerini sık görürsün.</p>
+
+        <h2>Koda dökelim</h2>
+        <p>Önce çıplak Kafka: bir producer olay yazsın, bir consumer okusun. <code>kafka-python</code> kütüphanesiyle çekirdek kavramların hepsi birkaç satırda görünür:</p>
+
+        <figure class="codebox">
+          <figcaption>Python — kafka-python ile producer ve consumer</figcaption>
+          <pre><code data-lang="python">from kafka import KafkaProducer, KafkaConsumer
+import json
+
+# --- PRODUCER: olayı topic'e yaz ---
+producer = KafkaProducer(
+    bootstrap_servers="localhost:9092",           # broker adresi
+    value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+)
+producer.send("siparisler", {"siparis_id": 42, "tutar": 199.90})
+producer.flush()   # tampondaki mesajların gerçekten gittiğinden emin ol
+
+# --- CONSUMER: topic'i sürekli dinle ---
+consumer = KafkaConsumer(
+    "siparisler",
+    bootstrap_servers="localhost:9092",
+    group_id="analitik",            # consumer group → iş bölüşümü
+    auto_offset_reset="earliest",   # ilk kez bağlanınca en baştan oku
+)
+for msg in consumer:                # sonsuz döngü: akış hiç bitmez
+    olay = json.loads(msg.value)
+    print(msg.partition, msg.offset, olay)   # kaldığın yer = offset</code></pre>
+        </figure>
+
+        <p>Şimdi bir adım yukarı çıkıp akışın üzerinde pencere hesabı yapalım. Spark Structured Streaming ile "her ürünün 5 dakikalık tıklama sayısı" şöyle yazılır — <code>withWatermark</code> ve <code>window</code> bu sayfada öğrendiklerinin doğrudan koda dökülmüş hâlidir:</p>
+
+        <figure class="codebox">
+          <figcaption>Python — Spark Structured Streaming ile 5 dakikalık pencere sayımı</figcaption>
+          <pre><code data-lang="python">from pyspark.sql import functions as F
+
+# Kafka'daki "tiklamalar" topic'ini akış olarak oku
+olaylar = (spark.readStream
+    .format("kafka")
+    .option("kafka.bootstrap.servers", "localhost:9092")
+    .option("subscribe", "tiklamalar")
+    .load())
+# olaylar: event_time ve urun_id kolonları içeriyor varsayalım
+
+sayim = (olaylar
+    # geciken veriye en fazla 10 dk bekle; daha geç geleni ele
+    .withWatermark("event_time", "10 minutes")
+    .groupBy(
+        F.window("event_time", "5 minutes"),   # tumbling pencere
+        "urun_id")
+    .count())
+
+# Sonuç sürekli güncellenen bir tablo gibi akar
+(sayim.writeStream
+    .outputMode("update")     # sadece değişen pencereleri yaz
+    .format("console")
+    .start())</code></pre>
+        </figure>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Streaming, "olsa hoş olur" bir süs değil; bazı işlerin tek mümkün yapılış biçimidir:</p>
+        <ul>
+          <li><strong>Clickstream analitiği →</strong> e-ticaret sitesindeki her tıklama bir olaydır; öneri motorları ve canlı funnel analizleri bu akıştan beslenir.</li>
+          <li><strong>Fraud tespiti →</strong> kart işlemi milisaniyeler içinde skorlanıp "onayla / engelle" kararı verilir — bu sayfanın açılış senaryosu, bankaların günlük gerçeğidir.</li>
+          <li><strong>IoT telemetrisi →</strong> fabrikadaki binlerce sensörün ölçümleri Kafka'ya akar; eşik aşımında alarm, uzun vadede arıza tahmini üretilir.</li>
+          <li><strong>Gerçek zamanlı dashboard'lar →</strong> operasyon ekiplerinin izlediği "şu anki sipariş adedi, anlık hata oranı" ekranları windowing ile hesaplanır.</li>
+          <li><strong>CDC ile veri ambarı beslemek →</strong> <a href="m3-etl-elt.html">ETL konusundaki</a> change data capture olayları çoğunlukla Kafka üzerinden <a href="m3-warehouse-lake.html">warehouse ve lake</a> katmanlarına akıtılır.</li>
+        </ul>
+        <p>İş ilanlarında "Kafka deneyimi" veri mühendisliğinin standart maddelerinden biridir; mülakatlarda da partition–consumer ilişkisi ve teslimat garantileri en sevilen sorulardandır. Bir sonraki konuda bu akışların da altındaki kas gücüne, yani <a href="m3-spark.html">Spark'ın dağıtık işleme motoruna</a> iniyoruz.</p>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Bir topic'i neden birden fazla partition'a böleriz?</summary>
+            <div class="answer"><b>Paralellik için.</b> Partition, Kafka'nın paralellik birimidir: her partition'ı grupta ayrı bir consumer okuyabilir, dolayısıyla 3 partition = aynı anda en fazla 3 paralel okuyucu. Ayrıca partition'lar farklı broker'lara dağıtılarak yük ve depolama da paylaştırılır. Bedeli: sıralama garantisi yalnız partition İÇİNDE geçerlidir, topic genelinde değil.</div>
+          </details>
+          <details class="quiz">
+            <summary>At-least-once garantisinde duplicate nasıl oluşur? Pratik çözüm nedir?</summary>
+            <div class="answer">Consumer mesajı işler ama <b>"işledim" onayı (offset commit) ulaşmadan</b> çöker ya da ağ kopar; broker emin olamadığı için mesajı yeniden gönderir → aynı olay iki kez işlenir. Pratik çözüm <b>idempotent işleme</b>: olay ID'siyle upsert yaparsın, aynı olay iki kez gelse de sonuç değişmez.</div>
+          </details>
+          <details class="quiz">
+            <summary>Watermark ne işe yarar, süresini uzun ya da kısa tutmanın bedeli nedir?</summary>
+            <div class="answer">Watermark, <b>geciken olaylara ne kadar bekleneceğini</b> belirler; pencere sonuçlarının ne zaman kesinleşeceğini o söyler. Uzun watermark → geç gelen veriler de sayılır, sonuç daha doğru ama geç kesinleşir ve daha çok state tutulur. Kısa watermark → hızlı sonuç, ama geciken olaylar elenir; sayımlar eksik kalabilir.</div>
+          </details>
+          <details class="quiz">
+            <summary>3 partition'lık bir topic'i hem 3 consumer'lı A grubu hem 1 consumer'lı B grubu okuyor. Kim neyi görür?</summary>
+            <div class="answer"><b>İki grup da akışın tamamını görür</b> — gruplar birbirinden bağımsızdır ve offset'lerini ayrı tutar. A grubunun İÇİNDE her consumer 1 partition okur (iş bölüşümü); B'nin tek consumer'ı 3 partition'ın hepsini tek başına okur. Kafka'nın pub/sub tarafı gruplar arası, kuyruk tarafı grup içidir.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Olay</span><span class="term-en">Event</span><span class="lvl lvl-orta">Orta</span></div><p>Gerçekleşmiş bir olgunun zaman damgalı, değişmez kaydı: tıklama, sipariş, sensör ölçümü. Streaming dünyasının atomudur.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Streaming (Akış İşleme)</span><span class="term-en">Stream Processing</span><span class="lvl lvl-ileri">İleri</span></div><p>Sonsuz olay akışını, olaylar geldikçe sürekli işleme yaklaşımı; batch'in "biriktir–işle" ritminin karşıtı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Mesaj Kuyruğu</span><span class="term-en">Message Queue</span><span class="lvl lvl-orta">Orta</span></div><p>Mesajın kuyruğa girip tek bir tüketici tarafından alındığı, işlenince silindiği aracı yapı; iş dağıtımı için idealdir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Pub/Sub</span><span class="term-en">Publish-Subscribe</span><span class="lvl lvl-orta">Orta</span></div><p>Yayıncının olayı bir kanala yayınladığı, abone olan her sistemin kendi kopyasını aldığı desen; radyo yayını gibi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Kafka</span><span class="term-en">Apache Kafka</span><span class="lvl lvl-ileri">İleri</span></div><p>Olayları dağıtık ve dayanıklı bir kayıt defterinde tutan akış platformu; event-driven mimarinin fiili standardı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Topic</span><span class="term-en">Topic</span><span class="lvl lvl-orta">Orta</span></div><p>Olayların kategorilere ayrıldığı adlandırılmış kanal; producer'lar topic'e yazar, consumer'lar topic'ten okur.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Partition (Bölüm)</span><span class="term-en">Partition</span><span class="lvl lvl-ileri">İleri</span></div><p>Topic'in sıralı alt şeridi ve Kafka'nın paralellik birimi; partition sayısı, aynı anda okuyabilecek consumer sayısının tavanıdır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Offset</span><span class="term-en">Offset</span><span class="lvl lvl-ileri">İleri</span></div><p>Olayın partition içindeki sıra numarası. Consumer kaldığı yeri offset ile bilir; geri sararak geçmişi yeniden okuyabilir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Consumer Group</span><span class="term-en">Consumer Group</span><span class="lvl lvl-ileri">İleri</span></div><p>Partition'ları aralarında bölüşen consumer takımı. Gruplar birbirinden bağımsızdır; her grup akışın tamamını ayrı okur.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Exactly-once</span><span class="term-en">Exactly-once Semantics</span><span class="lvl lvl-ileri">İleri</span></div><p>Her olayın tam bir kez işlenmesi garantisi; ağ kopmalarında "işlendi mi?" bilinemediği için uçtan uca kurması en zor garantidir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Windowing (Pencereleme)</span><span class="term-en">Windowing</span><span class="lvl lvl-ileri">İleri</span></div><p>Sonsuz akışı sonlu zaman dilimlerine bölerek hesap yapma tekniği; tumbling pencereler bitişiktir, sliding pencereler örtüşür.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Watermark</span><span class="term-en">Watermark</span><span class="lvl lvl-ileri">İleri</span></div><p>Geciken olaylara ne kadar bekleneceğini belirleyen eşik; pencere sonuçlarının ne zaman kesinleşeceğini kontrol eder.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Producer &amp; Consumer</span><span class="term-en">Producer &amp; Consumer</span><span class="lvl lvl-orta">Orta</span></div><p>Olayı üreten ve tüketen taraflar. Aracı sayesinde birbirini tanımaz ve beklemezler — decoupling'in iki ucu.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m3-streaming">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m3-orkestrasyon.html"><span>← Önceki</span><b>Orkestrasyon: Airflow ve DAG'ler</b></a>
+          <a class="next" href="m3-spark.html"><span>Sonraki →</span><b>Dağıtık Veri İşleme: Spark</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CI/CD ve Experiment Tracking — Veri Atlası</title>
+<meta name="description" content="ML'de tekrarlanabilirlik: MLflow ile deney takibi, model registry, GitHub Actions ile CI/CD ve continuous training. final_model_v3_SON.pkl kaosuna son.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m8" data-slug="m8-cicd-tracking">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m8">8. MLOps ve Üretim</a><span class="sep">/</span>
+        <span>CI/CD ve Experiment Tracking</span>
+      </nav>
+      <span class="mod-badge">Modül 8 · MLOps ve Üretim</span>
+      <h1>CI/CD ve Experiment Tracking</h1>
+      <p class="en-title">CI/CD &amp; Experiment Tracking</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~16 dk okuma</span>
+        <span class="chip">🔤 12 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>"final_model_v3_SON_gercek.pkl" ile tanış</h2>
+        <p>Şu dosya adına bak: <code>final_model_v3_SON_gercek.pkl</code>. Gülme — iki ay sonra kendi klasöründe göreceksin. Model production'da çalışıyor, sonuçlar fena değil; derken yöneticin soruyor: "Bunu hangi veriyle eğitmiştik? Learning rate neydi? Aynı sonucu bugün yeniden üretebilir miyiz?" Elinde sadece bir dosya adı var. Cevap yok.</p>
+        <p>Bu, ML'in <strong>tekrarlanabilirlik (reproducibility) krizi</strong>dir. Klasik yazılımda sonucu belirleyen tek şey koddur; kodu <a href="m1-linux-git.html">git</a> ile sürümlersen iş biter. ML'de ise sonuç dört şeyin bileşkesidir: <strong>kod + veri + hiperparametreler + ortam</strong> (üstüne bir tutam rastgelelik). Bunlardan herhangi biri kayıtsızsa deney kaybolur: en iyi modelini bir daha asla üretemeyebilirsin. Bu sayfada o kaosu düzene çeviren üç aracı öğreneceksin: deney takibi, model registry ve CI/CD otomasyonu.</p>
+
+        <div class="warn"><b>Dosya adı sürümleme değildir.</b> <code>v2_duzeltilmis_YENI.pkl</code> gibi adlar hangi veriyle, hangi parametreyle, hangi kodla eğitildiğini söylemez; iki kişi aynı klasörde çalışınca da anında çöker. Sürümleme işini araçlara bırak: kod için git, deneyler için tracking, modeller için registry.</div>
+
+        <h2>Experiment tracking: her koşunun karnesi</h2>
+        <p>Bir modelin eğitilmesine tek seferlik bir <strong>run (koşu)</strong> denir. <strong>Experiment tracking (deney takibi)</strong>, her koşunun üç şeyini otomatik kaydetmektir: <strong>parametreler</strong> (learning rate, ağaç sayısı…), <strong>metrikler</strong> (AUC, RMSE…) ve <strong>artifact'ler</strong> (modelin kendisi, grafikler). Kayıt otomatik olunca "not almayı unuttum" diye bir şey kalmaz; 50 koşu sonra bile hangi ayarın hangi sonucu verdiği tek tabloda durur.</p>
+        <p>Bu alanın en yaygın açık kaynak aracı <strong>MLflow</strong>. Eğitim script'ine üç satır eklersin; MLflow her koşuyu tracking server'a yazar, web arayüzünde koşuları yan yana dizip metriklere göre sıralarsın. "En iyi model hangisiydi?" sorusu, hafıza sorusu olmaktan çıkıp filtreleme sorusuna döner.</p>
+
+        <figure class="codebox">
+          <figcaption>Python — MLflow ile bir eğitim koşusunu kaydetmek</figcaption>
+          <pre><code data-lang="python">import mlflow
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import roc_auc_score
+
+mlflow.set_experiment("churn-tahmini")
+
+with mlflow.start_run(run_name="rf-derinlik-8"):
+    # 1) Parametreleri kaydet — "hangi ayarla koştu?" sorusunun cevabı
+    params = {"n_estimators": 300, "max_depth": 8}
+    mlflow.log_params(params)
+
+    model = RandomForestClassifier(**params, random_state=42)
+    model.fit(X_train, y_train)
+
+    # 2) Metriği kaydet — koşular UI'da yan yana karşılaştırılır
+    auc = roc_auc_score(y_test, model.predict_proba(X_test)[:, 1])
+    mlflow.log_metric("auc", auc)
+
+    # 3) Modeli artifact olarak kaydet — koşuya iliştirilir
+    mlflow.sklearn.log_model(model, name="model")</code></pre>
+        </figure>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 760 250" width="760" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MLflow akışı: eğitim scriptinden tracking server'a ve model registry'ye">
+            <defs>
+              <marker id="arrB1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <rect x="15" y="80" width="150" height="90" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="90" y="108" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">train.py</text>
+              <text x="90" y="130" text-anchor="middle" fill="var(--muted)" font-size="10.5">log_param()</text>
+              <text x="90" y="147" text-anchor="middle" fill="var(--muted)" font-size="10.5">log_metric()</text>
+              <path d="M165 125 L202 125" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrB1)"/>
+              <rect x="207" y="40" width="290" height="170" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="352" y="64" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Tracking Server</text>
+              <line x1="227" y1="76" x2="477" y2="76" stroke="var(--dg-line)" stroke-width="1"/>
+              <text x="262" y="93" text-anchor="middle" fill="var(--faint)" font-size="10.5" font-weight="700">run</text>
+              <text x="352" y="93" text-anchor="middle" fill="var(--faint)" font-size="10.5" font-weight="700">max_depth</text>
+              <text x="440" y="93" text-anchor="middle" fill="var(--faint)" font-size="10.5" font-weight="700">AUC</text>
+              <text x="262" y="115" text-anchor="middle" fill="var(--muted)" font-size="10.5">run_01</text>
+              <text x="352" y="115" text-anchor="middle" fill="var(--muted)" font-size="10.5">4</text>
+              <text x="440" y="115" text-anchor="middle" fill="var(--muted)" font-size="10.5">0.84</text>
+              <rect x="222" y="124" width="260" height="21" rx="5" fill="rgba(var(--acc-rgb),.16)"/>
+              <text x="262" y="139" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="700">run_02 ★</text>
+              <text x="352" y="139" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="700">8</text>
+              <text x="440" y="139" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="700">0.87</text>
+              <text x="262" y="162" text-anchor="middle" fill="var(--muted)" font-size="10.5">run_03</text>
+              <text x="352" y="162" text-anchor="middle" fill="var(--muted)" font-size="10.5">12</text>
+              <text x="440" y="162" text-anchor="middle" fill="var(--muted)" font-size="10.5">0.85</text>
+              <text x="352" y="195" text-anchor="middle" fill="var(--muted)" font-size="10.5">koşular tek tabloda, yan yana karşılaştırılır</text>
+              <path d="M497 125 L534 125" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrB1)"/>
+              <text x="516" y="112" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="700">en iyi</text>
+              <rect x="539" y="40" width="205" height="170" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="641" y="64" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Model Registry</text>
+              <rect x="556" y="84" width="172" height="36" rx="8" fill="var(--dg-box)" stroke="var(--warn)" stroke-width="1.5"/>
+              <text x="642" y="107" text-anchor="middle" fill="var(--ink)" font-size="11">churn v1 · staging</text>
+              <rect x="556" y="130" width="172" height="36" rx="8" fill="var(--dg-box)" stroke="var(--ok)" stroke-width="1.5"/>
+              <text x="642" y="153" text-anchor="middle" fill="var(--ink)" font-size="11">churn v2 · production</text>
+              <text x="641" y="195" text-anchor="middle" fill="var(--muted)" font-size="10.5">etiketle yönet, gerekirse geri dön</text>
+            </g>
+          </svg>
+          <figcaption>Eğitim script'i her koşuyu tracking server'a loglar; en iyi koşunun modeli registry'ye alınıp staging/production etiketleriyle yönetilir.</figcaption>
+        </figure>
+
+        <div class="note"><b>Araç değil, fikir önemli.</b> Weights &amp; Biases (W&amp;B) ve Neptune gibi ticari alternatifler de aynı işi yapar: parametre + metrik + artifact kaydı. Birini öğrenince hepsine geçiş dakikalar sürer.</div>
+
+        <h2>Model registry: adaylıktan production'a</h2>
+        <p>Deneyler kayıt altında; peki "kazanan" model canlıya nasıl çıkar? Klasörden klasöre dosya kopyalayarak değil. <strong>Model registry (model kütüğü)</strong>, modellerin isim ve sürümle yaşadığı merkezî katalogdur: <code>churn-model</code> adının altında v1, v2, v3… dizilir ve her sürüm bir <strong>etiket</strong> taşır: <strong>staging</strong> (aday — testte, gölgede) ya da <strong>production</strong> (canlıda olan).</p>
+        <p>Bunun iki büyük getirisi var. Birincisi, <a href="m8-deployment.html">deployment sistemi</a> modeli dosya yoluyla değil "production etiketli churn-model" diye çeker; eğitim ile servis arasındaki bağ kırılmaz. İkincisi, <strong>geri dönüş (rollback)</strong>: v3 canlıda kötü sonuç verirse production etiketini v2'ye geri taşırsın — dakikalar içinde, yeniden eğitim yok, panik yok.</p>
+
+        <h2>CI: her push'ta otomatik sınav</h2>
+        <p><strong>CI (Continuous Integration — sürekli entegrasyon)</strong>, ekipteki herkesin kod değişikliğinin her push'ta otomatik test edilmesi pratiğidir: bozan değişiklik ana dala karışmadan yakalanır. Klasik yazılımda bu, birim testlerini koşturmak demektir; ML'de sınav üç katmanlıdır:</p>
+        <ul>
+          <li><strong>Birim testleri</strong> — fonksiyonlar doğru mu? (özellik hesaplayan kod, ön işleme adımları)</li>
+          <li><strong>Veri testleri</strong> — gelen veri beklenen şemada ve aralıkta mı? (<a href="m3-veri-kalitesi.html">veri kalitesi</a> konusundaki kontrollerin CI'a taşınmış hâli)</li>
+          <li><strong>Model kalite eşiği</strong> — yeni model, production'dakinden belirgin şekilde kötüyse hat kırmızıya döner; kötü model daha yolun başında elenir.</li>
+        </ul>
+        <p>Bu sınavı koşturan en yaygın araç <strong>GitHub Actions</strong>: repo'ya bir YAML dosyası koyarsın; her push'ta GitHub kiralık bir sanal makine açar, adımlarını sırayla çalıştırır ve sonucu commit'in yanına yeşil tik ya da kırmızı çarpı olarak iliştirir.</p>
+
+        <figure class="codebox">
+          <figcaption>YAML — GitHub Actions ile temel CI workflow'u</figcaption>
+          <pre><code data-lang="yaml"># .github/workflows/ci.yml — her push'ta otomatik koşar
+name: ml-ci
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest            # GitHub'ın kiralık sanal makinesi
+    steps:
+      - uses: actions/checkout@v4     # repo'yu makineye indir
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt
+      - run: ruff check src/          # lint: stil ve bariz hatalar
+      - run: pytest tests/ -q         # birim + veri + model testleri</code></pre>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Python — model kalite eşiği testi (pytest tarzı)</figcaption>
+          <pre><code data-lang="python"># tests/test_model_kalitesi.py — kötü model deploy edilemesin
+import json
+from sklearn.metrics import roc_auc_score
+
+ESIK_PAYI = 0.01  # küçük dalgalanmalara tolerans
+
+def test_yeni_model_eskisinden_kotu_degil():
+    yeni_auc = roc_auc_score(
+        y_test, yeni_model.predict_proba(X_test)[:, 1]
+    )
+
+    # Production modelinin metriği registry'den/dosyadan okunur
+    with open("metrics/production.json") as f:
+        eski_auc = json.load(f)["auc"]
+
+    # Yeni model belirgin şekilde kötüyse CI kırmızı olur, hat durur
+    assert yeni_auc &gt;= eski_auc - ESIK_PAYI, (
+        f"AUC düştü: {eski_auc:.3f} -&gt; {yeni_auc:.3f}"
+    )</code></pre>
+        </figure>
+
+        <h2>CD ve continuous training: testi geçen yola devam eder</h2>
+        <p><strong>CD (Continuous Delivery/Deployment)</strong>, CI'ın devamıdır: bütün testleri geçen değişiklik otomatik olarak paketlenir (genelde bir <a href="m8-deployment.html">Docker image</a>'ı) ve yayına hazırlanır. Aradaki ince fark: <em>delivery</em>'de son "canlıya bas" düğmesine bir insan basar; <em>deployment</em>'ta o adım da otomatiktir. Elle sunucuya dosya kopyalama devri her iki durumda da kapanır.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 760 220" width="760" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CI/CD boru hattı: push, testler, build, deploy; başarısız test hattı durdurur">
+            <defs>
+              <marker id="arrB2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              <marker id="arrB3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--bad)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="380" y="22" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">CI/CD boru hattı — sınavı geçemeyen değişiklik canlıya çıkamaz</text>
+              <rect x="15" y="42" width="110" height="76" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="70" y="76" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">git push</text>
+              <text x="70" y="96" text-anchor="middle" fill="var(--muted)" font-size="10.5">değişiklik gelir</text>
+              <path d="M125 80 L163 80" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrB2)"/>
+              <rect x="168" y="42" width="200" height="76" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="268" y="62" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Testler</text>
+              <text x="268" y="80" text-anchor="middle" fill="var(--muted)" font-size="10.5">birim testleri · veri testleri</text>
+              <text x="268" y="96" text-anchor="middle" fill="var(--muted)" font-size="10.5">model kalite eşiği</text>
+              <path d="M368 80 L406 80" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrB2)"/>
+              <rect x="411" y="42" width="150" height="76" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="486" y="76" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Build</text>
+              <text x="486" y="96" text-anchor="middle" fill="var(--muted)" font-size="10.5">Docker image</text>
+              <path d="M561 80 L599 80" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrB2)"/>
+              <rect x="604" y="42" width="140" height="76" rx="10" fill="var(--dg-box)" stroke="var(--ok)" stroke-width="1.6"/>
+              <text x="674" y="76" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Deploy</text>
+              <text x="674" y="96" text-anchor="middle" fill="var(--muted)" font-size="10.5">yeni sürüm canlıda</text>
+              <path d="M268 118 L268 148" stroke="var(--bad)" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#arrB3)"/>
+              <rect x="153" y="152" width="230" height="42" rx="10" fill="var(--dg-box)" stroke="var(--bad)" stroke-width="1.6"/>
+              <text x="268" y="178" text-anchor="middle" fill="var(--bad)" font-size="11.5" font-weight="700">✗ test kırmızı → hat durur, deploy yok</text>
+            </g>
+          </svg>
+          <figcaption>Boru hattı bir zincirdir: testlerden biri bile kırmızıysa build ve deploy hiç başlamaz. Kötü model canlıya çıkma şansı bulamaz.</figcaption>
+        </figure>
+
+        <p>ML'in klasik yazılımdan ayrıldığı nokta tam burada: klasik CI/CD yalnızca <em>kod değişince</em> tetiklenir. Ama ML'de kod hiç değişmese bile <strong>veri değişir</strong> — müşteri davranışı kayar, model sessizce bayatlar (bu kaymayı <a href="m8-monitoring.html">monitoring konusunda</a> "drift" adıyla ölçeceğiz). Çözüm <strong>continuous training (sürekli eğitim)</strong>: eğitim pipeline'ının kendisinin de otomatik tetiklenmesi — zamanlanmış olarak (her pazar yeniden eğit) ya da drift alarmı çalınca. Yani ML'de boru hattının iki tetiği vardır: <em>push</em> ve <em>veri</em>.</p>
+
+        <h2>Reproducibility üçlüsü: kod + veri + ortam</h2>
+        <p>Sayfanın başındaki soruya dönelim: "aynı sonucu bugün yeniden üretebilir miyiz?" Cevabın "evet" olması için üç şeyin sürümü aynı anda bilinmeli:</p>
+        <ul>
+          <li><strong>Kod → git.</strong> Eğitim script'inin hangi commit'te olduğu; <a href="m1-linux-git.html">Modül 1'den</a> tanıdığın hikâye.</li>
+          <li><strong>Veri → DVC.</strong> Git devasa veri dosyalarını taşıyamaz; DVC (Data Version Control) dosyanın parmak izini (hash) git'e, kendisini depoya koyar. Detayı <a href="m8-feature-store.html">feature store ve veri versiyonlama</a> konusunda.</li>
+          <li><strong>Ortam → Docker.</strong> Kütüphane sürümleri değişirse aynı kod farklı sonuç verebilir; image sabitse ortam da sabittir.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 640 320" width="640" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tekrarlanabilirlik üçgeni: kod, veri, model ve sürümleme araçları">
+            <g font-family="inherit">
+              <line x1="283" y1="88" x2="152" y2="216" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <line x1="357" y1="88" x2="488" y2="216" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <line x1="212" y1="246" x2="428" y2="246" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <rect x="250" y="32" width="140" height="58" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="320" y="57" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Kod</text>
+              <text x="320" y="76" text-anchor="middle" fill="var(--muted)" font-size="10.5">git ile sürümle</text>
+              <rect x="60" y="218" width="150" height="58" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="135" y="243" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Veri</text>
+              <text x="135" y="262" text-anchor="middle" fill="var(--muted)" font-size="10.5">DVC ile sürümle</text>
+              <rect x="430" y="218" width="150" height="58" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="505" y="243" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Model</text>
+              <text x="505" y="262" text-anchor="middle" fill="var(--muted)" font-size="10.5">registry ile sürümle</text>
+              <text x="320" y="168" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Tekrarlanabilir deney</text>
+              <text x="320" y="188" text-anchor="middle" fill="var(--muted)" font-size="10.5">üçünün sürümü aynı anda bilinirse</text>
+              <text x="320" y="306" text-anchor="middle" fill="var(--muted)" font-size="10.5">+ ortamı Docker ile, rastgeleliği seed ile sabitle</text>
+            </g>
+          </svg>
+          <figcaption>ML üçgeni: kod, veri ve modelin her biri kendi aracıyla sürümlenir. Köşelerden biri kayıtsızsa deney yeniden üretilemez.</figcaption>
+        </figure>
+
+        <div class="tip"><b>Seed'i sabitle, sessiz farkları bitir.</b> Veri bölme, ağırlık başlatma gibi adımlar rastgeledir; <code>random_state=42</code> gibi sabit bir seed (tohum) vermezsen aynı kod + aynı veri bile her koşuda farklı sonuç üretir. Alışkanlık edin: numpy, random ve kullandığın framework'ün seed'ini tek bir yerden sabitle.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Bu sayfadaki pratikler, "tek kişilik notebook projesi" ile "ekipçe geliştirilen ML sistemi" arasındaki farkın ta kendisi:</p>
+        <ul>
+          <li><strong>İş görüşmelerinde →</strong> "Deneylerinizi nasıl takip ediyordunuz?" sorusu MLOps olgunluğunu ölçen klasik sorudur; "MLflow ile, registry üzerinden deploy ediyorduk" cümlesi seni ayrıştırır.</li>
+          <li><strong>PR (pull request) rutini →</strong> yazdığın her değişiklik CI'dan yeşil tik almadan birleşmez; kırmızı testi okuyup düzeltmek günlük ekmek olur.</li>
+          <li><strong>Gece 03:00 rollback'i →</strong> canlıdaki model saçmalamaya başlarsa registry'de etiketi bir önceki sürüme taşımak, seni yeniden eğitim beklemekten kurtarır.</li>
+          <li><strong>Zamanlanmış yeniden eğitim →</strong> continuous training pipeline'ları genelde <a href="m3-orkestrasyon.html">Airflow gibi orkestratörlerle</a> kurulur; drift alarmıyla tetiklenen sürümünü <a href="m8-monitoring.html">monitoring konusunda</a> göreceksin.</li>
+          <li><strong>Denetim ve uyum →</strong> finans/sağlık gibi sektörlerde "bu kararı hangi model, hangi veriyle verdi?" sorusuna kayıtla cevap vermek yasal zorunluluktur; tracking + registry o kaydın kendisidir.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Bir MLflow run'ı hangi üç şeyi kaydeder ve bu neden yeterlidir?</summary>
+            <div class="answer"><b>Parametreler, metrikler ve artifact'ler.</b> Bu üçlü "hangi ayarla koştu, ne sonuç verdi, ortaya ne çıktı" sorularının tamamını cevaplar. Kayıt otomatik olduğu için 50 koşu sonra bile en iyi deney tek tabloda filtrelenerek bulunur — hafızaya ya da dosya adlarına gerek kalmaz.</div>
+          </details>
+          <details class="quiz">
+            <summary>Model registry'de staging ve production etiketleri ne işe yarar?</summary>
+            <div class="answer"><b>Staging</b> aday modeldir: testte/gölgede denenir. <b>Production</b> canlıda olandır. Deploy sistemi modeli dosya yoluyla değil "production etiketli sürüm" diye çektiği için, kötü giden bir sürümde etiketi öncekine geri taşımak (rollback) dakikalar sürer — yeniden eğitim gerekmez.</div>
+          </details>
+          <details class="quiz">
+            <summary>ML'deki CI, klasik yazılım CI'ından hangi test katmanlarıyla ayrılır?</summary>
+            <div class="answer">Birim testlerinin üstüne iki katman eklenir: <b>veri testleri</b> (şema ve aralık kontrolleri — veri bozuksa kod doğru olsa da model bozulur) ve <b>model kalite eşiği</b> (yeni modelin metriği production'dakinden belirgin düşükse hat durur). Kod kadar veri ve model de sınava girer.</div>
+          </details>
+          <details class="quiz">
+            <summary>Kod hiç değişmediği hâlde model neden yeniden eğitilir?</summary>
+            <div class="answer">Çünkü <b>veri değişir</b>: müşteri davranışı, fiyatlar, mevsimsellik kayar ve model sessizce bayatlar (drift). Bu yüzden ML boru hattının push dışında ikinci bir tetiği vardır: <b>continuous training</b> — zamanlanmış olarak ya da drift alarmıyla eğitim pipeline'ı otomatik yeniden koşar.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">CI</span><span class="term-en">Continuous Integration</span><span class="lvl lvl-orta">Orta</span></div><p>Her push'ta testlerin otomatik koşması; bozan değişikliğin ana dala karışmadan yakalanması pratiği.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">CD</span><span class="term-en">Continuous Delivery-Deployment</span><span class="lvl lvl-orta">Orta</span></div><p>Testleri geçen değişikliğin otomatik paketlenip yayına hazırlanması (delivery) ya da doğrudan canlıya çıkması (deployment).</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Experiment Tracking (Deney Takibi)</span><span class="term-en">Experiment Tracking</span><span class="lvl lvl-orta">Orta</span></div><p>Her eğitim koşusunun parametre, metrik ve artifact'lerinin otomatik kaydı; "hangi ayar hangi sonucu verdi?"nin kalıcı cevabı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">MLflow</span><span class="term-en">MLflow</span><span class="lvl lvl-orta">Orta</span></div><p>Açık kaynaklı deney takibi ve model yaşam döngüsü aracı: koşuları loglar, UI'da karşılaştırır, registry ile sürüm yönetir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Run (Koşu)</span><span class="term-en">Run</span><span class="lvl lvl-orta">Orta</span></div><p>Tek bir eğitim çalıştırması; tracking sisteminde parametreleri, metrikleri ve artifact'leriyle tek satır olarak yaşar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Model Registry (Model Kütüğü)</span><span class="term-en">Model Registry</span><span class="lvl lvl-orta">Orta</span></div><p>Modellerin sürümlenip staging/production etiketleriyle yönetildiği merkezî katalog; rollback'i dakikalara indirir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Reproducibility (Tekrarlanabilirlik)</span><span class="term-en">Reproducibility</span><span class="lvl lvl-orta">Orta</span></div><p>Aynı kod + veri + ortamla aynı sonucun yeniden üretilebilmesi; git + DVC + Docker + sabit seed ile sağlanır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Birim Testi</span><span class="term-en">Unit Test</span><span class="lvl lvl-orta">Orta</span></div><p>Kodun küçük bir parçasını izole doğrulayan otomatik test; CI hattının ilk ve en hızlı savunma katmanı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">GitHub Actions</span><span class="term-en">GitHub Actions</span><span class="lvl lvl-orta">Orta</span></div><p>GitHub'a gömülü CI/CD servisi: repodaki YAML workflow'ları, push gibi olaylarda sanal makinelerde adım adım koşar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Continuous Training (Sürekli Eğitim)</span><span class="term-en">Continuous Training</span><span class="lvl lvl-ileri">İleri</span></div><p>Kod değişmese bile veri değişince model eğitiminin otomatik tetiklenmesi; ML'i klasik CI/CD'den ayıran halka.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Sürümleme</span><span class="term-en">Versioning</span><span class="lvl lvl-orta">Orta</span></div><p>Kodun, verinin ve modelin her hâline geri dönülebilir bir numara verme pratiği; "v3_SON_gercek" dosya adlarının medeni alternatifi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Seed (Tohum)</span><span class="term-en">Random Seed</span><span class="lvl lvl-orta">Orta</span></div><p>Rastgele sayı üretecinin başlangıç değeri; sabitlenirse veri bölme ve ağırlık başlatma her koşuda aynı sonucu verir.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m8-cicd-tracking">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m8-deployment.html"><span>← Önceki</span><b>Model Deployment ve Serving</b></a>
+          <a class="next" href="m8-monitoring.html"><span>Sonraki →</span><b>Monitoring ve Model Drift</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

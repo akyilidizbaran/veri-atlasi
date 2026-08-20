@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sinir Ağlarının Temelleri — Veri Atlası</title>
+<meta name="description" content="Nöron, ağırlık, aktivasyon fonksiyonu, backpropagation ve gradient descent: sinir ağlarının çalışma mantığını sıfırdan NumPy ve PyTorch örnekleriyle öğren.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m6" data-slug="m6-sinir-aglari">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m6">6. Derin Öğrenme</a><span class="sep">/</span>
+        <span>Sinir Ağlarının Temelleri</span>
+      </nav>
+      <span class="mod-badge">Modül 6 · Derin Öğrenme</span>
+      <h1>Sinir Ağlarının Temelleri</h1>
+      <p class="en-title">Neural Network Fundamentals</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~19 dk okuma</span>
+        <span class="chip">🔤 14 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Elle tarif etmenin duvarı</h2>
+        <p><a href="m5-feature-engineering.html">Feature engineering konusunda</a> modele yem olacak özellikleri kendin üretiyordun: "son 30 günün sipariş sayısı", "ortalama sepet tutarı"… Tablo verisinde bu yaklaşım gayet iyi çalışır. Ama şu soruya bir cevap dene: bir fotoğraftaki kediyi yakalayan feature'ı elle nasıl yazarsın? "Kulaklar üçgense…" diye başlarsın; ışık değişir, kedi arkasını döner, kural çöker. Piksel seviyesinde elle kural yazmak bir duvardır — ve klasik ML bu duvarı aşamaz.</p>
+        <p><strong>Sinir ağının (neural network)</strong> vaadi tam burada: özellikleri sen tarif etmezsin, <strong>ağ ham veriden temsili kendisi öğrenir</strong> (representation learning). İlk katmanlar basit örüntüleri yakalar, sonraki katmanlar bunları birleştirip daha soyut kavramlara ulaşır. "Derin öğrenme"deki <em>derin</em> kelimesinin tüm sırrı da bu: <strong>derinlik = art arda dizilmiş katman sayısı</strong>. Katman sayısı arttıkça ağ, basit parçalardan karmaşık kavramlar kurabilir.</p>
+        <p>Bu sayfada o mekanizmayı en küçük parçasından kurarak öğreneceksin: tek bir nöron, aktivasyonlar, ileri geçiş, hatanın geri yayılması ve eğitim döngüsü. <a href="m5-ml-giris.html">ML'e girişte</a> öğrendiğin her şey — train/test ayrımı, overfitting, loss — burada aynen geçerli; değişen tek şey modelin içi.</p>
+
+        <h2>Yapay nöron: dört işlemlik bir makine</h2>
+        <p>Bir <strong>nöron (neuron)</strong>, kulağa gizemli gelse de dört adımlık bir hesap makinesidir: girdileri alır, her girdiyi bir <strong>ağırlıkla (weight)</strong> çarpar, hepsini toplar, üstüne <strong>bias</strong> ekler ve sonucu bir <strong>aktivasyon fonksiyonundan</strong> geçirir. Formülü tek satır:</p>
+        <p style="text-align:center"><code>ŷ = f(w₁x₁ + w₂x₂ + w₃x₃ + b)</code></p>
+        <p>Parantezin içini bir yerden hatırlıyor olmalısın: bu, <a href="m1-matematik.html">matematik konusunda</a> gördüğün <strong>dot product</strong>'ın ta kendisi — <code>z = w·x + b</code>. Ağırlık, bir girdinin "sözünün ne kadar dinlendiğini" belirler: pozitif ve büyükse o girdi çıktıyı yukarı iter, negatifse aşağı çeker, sıfıra yakınsa nöron o girdiyi umursamaz. Öğrenme dediğimiz şey, bu ağırlıkların doğru değerlerini bulmaktan ibarettir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 280" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tek yapay nöronun anatomisi: girdiler, ağırlıklar, toplam, bias, aktivasyon ve çıktı">
+            <defs>
+              <marker id="nn-arr1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--muted)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="70" y="28" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="600">girdiler</text>
+              <text x="198" y="50" text-anchor="middle" fill="var(--muted)" font-size="10.5">ağırlıklar (öğrenilir)</text>
+              <!-- girdi düğümleri -->
+              <circle cx="70" cy="70" r="24" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="70" y="75" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="600">x₁</text>
+              <circle cx="70" cy="145" r="24" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="70" y="150" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="600">x₂</text>
+              <circle cx="70" cy="220" r="24" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="70" y="225" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="600">x₃</text>
+              <!-- bağlantılar -->
+              <line x1="94" y1="76" x2="302" y2="133" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#nn-arr1)"/>
+              <line x1="94" y1="145" x2="300" y2="145" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#nn-arr1)"/>
+              <line x1="94" y1="214" x2="302" y2="157" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#nn-arr1)"/>
+              <text x="198" y="96" text-anchor="middle" fill="var(--acc)" font-size="12" font-weight="700">w₁</text>
+              <text x="198" y="138" text-anchor="middle" fill="var(--acc)" font-size="12" font-weight="700">w₂</text>
+              <text x="198" y="198" text-anchor="middle" fill="var(--acc)" font-size="12" font-weight="700">w₃</text>
+              <!-- toplam -->
+              <text x="340" y="96" text-anchor="middle" fill="var(--acc)" font-size="12" font-weight="700">z = w·x + b</text>
+              <circle cx="340" cy="145" r="34" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.8"/>
+              <text x="340" y="152" text-anchor="middle" fill="var(--ink)" font-size="20" font-weight="700">Σ</text>
+              <!-- bias -->
+              <rect x="300" y="230" width="80" height="34" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="340" y="251" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">b (bias)</text>
+              <line x1="340" y1="228" x2="340" y2="184" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#nn-arr1)"/>
+              <!-- aktivasyon -->
+              <text x="495" y="103" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="600">aktivasyon</text>
+              <rect x="440" y="115" width="110" height="60" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="495" y="140" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="700">f(z)</text>
+              <text x="495" y="159" text-anchor="middle" fill="var(--muted)" font-size="10.5">ör. ReLU</text>
+              <line x1="376" y1="145" x2="434" y2="145" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#nn-arr1)"/>
+              <!-- çıktı -->
+              <circle cx="640" cy="145" r="26" fill="rgba(var(--acc-rgb),.2)" stroke="var(--acc)" stroke-width="1.8"/>
+              <text x="640" y="151" text-anchor="middle" fill="var(--ink)" font-size="15" font-weight="700">ŷ</text>
+              <line x1="552" y1="145" x2="608" y2="145" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#nn-arr1)"/>
+              <text x="640" y="196" text-anchor="middle" fill="var(--muted)" font-size="11">çıktı (tahmin)</text>
+              <text x="360" y="272" text-anchor="middle" fill="var(--muted)" font-size="11.5">Nöronun tüm hikâyesi: çarp, topla, bias ekle, aktivasyondan geçir.</text>
+            </g>
+          </svg>
+          <figcaption>Tek nöronun anatomisi. 1958'de Rosenblatt'ın "perceptron"u da tam olarak buydu; bugünün dev modelleri bu yapı taşının milyarlarcasını bağlar.</figcaption>
+        </figure>
+
+        <div class="note"><b>Bias niye var?</b> Bias'sız bir nöronun karar sınırı hep orijinden geçmek zorundadır: tüm girdiler sıfırken çıktı da sıfırdır. Bias, çizgiyi sağa sola kaydırma özgürlüğü verir — termostatın "25 dereceden sonra çalış" eşiği gibi, nöronun ne zaman "ateşleneceğini" ayarlar.</div>
+
+        <p>Tek nöron ancak bir doğru çizebilir. Gücün kaynağı, nöronları <strong>katmanlar (layer)</strong> hâlinde dizip her katmanın çıktısını sonrakine girdi yapmaktır:</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 340" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="4 girdili, iki gizli katmanlı, 2 çıkışlı sinir ağı; her bağlantı bir ağırlık">
+            <defs>
+              <marker id="nn-arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="350" y="25" text-anchor="middle" fill="var(--muted)" font-size="11.5" font-weight="600">Her çizgi öğrenilen bir ağırlık: bu mini ağda bile 48 ağırlık + 11 bias = 59 parametre</text>
+              <!-- bağlantılar -->
+              <g stroke="var(--dg-line)" stroke-width="1" opacity=".5">
+                <line x1="90" y1="75" x2="270" y2="45"/><line x1="90" y1="75" x2="270" y2="105"/><line x1="90" y1="75" x2="270" y2="165"/><line x1="90" y1="75" x2="270" y2="225"/><line x1="90" y1="75" x2="270" y2="285"/>
+                <line x1="90" y1="135" x2="270" y2="45"/><line x1="90" y1="135" x2="270" y2="165"/><line x1="90" y1="135" x2="270" y2="225"/><line x1="90" y1="135" x2="270" y2="285"/>
+                <line x1="90" y1="195" x2="270" y2="45"/><line x1="90" y1="195" x2="270" y2="105"/><line x1="90" y1="195" x2="270" y2="165"/><line x1="90" y1="195" x2="270" y2="225"/><line x1="90" y1="195" x2="270" y2="285"/>
+                <line x1="90" y1="255" x2="270" y2="45"/><line x1="90" y1="255" x2="270" y2="105"/><line x1="90" y1="255" x2="270" y2="165"/><line x1="90" y1="255" x2="270" y2="225"/><line x1="90" y1="255" x2="270" y2="285"/>
+                <line x1="270" y1="45" x2="450" y2="75"/><line x1="270" y1="45" x2="450" y2="135"/><line x1="270" y1="45" x2="450" y2="195"/><line x1="270" y1="45" x2="450" y2="255"/>
+                <line x1="270" y1="105" x2="450" y2="75"/><line x1="270" y1="105" x2="450" y2="195"/><line x1="270" y1="105" x2="450" y2="255"/>
+                <line x1="270" y1="165" x2="450" y2="75"/><line x1="270" y1="165" x2="450" y2="135"/><line x1="270" y1="165" x2="450" y2="195"/><line x1="270" y1="165" x2="450" y2="255"/>
+                <line x1="270" y1="225" x2="450" y2="75"/><line x1="270" y1="225" x2="450" y2="135"/><line x1="270" y1="225" x2="450" y2="195"/><line x1="270" y1="225" x2="450" y2="255"/>
+                <line x1="270" y1="285" x2="450" y2="75"/><line x1="270" y1="285" x2="450" y2="135"/><line x1="270" y1="285" x2="450" y2="195"/><line x1="270" y1="285" x2="450" y2="255"/>
+                <line x1="450" y1="75" x2="620" y2="135"/><line x1="450" y1="75" x2="620" y2="195"/>
+                <line x1="450" y1="135" x2="620" y2="195"/>
+                <line x1="450" y1="195" x2="620" y2="135"/><line x1="450" y1="195" x2="620" y2="195"/>
+                <line x1="450" y1="255" x2="620" y2="135"/><line x1="450" y1="255" x2="620" y2="195"/>
+              </g>
+              <!-- vurgulu yol -->
+              <line x1="90" y1="135" x2="266" y2="107" stroke="var(--acc)" stroke-width="2.2" marker-end="url(#nn-arr2)"/>
+              <line x1="270" y1="105" x2="446" y2="132" stroke="var(--acc)" stroke-width="2.2" marker-end="url(#nn-arr2)"/>
+              <line x1="450" y1="135" x2="616" y2="135" stroke="var(--acc)" stroke-width="2.2" marker-end="url(#nn-arr2)"/>
+              <!-- düğümler -->
+              <g fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5">
+                <circle cx="90" cy="75" r="15"/><circle cx="90" cy="195" r="15"/><circle cx="90" cy="255" r="15"/>
+                <circle cx="270" cy="45" r="15"/><circle cx="270" cy="165" r="15"/><circle cx="270" cy="225" r="15"/><circle cx="270" cy="285" r="15"/>
+                <circle cx="450" cy="75" r="15"/><circle cx="450" cy="195" r="15"/><circle cx="450" cy="255" r="15"/>
+                <circle cx="620" cy="195" r="15"/>
+              </g>
+              <g fill="var(--dg-box)" stroke="var(--acc)" stroke-width="2">
+                <circle cx="90" cy="135" r="15"/><circle cx="270" cy="105" r="15"/><circle cx="450" cy="135" r="15"/><circle cx="620" cy="135" r="15"/>
+              </g>
+              <!-- katman etiketleri -->
+              <text x="90" y="322" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">Girdi (4 özellik)</text>
+              <text x="270" y="322" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">Gizli katman 1 (5)</text>
+              <text x="450" y="322" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">Gizli katman 2 (4)</text>
+              <text x="620" y="322" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">Çıktı (2 sınıf)</text>
+            </g>
+          </svg>
+          <figcaption>Tam bağlantılı (fully connected) bir ağ. Vurgulu yol, tek bir sinyalin izleyebileceği güzergâhlardan biri; "derin" öğrenme, bu gizli katmanların sayısını artırmaktan gelir.</figcaption>
+        </figure>
+
+        <h2>Aktivasyon fonksiyonları: doğrusallığı kırmak</h2>
+        <p>Şimdi kritik soru: aktivasyon fonksiyonu olmasa ne olurdu? Kötü haber: <strong>kaç katman dizersen diz, ağ tek bir doğrusal modele çöker.</strong> Çünkü doğrusal işlemlerin (çarp-topla) art arda uygulanması yine doğrusal bir işlemdir — on katmanlı "derin" ağın, tek satırlık bir doğrusal regresyondan fazlası olmazdı. Gerçek dünya ise eğri büğrüdür: fiyat–talep ilişkisi doyuma ulaşır, görüntüdeki desenler doğrusal ayrılamaz. <strong>Aktivasyon fonksiyonu (activation function)</strong>, her nöronun çıkışına küçük bir "bükülme" ekleyerek ağa eğri öğrenme yeteneği kazandırır.</p>
+        <p>Pratikte üç isim bilmen yeterli:</p>
+        <ul>
+          <li><strong>ReLU</strong> — <code>max(0, z)</code>: negatifi sıfırla, pozitifi aynen geçir. Hesabı bedava, gradyanı sağlıklı; <strong>gizli katmanların varsayılanıdır</strong>.</li>
+          <li><strong>Sigmoid</strong> — her değeri 0–1 aralığına sıkıştırır; ikili sınıflandırmanın <em>çıkış</em> katmanında "olasılık" üretmek için kullanılır. Gizli katmanlarda ise uçlarda gradyanı ezdiği için artık tercih edilmez.</li>
+          <li><strong>Softmax</strong> — sigmoid'in çok sınıflı kardeşi: çıkış nöronlarının ham skorlarını, toplamı 1 olan bir olasılık dağılımına çevirir ("%70 kedi, %20 köpek, %10 tavşan").</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 250" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ReLU ve sigmoid aktivasyon fonksiyonlarının grafikleri">
+            <g font-family="inherit">
+              <!-- ReLU paneli -->
+              <text x="180" y="32" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">ReLU — gizli katmanların varsayılanı</text>
+              <line x1="50" y1="170" x2="310" y2="170" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <line x1="180" y1="58" x2="180" y2="192" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <polyline points="60,170 180,170 300,64" fill="none" stroke="var(--acc)" stroke-width="2.5"/>
+              <text x="115" y="188" text-anchor="middle" fill="var(--muted)" font-size="10.5">negatif → 0</text>
+              <text x="268" y="140" text-anchor="middle" fill="var(--muted)" font-size="10.5">pozitif → aynen geçer</text>
+              <text x="180" y="218" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">ReLU(z) = max(0, z)</text>
+              <!-- Sigmoid paneli -->
+              <text x="540" y="32" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Sigmoid — çıkışta olasılık</text>
+              <line x1="410" y1="170" x2="670" y2="170" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <line x1="540" y1="58" x2="540" y2="192" stroke="var(--dg-line)" stroke-width="1.4" stroke-dasharray="4 4"/>
+              <line x1="410" y1="70" x2="670" y2="70" stroke="var(--dg-line)" stroke-width="1" stroke-dasharray="4 4"/>
+              <text x="400" y="74" text-anchor="middle" fill="var(--muted)" font-size="10">1</text>
+              <text x="400" y="182" text-anchor="middle" fill="var(--muted)" font-size="10">0</text>
+              <path d="M415 167 C 495 165, 500 74, 665 72" fill="none" stroke="var(--acc)" stroke-width="2.5"/>
+              <text x="620" y="60" text-anchor="middle" fill="var(--muted)" font-size="10.5">0–1 arası → olasılık gibi okunur</text>
+              <text x="540" y="218" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">σ(z) = 1 / (1 + e^(-z))</text>
+            </g>
+          </svg>
+          <figcaption>İki temel aktivasyon eğrisi. Softmax'ın grafiği çizilmez; o tek değere değil, çıkış vektörünün tamamına uygulanır ve toplamı 1 yapar.</figcaption>
+        </figure>
+
+        <h2>İleri geçiş ve loss: tahmin et, hatayı ölç</h2>
+        <p>Ağı eğitmenin ilk yarısı <strong>ileri geçiştir (forward pass)</strong>: girdi vektörü ilk katmana verilir, her katman "çarp–topla–aktive et" zincirini uygular ve en sonda bir tahmin çıkar. Bilgi tek yönde, girdiden çıkışa akar — bu yüzden "ileri".</p>
+        <p>İkinci yarı, bu tahminin ne kadar kötü olduğunu tek bir sayıya indirgemektir. Bu sayıya <strong>loss (kayıp)</strong> denir ve problemine göre seçilir:</p>
+        <ul>
+          <li><strong>MSE (mean squared error)</strong> — regresyon için: hataların karesinin ortalaması. Kare almak, büyük hataları orantısız cezalandırır.</li>
+          <li><strong>Cross-entropy</strong> — sınıflandırma için: modelin doğru sınıfa verdiği olasılığa bakar. En sevdiğim özelliği şu: <em>emin ve yanlış</em> olmayı acımasızca cezalandırır. Gerçek sınıf "kedi"yken model %98 "köpek" derse loss patlar; %55 "köpek" demek çok daha ucuza mal olur.</li>
+        </ul>
+        <p>Burada bir ayrımı netleştirelim: loss, eğitimin <em>pusulasıdır</em> — türevi alınabilir olmalı ki ağ hangi yöne düzeleceğini bilsin. Accuracy, F1 gibi <a href="m5-model-degerlendirme.html">model değerlendirme konusundaki</a> metrikler ise raporun dilidir; eğitim sırasında optimize edilen şey her zaman loss'tur.</p>
+
+        <h2>Backpropagation: sorumluluk zinciri</h2>
+        <p>Loss'u ölçtük, kötüyüz. Peki 59 (ya da 59 milyar) ağırlıktan <em>hangisini, ne yöne, ne kadar</em> oynatmalı? İşte derin öğrenmenin kalbi olan soru bu ve cevabı <strong>backpropagation (geri yayılım)</strong>.</p>
+        <p>Bir seri üretim bandı düşün: son istasyondan kusurlu ürün çıktı. Kalite şefi en sondan başlayıp geriye yürür. Son istasyona sorar: "Kusurun ne kadarı senin işleminden?" İstasyon kendi payını üstlenir, kalan sorumluluğu kendisine parça gönderen önceki istasyonlara <em>katkıları oranında</em> paylaştırır. Onlar da aynısını yapar; sorumluluk, banttaki ilk istasyona kadar zincirleme dağıtılır. Sonunda her istasyon kusurdaki kendi payını bilir ve <strong>herkes ayarını kendi payı kadar düzeltir</strong>.</p>
+        <p>Matematikteki adı <strong>zincir kuralı (chain rule)</strong>: ağ, iç içe geçmiş fonksiyonlardan oluştuğu için loss'un her ağırlığa göre türevi, katman katman geriye çarpılarak hesaplanır. Her ağırlık için çıkan sayıya <strong>gradyan (gradient)</strong> denir ve şunu söyler: "bu ağırlığı birazcık artırırsan loss şu kadar değişir." Yani gradyan, her ağırlığın hatadaki suç payı ve düzelme yönüdür.</p>
+        <p>Güncelleme işini <strong>gradient descent (gradyan inişi)</strong> yapar: her ağırlığı, gradyanın işaret ettiği "loss'u artıran" yönün tersine küçük bir adım kaydır:</p>
+        <p style="text-align:center"><code>w ← w − learning_rate × gradyan</code></p>
+        <p>Adımın boyunu <strong>learning rate (öğrenme hızı)</strong> belirler ve bu tam bir Goldilocks problemidir: çok büyükse vadinin dibini ıskalayıp karşı yamaca zıplarsın, çok küçükse inersin ama emekleme hızında; "tam kararında" değer ise seni düzgün adımlarla minimuma taşır.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 270" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Loss yüzeyinde üç farklı learning rate davranışı: zıplayan, sürünen ve düzgün inen">
+            <defs>
+              <marker id="nn-arr-bad" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--bad)"/></marker>
+              <marker id="nn-arr-ok" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--ok)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="18" y="140" text-anchor="middle" fill="var(--muted)" font-size="10.5" transform="rotate(-90 18 140)">Loss</text>
+              <!-- Panel 1: çok büyük -->
+              <text x="120" y="38" text-anchor="middle" fill="var(--bad)" font-size="12.5" font-weight="700">Çok büyük</text>
+              <path d="M30 80 Q 120 260 210 80" fill="none" stroke="var(--dg-line)" stroke-width="2"/>
+              <polyline points="93,162 156,156 66,138 183,126 228,84" fill="none" stroke="var(--bad)" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#nn-arr-bad)"/>
+              <circle cx="93" cy="162" r="4.5" fill="var(--bad)"/><circle cx="156" cy="156" r="4.5" fill="var(--bad)"/><circle cx="66" cy="138" r="4.5" fill="var(--bad)"/><circle cx="183" cy="126" r="4.5" fill="var(--bad)"/>
+              <text x="120" y="250" text-anchor="middle" fill="var(--muted)" font-size="10.5">zıplar, hatta ıraksar (loss → NaN)</text>
+              <!-- Panel 2: çok küçük -->
+              <text x="360" y="38" text-anchor="middle" fill="var(--warn)" font-size="12.5" font-weight="700">Çok küçük</text>
+              <path d="M270 80 Q 360 260 450 80" fill="none" stroke="var(--dg-line)" stroke-width="2"/>
+              <polyline points="284,106 292,118 299,128 306,138 313,146" fill="none" stroke="var(--warn)" stroke-width="1.4" stroke-dasharray="3 3"/>
+              <circle cx="284" cy="106" r="3.5" fill="var(--warn)"/><circle cx="292" cy="118" r="3.5" fill="var(--warn)"/><circle cx="299" cy="128" r="3.5" fill="var(--warn)"/><circle cx="306" cy="138" r="3.5" fill="var(--warn)"/><circle cx="313" cy="146" r="3.5" fill="var(--warn)"/>
+              <text x="360" y="250" text-anchor="middle" fill="var(--muted)" font-size="10.5">iniyor ama emekleme hızında</text>
+              <!-- Panel 3: tam kararında -->
+              <text x="600" y="38" text-anchor="middle" fill="var(--ok)" font-size="12.5" font-weight="700">Tam kararında</text>
+              <path d="M510 80 Q 600 260 690 80" fill="none" stroke="var(--dg-line)" stroke-width="2"/>
+              <polyline points="528,112 555,148 582,166 598,170" fill="none" stroke="var(--ok)" stroke-width="1.6" marker-end="url(#nn-arr-ok)"/>
+              <circle cx="528" cy="112" r="4.5" fill="var(--ok)"/><circle cx="555" cy="148" r="4.5" fill="var(--ok)"/><circle cx="582" cy="166" r="4.5" fill="var(--ok)"/>
+              <text x="600" y="250" text-anchor="middle" fill="var(--muted)" font-size="10.5">düzgün adımlarla minimuma iner</text>
+            </g>
+          </svg>
+          <figcaption>Aynı loss "kâsesi", üç farklı learning rate. Gerçekte yüzey milyonlarca boyutludur ama sezgi aynıdır: adım boyu her şeydir.</figcaption>
+        </figure>
+
+        <div class="warn"><b>Loss NaN oldu, ilk şüpheli learning rate.</b> Eğitim sırasında loss birden yükselip <code>NaN</code>'a dönüyorsa büyük ihtimalle adımlar çok büyük: gradyanlar patlıyor demektir. İlk refleks learning rate'i 10'a bölmek; ayrıntılı reçeteler <a href="m6-egitim-pratikleri.html">eğitim pratikleri konusunda</a>.</div>
+
+        <p>Bütün bu mekanizmayı 20 satır NumPy ile elle kurabilirsin — ve bir kere elle kuran, PyTorch'un ne yaptığını bir daha asla unutmaz:</p>
+
+        <figure class="codebox">
+          <figcaption>Python — sıfırdan tek nöron: ileri geçiş + elle bir gradyan adımı</figcaption>
+          <pre><code data-lang="python">import numpy as np
+
+x = np.array([2.0, 3.0])    # girdiler (iki feature)
+w = np.array([0.5, -0.2])   # ağırlıklar (rastgele başladı varsay)
+b = 0.1                     # bias
+y_true = 1.0                # olması gereken çıktı
+
+# --- İleri geçiş: z = w·x + b (m1'deki dot product!) ---
+z = np.dot(w, x) + b        # 2*0.5 + 3*(-0.2) + 0.1 = 0.5
+y_pred = max(0.0, z)        # ReLU aktivasyonu → 0.5
+
+# --- Hata: MSE loss ---
+loss = (y_pred - y_true) ** 2        # (0.5 - 1)² = 0.25
+
+# --- Geri yayılım: zincir kuralıyla suç payları ---
+grad_y = 2 * (y_pred - y_true)       # loss'un tahmine göre türevi = -1.0
+grad_z = grad_y * (1.0 if z &gt; 0 else 0.0)  # ReLU'nun türevi: z&gt;0 ise 1
+grad_w = grad_z * x                  # her ağırlığın payı: [-2.0, -3.0]
+grad_b = grad_z                      # bias'ın payı: -1.0
+
+# --- Gradient descent adımı: suç payının tersine küçük adım ---
+lr = 0.05
+w = w - lr * grad_w                  # [0.5, -0.2] → [0.6, -0.05]
+b = b - lr * grad_b                  # 0.1 → 0.15
+
+# Aynı örnekle yeni loss: (1.2 - 1)² = 0.04  ← 0.25'ten düştü!</code></pre>
+        </figure>
+
+        <h2>Eğitim döngüsü: epoch, batch ve optimizer'lar</h2>
+        <p>Gerçek eğitimde bu adımı milyonlarca örnekle tekrarlarsın; iki pratik sorun doğar. Birincisi, tüm veri GPU belleğine bir kerede sığmaz. İkincisi, tek örnekle atılan adım aşırı gürültülüdür. Orta yol: veriyi <strong>batch</strong> denen küçük gruplara (tipik olarak 32–256 örnek) bölmek ve her batch'te bir gradyan adımı atmak. Bu tarife <strong>mini-batch SGD</strong> denir. Tüm veri kümesinin baştan sona bir tam turuna ise <strong>epoch</strong> denir: 10.000 örnek ve 100'lük batch ile bir epoch, 100 güncelleme adımı demektir.</p>
+        <p>Adımları <em>nasıl</em> attığın da yıllar içinde evrildi; bu araçlara <strong>optimizer</strong> denir:</p>
+        <ul>
+          <li><strong>SGD</strong> — saf tarif: gradyanın tersine sabit boyda adım at.</li>
+          <li><strong>Momentum</strong> — yokuştan yuvarlanan top gibi geçmiş gradyanların birikimini taşır; küçük çukurlarda takılmadan hızlanarak iner.</li>
+          <li><strong>Adam</strong> — momentum'a ek olarak her parametreye kendi uyarlanmış adım boyunu verir; çoğu projenin "önce bunu dene" varsayılanıdır.</li>
+        </ul>
+        <div class="tip"><b>Başlangıç reçetesi.</b> Adam + <code>lr=1e-3</code> ile başla, loss eğrisini grafiğe dök. Eğri inmiyorsa learning rate'i 10'a böl/çarp ederek tara — derin öğrenmede tek bir hiperparametre ayarlayacaksan o, learning rate'tir.</div>
+
+        <h2>PyTorch dünyasına ilk bakış: tensor</h2>
+        <p>Bu mekaniği her seferinde elle yazmak işkence olurdu; endüstri standardı araç <strong>PyTorch</strong>. Merkezindeki veri yapısı <strong>tensor</strong>: çok boyutlu sayı dizisi — NumPy array'inin iki süper güçlü kuzeni. Birincisi, tensor GPU'ya taşınabilir (<code>.to("cuda")</code>) ve oradaki paralel orduda hesaplanır. İkincisi, <strong>autograd</strong>: yapılan her işlemi kaydeder ve <code>backward()</code> dediğinde tüm gradyanları senin yerine zincir kuralıyla hesaplar — az önce elle yazdığın geri yayılım, tek satıra iner.</p>
+        <p>Boyut sezgisi: skaler 0 boyutlu, vektör 1, matris 2 boyutlu bir tensordur; renkli bir görüntü <code>(3, 224, 224)</code>, 32'lik bir görüntü batch'i <code>(32, 3, 224, 224)</code> şeklinde 4 boyutlu yaşar. Şimdi her şeyi birleştirelim — mini bir ağ ve tek eğitim adımının beş satırlık ritüeli:</p>
+
+        <figure class="codebox">
+          <figcaption>Python — PyTorch ile mini ağ ve bir eğitim adımının anatomisi</figcaption>
+          <pre><code data-lang="python">import torch
+import torch.nn as nn
+
+# 4 feature'dan 3 sınıf tahmin eden mini ağ
+model = nn.Sequential(
+    nn.Linear(4, 16),   # girdi → 16 nöronlu gizli katman
+    nn.ReLU(),          # doğrusallığı kıran aktivasyon
+    nn.Linear(16, 3)    # çıkış: 3 sınıfın ham skorları (logit)
+)
+
+loss_fn = nn.CrossEntropyLoss()   # softmax'ı içinde barındırır
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+
+X = torch.randn(32, 4)            # 32 örneklik bir mini-batch
+y = torch.randint(0, 3, (32,))    # doğru sınıf etiketleri
+
+# --- Tek eğitim adımının 5 satırlık ritüeli ---
+optimizer.zero_grad()        # 1) eski gradyanları temizle
+y_pred = model(X)            # 2) ileri geçiş: tahmin üret
+loss = loss_fn(y_pred, y)    # 3) hatayı tek sayıya indir
+loss.backward()              # 4) backpropagation: gradyanları hesapla
+optimizer.step()             # 5) ağırlıkları güncelle
+
+# Eğitim = bu ritüeli batch'ler ve epoch'lar boyunca tekrarlamak</code></pre>
+        </figure>
+
+        <div class="note"><b>zero_grad neden var?</b> PyTorch gradyanları varsayılan olarak <em>biriktirir</em> (toplar). Her adımın başında sıfırlamazsan, yeni gradyan eskinin üstüne eklenir ve adımların anlamsızlaşır — yeni başlayanların en klasik hatasıdır.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Bu sayfanın kavramları, derin öğrenmeyle ilgili her işin ortak sözlüğüdür:</p>
+        <ul>
+          <li><strong>Model seçimi tartışması →</strong> tablo verisinde <a href="m5-supervised.html">XGBoost gibi ağaç modelleri</a> hâlâ çok güçlü bir rakiptir; sinir ağının ezici üstünlüğü görüntü, metin ve ses gibi ham/yapısız veridedir. "Her derde NN" refleksinden kaçın.</li>
+          <li><strong>Loss eğrisi okumak →</strong> günlük işin: eğitim ve validation loss'unu birlikte çizersin. Eğitim düşüp validation yükseliyorsa overfitting'desin — panzehirler <a href="m6-egitim-pratikleri.html">eğitim pratikleri konusunda</a>.</li>
+          <li><strong>"CUDA out of memory" →</strong> batch size'ı küçültürsün; bunun neden işe yaradığını artık biliyorsun (batch, GPU belleğinde tutulan örnek grubudur — <a href="m1-bilgisayar-temelleri.html">donanım konusuna</a> selam).</li>
+          <li><strong>Hiperparametre aramasında →</strong> ilk taranan şey neredeyse her zaman learning rate'tir; iş görüşmelerinde "LR çok büyük olursa ne olur?" klasik sorudur.</li>
+          <li><strong>Yolun devamı →</strong> buradaki tam bağlantılı ağ, görüntü için <a href="m6-cnn.html">CNN'e</a>, dizi verisi için <a href="m6-rnn.html">RNN'e</a> evrilecek — hepsinde nöron, loss ve backprop aynen bu sayfadaki gibi çalışır.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Aktivasyon fonksiyonu olmasaydı 10 katmanlı bir ağ neye eşdeğer olurdu?</summary>
+            <div class="answer"><b>Tek katmanlı doğrusal bir modele.</b> Doğrusal işlemlerin bileşkesi yine doğrusaldır: 10 matris çarpımı, tek bir matris çarpımına indirgenebilir. Aktivasyonların eklediği doğrusal olmayan "bükülmeler", derinliği anlamlı kılan şeydir.</div>
+          </details>
+          <details class="quiz">
+            <summary>Backpropagation ile gradient descent'in görev dağılımı nedir?</summary>
+            <div class="answer"><b>Backpropagation hesaplar, gradient descent uygular.</b> Backprop, zincir kuralıyla her ağırlığın loss'taki "suç payını" (gradyanı) bulur; gradient descent bu bilgiyi kullanıp her ağırlığı <code>w ← w − lr × gradyan</code> formülüyle günceller. Biri teşhis, öbürü tedavidir.</div>
+          </details>
+          <details class="quiz">
+            <summary>Learning rate çok büyük seçilirse eğitimde ne gözlemlersin? Çok küçükse?</summary>
+            <div class="answer">Çok büyükse loss <b>zıplar, salınır, hatta NaN'a ıraksar</b> — adımlar vadinin dibini aşıp karşı yamaca konar. Çok küçükse loss iner ama <b>sürünerek</b>: eğitim saatler/günler uzar ve sığ bir noktada takılıp kalabilirsin. Bu yüzden LR, ilk taranan hiperparametredir.</div>
+          </details>
+          <details class="quiz">
+            <summary>10.000 örneklik veri, 100'lük batch: 5 epoch kaç güncelleme adımı eder?</summary>
+            <div class="answer"><b>500 adım.</b> Bir epoch = tüm verinin bir tam turu = 10.000 / 100 = 100 batch, yani 100 gradyan adımı. 5 epoch → 5 × 100 = 500 güncelleme. Epoch "kaç tur", batch "tek adımda kaç örnek" sorusunun cevabıdır.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Sinir Ağı</span><span class="term-en">Neural Network</span><span class="lvl lvl-orta">Orta</span></div><p>Katmanlar hâlinde bağlanmış yapay nöronlardan oluşan, temsili veriden kendisi öğrenen model ailesi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Nöron (Perceptron)</span><span class="term-en">Neuron</span><span class="lvl lvl-orta">Orta</span></div><p>Ağın yapı taşı: girdileri ağırlıklarla çarpıp toplar, bias ekler, aktivasyondan geçirir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Ağırlık</span><span class="term-en">Weight</span><span class="lvl lvl-orta">Orta</span></div><p>Bir girdinin çıktı üzerindeki etkisini belirleyen, eğitimle öğrenilen katsayı. "Model öğrendi" = ağırlıklar ayarlandı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Bias</span><span class="term-en">Bias</span><span class="lvl lvl-orta">Orta</span></div><p>Nörona eklenen sabit terim; karar sınırını orijinden bağımsız kaydırarak nöronun eşiğini ayarlar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Aktivasyon Fonksiyonu</span><span class="term-en">Activation Function</span><span class="lvl lvl-orta">Orta</span></div><p>Nöron çıkışına uygulanan doğrusal olmayan fonksiyon; ağın eğri ilişkiler öğrenebilmesinin tek sebebi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">ReLU</span><span class="term-en">ReLU</span><span class="lvl lvl-orta">Orta</span></div><p>max(0, z): negatifi sıfırlayan, pozitifi geçiren aktivasyon. Ucuz ve gradyan dostu; gizli katmanların varsayılanı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Softmax</span><span class="term-en">Softmax</span><span class="lvl lvl-ileri">İleri</span></div><p>Çıkış skorlarını toplamı 1 olan olasılık dağılımına çeviren fonksiyon; çok sınıflı sınıflandırmanın son katmanı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">İleri Geçiş</span><span class="term-en">Forward Pass</span><span class="lvl lvl-orta">Orta</span></div><p>Girdinin katman katman işlenip tahmine dönüşmesi; bilginin girdiden çıkışa tek yönlü akışı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Cross-Entropy</span><span class="term-en">Cross-Entropy Loss</span><span class="lvl lvl-ileri">İleri</span></div><p>Sınıflandırmanın loss'u: doğru sınıfa verilen olasılığı ölçer, "emin ama yanlış" tahminleri ağır cezalandırır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Backpropagation (Geri Yayılım)</span><span class="term-en">Backpropagation</span><span class="lvl lvl-ileri">İleri</span></div><p>Zincir kuralıyla hatayı çıkıştan girişe dağıtıp her ağırlığın gradyanını (suç payını) hesaplayan algoritma.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Gradient Descent (Gradyan İnişi)</span><span class="term-en">Gradient Descent</span><span class="lvl lvl-orta">Orta</span></div><p>Ağırlıkları gradyanın tersi yönünde küçük adımlarla güncelleyerek loss'u azaltan optimizasyon yöntemi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Learning Rate (Öğrenme Hızı)</span><span class="term-en">Learning Rate</span><span class="lvl lvl-orta">Orta</span></div><p>Gradyan adımının boyu. Çok büyükse eğitim ıraksar, çok küçükse sürünür; en kritik hiperparametredir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Epoch &amp; Batch</span><span class="term-en">Epoch &amp; Batch</span><span class="lvl lvl-orta">Orta</span></div><p>Batch: tek adımda işlenen örnek grubu. Epoch: tüm veri kümesinin baştan sona bir tam turu.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Adam</span><span class="term-en">Adam Optimizer</span><span class="lvl lvl-ileri">İleri</span></div><p>Momentum ile parametre başına uyarlanmış adım boyunu birleştiren optimizer; pratikte en yaygın ilk tercih.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m6-sinir-aglari">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m5-nlp.html"><span>← Önceki</span><b>Klasik NLP: Metni Sayıya Çevirmek</b></a>
+          <a class="next" href="m6-cnn.html"><span>Sonraki →</span><b>CNN: Görüntü İşleyen Ağlar</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

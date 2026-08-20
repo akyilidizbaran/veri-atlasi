@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+.AppleDouble
+
+# Editör / IDE
+.vscode/
+.idea/
+*.swp
+
+# Python (yerel sunucu / betikler)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node (ileride araç eklenirse)
+node_modules/
+
+# Loglar ve geçici dosyalar
+*.log
+tmp/

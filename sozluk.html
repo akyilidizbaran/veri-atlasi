@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terim Sözlüğü — Veri Atlası</title>
+<meta name="description" content="AI ve Data Engineering'in 600+ terimi tek yerde: Türkçe tanımlar, zorluk seviyeleri ve ilgili konu bağlantıları.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="index.html#konular">Konular</a>
+      <a href="sozluk.html" class="active">Sözlük</a>
+      <a href="konular/m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="section">
+    <div class="wrap">
+      <h2 class="section-title">Terim Sözlüğü</h2>
+      <p class="section-sub">Alanın bütün dili tek sayfada. Bir terimi arat, seviyene göre filtrele, sonra "konuya git" ile tam anlatıma geç.</p>
+
+      <div class="gloss-controls">
+        <div class="searchbar">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input id="gloss-search" type="search" placeholder="Terim ara… (ör. partition, gradyan, drift)" aria-label="Terim ara">
+        </div>
+        <div class="gloss-filters">
+          <select id="gloss-module" aria-label="Modüle göre filtrele">
+            <option value="all">Tüm modüller</option>
+          </select>
+          <button class="fchip active" data-level="all" type="button">Tümü</button>
+          <button class="fchip" data-level="baslangic" type="button">Başlangıç</button>
+          <button class="fchip" data-level="orta" type="button">Orta</button>
+          <button class="fchip" data-level="ileri" type="button">İleri</button>
+          <span id="gloss-count"></span>
+        </div>
+      </div>
+
+      <div id="glossary-list"></div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="index.html#konular">Konular</a>
+      <a href="sozluk.html">Sözlük</a>
+      <a href="konular/m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="assets/data/curriculum.js"></script>
+<script src="assets/data/terms-m1a.js"></script>
+<script src="assets/data/terms-m1b.js"></script>
+<script src="assets/data/terms-m1c.js"></script>
+<script src="assets/data/terms-m2a.js"></script>
+<script src="assets/data/terms-m2b.js"></script>
+<script src="assets/data/terms-m2c.js"></script>
+<script src="assets/data/terms-m3a.js"></script>
+<script src="assets/data/terms-m3b.js"></script>
+<script src="assets/data/terms-m3c.js"></script>
+<script src="assets/data/terms-m3d.js"></script>
+<script src="assets/data/terms-m4.js"></script>
+<script src="assets/data/terms-m4b.js"></script>
+<script src="assets/data/terms-m5a.js"></script>
+<script src="assets/data/terms-m5b.js"></script>
+<script src="assets/data/terms-m5c.js"></script>
+<script src="assets/data/terms-m6a.js"></script>
+<script src="assets/data/terms-m6b.js"></script>
+<script src="assets/data/terms-m7a.js"></script>
+<script src="assets/data/terms-m7b.js"></script>
+<script src="assets/data/terms-m7c.js"></script>
+<script src="assets/data/terms-m8a.js"></script>
+<script src="assets/data/terms-m8b.js"></script>
+<script src="assets/data/terms-m9.js"></script>
+<script src="assets/js/main.js"></script>
+<script src="assets/js/glossary.js"></script>
+</body>
+</html>

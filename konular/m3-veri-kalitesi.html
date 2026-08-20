@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Veri Kalitesi, Governance ve Lineage — Veri Atlası</title>
+<meta name="description" content="Veri kalitesi boyutları, Great Expectations ve dbt testleri, data contract, lineage, veri kataloğu, KVKK/GDPR temelleri ve data mesh: güvenilir veri için çekirdek pratikler.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m3" data-slug="m3-veri-kalitesi">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m3">3. Veri Mühendisliği</a><span class="sep">/</span>
+        <span>Veri Kalitesi, Governance ve Lineage</span>
+      </nav>
+      <span class="mod-badge">Modül 3 · Veri Mühendisliği</span>
+      <h1>Veri Kalitesi, Governance ve Lineage</h1>
+      <p class="en-title">Data Quality, Governance &amp; Lineage</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~15 dk okuma</span>
+        <span class="chip">🔤 12 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Çöp giren, çöp çıkar</h2>
+        <p>Cuma 17:40. Genel müdür dashboard'u açıyor ve haftalık cironun bir gecede %40 düştüğünü görüyor. Kriz toplantısı, pazarlama bütçesi donduruluyor, herkes mesaide. Gece yarısı gerçek ortaya çıkıyor: mobil ekip o sabahki sürümde <code>tutar</code> alanını TL yerine <em>kuruş</em> cinsinden göndermeye başlamış; pipeline tek hata vermeden yüklemiş, iki farklı ölçekteki sayılar toplanınca metrik saçmalamış. Veri "akıyordu" — ama yanlış akıyordu.</p>
+        <p>Bu hikâyenin adı <strong>GIGO — "garbage in, garbage out"</strong> (çöp giren, çöp çıkar): girdisi bozuk olan en şık dashboard ve en güçlü model bile bozuk sonuç üretir. Asıl fatura da tek seferlik yanlış karar değildir; <strong>güven kaybıdır</strong>. Bir kez yanlış rakam gösteren dashboard'a insanlar bir daha kolay kolay inanmaz, herkes kendi Excel'ine geri döner ve veri ekibinin bütün emeği değersizleşir. Bu sayfa, o güveni sistematik olarak koruma araçlarını anlatıyor: kalite testleri, sözleşmeler, soyağacı ve yönetişim.</p>
+
+        <h2>Kalitenin altı boyutu</h2>
+        <p>"Veri kalitesi" havada bir laf gibi durur; onu ölçülebilir kılmak için altı boyuta ayırırız. Her boyut, aynı tabloya sorulan farklı bir sorudur:</p>
+        <ul>
+          <li><strong>Completeness (eksiksizlik):</strong> olması gereken değerler yerinde mi? — <em>e-posta kolonunun %30'u boş.</em></li>
+          <li><strong>Uniqueness (teklik):</strong> aynı gerçek varlık bir kez mi kayıtlı? — <em>aynı müşteri iki ayrı satırda, ciro çift sayılıyor.</em></li>
+          <li><strong>Validity (geçerlilik):</strong> değerler tanımlı kurallara uyuyor mu? — <em>yaş = -5, teslim tarihi = 2099.</em></li>
+          <li><strong>Consistency (tutarlılık):</strong> aynı bilgi farklı yerlerde aynı mı? — <em>sipariş toplamı, kalemlerinin toplamına eşit değil.</em></li>
+          <li><strong>Timeliness (güncellik):</strong> veri zamanında geliyor mu? — <em>tablo dün 23:00'ten beri güncellenmemiş.</em></li>
+          <li><strong>Accuracy (doğruluk):</strong> veri gerçek dünyayla örtüşüyor mu? — <em>sistemdeki adres, müşterinin gerçek adresi değil.</em></li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 250" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Veri kalitesinin altı boyutu">
+            <g font-family="inherit">
+              <text x="360" y="20" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Aynı tabloya sorulan altı ayrı soru</text>
+              <rect x="15" y="35" width="210" height="88" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="120" y="62" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Completeness</text>
+              <text x="120" y="82" text-anchor="middle" fill="var(--muted)" font-size="10.5">eksiksizlik</text>
+              <text x="120" y="103" text-anchor="middle" fill="var(--muted)" font-size="10.5">"e-postaların %30'u NULL"</text>
+              <rect x="255" y="35" width="210" height="88" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="360" y="62" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Uniqueness</text>
+              <text x="360" y="82" text-anchor="middle" fill="var(--muted)" font-size="10.5">teklik</text>
+              <text x="360" y="103" text-anchor="middle" fill="var(--muted)" font-size="10.5">"aynı müşteri iki kez kayıtlı"</text>
+              <rect x="495" y="35" width="210" height="88" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="600" y="62" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Validity</text>
+              <text x="600" y="82" text-anchor="middle" fill="var(--muted)" font-size="10.5">geçerlilik</text>
+              <text x="600" y="103" text-anchor="middle" fill="var(--muted)" font-size="10.5">"yaş = -5, tarih = 2099"</text>
+              <rect x="15" y="140" width="210" height="88" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="120" y="167" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Consistency</text>
+              <text x="120" y="187" text-anchor="middle" fill="var(--muted)" font-size="10.5">tutarlılık</text>
+              <text x="120" y="208" text-anchor="middle" fill="var(--muted)" font-size="10.5">"toplam ≠ kalemler toplamı"</text>
+              <rect x="255" y="140" width="210" height="88" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="360" y="167" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Timeliness</text>
+              <text x="360" y="187" text-anchor="middle" fill="var(--muted)" font-size="10.5">güncellik</text>
+              <text x="360" y="208" text-anchor="middle" fill="var(--muted)" font-size="10.5">"dün 23:00'ten beri veri yok"</text>
+              <rect x="495" y="140" width="210" height="88" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="600" y="167" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Accuracy</text>
+              <text x="600" y="187" text-anchor="middle" fill="var(--muted)" font-size="10.5">doğruluk</text>
+              <text x="600" y="208" text-anchor="middle" fill="var(--muted)" font-size="10.5">"adres gerçekle uyuşmuyor"</text>
+            </g>
+          </svg>
+          <figcaption>Altı kalite boyutu ve tipik ihlal örnekleri. İlk beşi otomatik test edilebilir; accuracy çoğu zaman gerçek dünyayla karşılaştırma ister.</figcaption>
+        </figure>
+
+        <h2>Test kültürü: veri için birim testleri</h2>
+        <p>Yazılımcılar kodu her değişiklikte otomatik testlerden geçirir; veri ekipleri de aynısını veriye yapar. Çünkü "gözle kontrol" günde bir tabloyken işe yarar, yüz tabloyken imkânsızdır. Fikir basit: her tablo için <strong>beklentiler</strong> tanımlarsın — "bu kolon null olamaz", "bu değer 0–120 arasında", "bu tablo her gün en az 10 bin satır alır" — ve <a href="m3-etl-elt.html">pipeline</a> her koştuğunda bu beklentiler otomatik doğrulanır. Test kırılırsa yükleme durur ya da alarm çalar; bozuk veri dashboard'a <em>ulaşamadan</em> yakalanır.</p>
+        <p>İki araç bu kültürün standardı hâline geldi: <strong>Great Expectations</strong>, Python tarafında zengin beklenti kütüphanesiyle; <strong>dbt tests</strong> ise SQL dönüşümlerinin yanına birkaç satır YAML yazarak. İkisinde de testler kod olduğu için versiyon kontrolünde yaşar ve code review'dan geçer.</p>
+
+        <figure class="codebox">
+          <figcaption>Python — pandas ile hızlı kalite kontrolü (yüklemeden önce çalışır)</figcaption>
+          <pre><code data-lang="python">import pandas as pd
+
+def kalite_raporu(df: pd.DataFrame) -&gt; dict:
+    """Yükleme öncesi hızlı sağlık taraması."""
+    sorunlar = {}
+
+    # 1) Eksiksizlik: kolon başına null oranı (%5 eşiğini aşanlar)
+    null_orani = df.isna().mean()
+    sorunlar["null_kolonlar"] = null_orani[null_orani &gt; 0.05]
+
+    # 2) Teklik: anahtar kolonda kopya var mı?
+    sorunlar["kopya_id"] = df["siparis_id"].duplicated().sum()
+
+    # 3) Geçerlilik: alan bazlı aralık kuralları
+    sorunlar["negatif_tutar"] = (df["tutar"] &lt; 0).sum()
+    sorunlar["ucuk_yas"] = (~df["yas"].between(0, 120)).sum()
+
+    # 4) Güncellik: en yeni kayıt kaç saat eski?
+    gecikme = pd.Timestamp.now() - df["olay_zamani"].max()
+    sorunlar["gecikme_saat"] = gecikme.total_seconds() / 3600
+    return sorunlar
+
+rapor = kalite_raporu(df)
+if rapor["kopya_id"] &gt; 0:
+    raise ValueError("Kopya sipariş var — yükleme durduruldu!")</code></pre>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>YAML — dbt test tanımı: üç satırla tabloya bekçi dikmek</figcaption>
+          <pre><code data-lang="yaml"># models/schema.yml — dbt her koşuda bu testleri de çalıştırır
+version: 2
+
+models:
+  - name: musteriler
+    columns:
+      - name: musteri_id
+        tests:
+          - not_null          # boş kimlik olamaz (completeness)
+          - unique            # her müşteri bir kez (uniqueness)
+      - name: ulke_kodu
+        tests:
+          - accepted_values:  # liste dışı değer görürse test kırılır
+              values: ["TR", "DE", "NL"]
+      - name: kayit_tarihi
+        tests:
+          - not_null
+# Çalıştır: dbt test  → kırılan test pipeline'ı kırmızıya boyar</code></pre>
+        </figure>
+
+        <div class="tip"><b>Küçük başla.</b> Yüz tabloya birden test yazmaya kalkma; en kritik 3–5 gold tabloya <code>not_null</code> ve <code>unique</code> ile başla, kırıldıkça kural ekle. Her gerçek olay ("bir daha yaşanmasın" dediğin her sabah) yeni bir testin ilhamıdır.</div>
+
+        <p>Testler senin tarafını korur; peki bozulmanın kaynağında, yani <em>üreticide</em> önlenmesi? Bunun aracı <strong>data contract (veri sözleşmesi)</strong>: veri üreten ekip ile tüketen ekip arasında yazılı bir anlaşma. Sözleşme şemayı (alan adları, tipler), anlamı ("tutar TL cinsindendir, KDV dahildir"), SLA'yı ("veri her gün 06:00'da hazır") ve değişiklik prosedürünü ("alan silmeden 30 gün önce duyuru") tanımlar. Mobil ekip <code>tutar</code> alanının birimini değiştirmek istediğinde sözleşme testi daha CI aşamasında kırılır — açılıştaki cuma krizi hiç yaşanmaz.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 250" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Data contract: üretici ve tüketici arasındaki sözleşme">
+            <g font-family="inherit">
+              <rect x="30" y="80" width="170" height="95" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="115" y="108" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Üretici</text>
+              <text x="115" y="130" text-anchor="middle" fill="var(--muted)" font-size="10.5">mobil uygulama ekibi</text>
+              <text x="115" y="147" text-anchor="middle" fill="var(--muted)" font-size="10.5">olay: siparis_olustu</text>
+              <path d="M204 127 L256 127" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrvk3)"/>
+              <text x="230" y="114" text-anchor="middle" fill="var(--acc)" font-size="10" font-weight="700">taahhüt eder</text>
+              <path d="M260 45 h140 l40 40 v120 h-180 z" fill="rgba(var(--acc-rgb),.10)" stroke="var(--acc)" stroke-width="1.6"/>
+              <path d="M400 45 l40 40 h-40 z" fill="rgba(var(--acc-rgb),.25)" stroke="var(--acc)" stroke-width="1.2"/>
+              <text x="350" y="100" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Data Contract</text>
+              <text x="350" y="124" text-anchor="middle" fill="var(--muted)" font-size="10">şema: alan adları + tipler</text>
+              <text x="350" y="142" text-anchor="middle" fill="var(--muted)" font-size="10">anlam: tutar TL, KDV dahil</text>
+              <text x="350" y="160" text-anchor="middle" fill="var(--muted)" font-size="10">SLA: her gün 06:00'da hazır</text>
+              <text x="350" y="178" text-anchor="middle" fill="var(--muted)" font-size="10">değişiklik: 30 gün önce duyur</text>
+              <path d="M444 127 L496 127" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrvk3)"/>
+              <text x="470" y="114" text-anchor="middle" fill="var(--acc)" font-size="10" font-weight="700">güvence verir</text>
+              <rect x="500" y="80" width="170" height="95" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="585" y="108" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Tüketici</text>
+              <text x="585" y="130" text-anchor="middle" fill="var(--muted)" font-size="10.5">veri ve analitik ekibi</text>
+              <text x="585" y="147" text-anchor="middle" fill="var(--muted)" font-size="10.5">gold tablolar, dashboard</text>
+              <text x="350" y="228" text-anchor="middle" fill="var(--muted)" font-size="11">Sözleşme kırılırsa üreticinin CI'ı uyarır — sürpriz, dashboard'a ulaşmadan yakalanır.</text>
+              <defs>
+                <marker id="arrvk3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              </defs>
+            </g>
+          </svg>
+          <figcaption>Data contract: API sözleşmesinin veri dünyasındaki karşılığı. Şema + anlam + SLA tek belgede, iki tarafın imzasıyla.</figcaption>
+        </figure>
+
+        <h2>Lineage: verinin soyağacı</h2>
+        <p><strong>Data lineage (veri soyağacı)</strong>, bir verinin kaynaktan rapora kadar izlediği yolun haritasıdır: "Dashboard'daki <em>Aylık Ciro</em> kolonu hangi tablodan, hangi dönüşümlerden geçerek geliyor?" İyi bir lineage grafı bu soruyu kolon düzeyinde cevaplar ve iki yönde hayat kurtarır:</p>
+        <ul>
+          <li><strong>Geriye doğru — kök neden analizi:</strong> rapor bozuk; hangi kaynaktan besleniyordu, hangi halkada bozuldu? Grafı geriye yürüyerek dakikalar içinde suçlu tabloyu bulursun.</li>
+          <li><strong>İleriye doğru — etki analizi:</strong> "şu kaynak kolonu yeniden adlandıracağız" dendiğinde grafı ileri yürütüp nelerin kırılacağını <em>değişiklikten önce</em> görürsün: 3 dbt modeli, 2 dashboard, 1 ML feature'ı.</li>
+        </ul>
+        <p>Lineage'ı elle çizip güncel tutmak umutsuz iştir; bu yüzden modern araçlar onu koddan türetir: dbt, modeller arasındaki bağımlılık grafını otomatik çıkarır; OpenLineage standardı ise <a href="m3-orkestrasyon.html">Airflow</a> ve <a href="m3-spark.html">Spark</a> işlerinden lineage olaylarını toplar.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 740 300" width="740" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Lineage grafı: bozulan kaynağın rapora yayılması">
+            <g font-family="inherit">
+              <text x="370" y="22" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Kaynaktaki bir bozulma nereye kadar yayılır?</text>
+              <rect x="20" y="45" width="155" height="44" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="97" y="64" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">crm.musteriler</text>
+              <text x="97" y="80" text-anchor="middle" fill="var(--muted)" font-size="9.5">kaynak tablo</text>
+              <rect x="20" y="120" width="155" height="44" rx="8" fill="var(--dg-box)" stroke="var(--bad)" stroke-width="2"/>
+              <text x="97" y="139" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">odeme.islemler</text>
+              <text x="97" y="155" text-anchor="middle" fill="var(--bad)" font-size="9.5" font-weight="700">şema değişti — bozuk!</text>
+              <rect x="20" y="195" width="155" height="44" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="97" y="214" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">app.oturumlar</text>
+              <text x="97" y="230" text-anchor="middle" fill="var(--muted)" font-size="9.5">kaynak tablo</text>
+              <rect x="255" y="82" width="170" height="44" rx="8" fill="var(--dg-box)" stroke="var(--bad)" stroke-width="2"/>
+              <text x="340" y="101" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">stg_gelir</text>
+              <text x="340" y="117" text-anchor="middle" fill="var(--bad)" font-size="9.5" font-weight="700">dönüşüm (dbt) — kirlendi</text>
+              <rect x="255" y="195" width="170" height="44" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="340" y="214" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">stg_aktiflik</text>
+              <text x="340" y="230" text-anchor="middle" fill="var(--muted)" font-size="9.5">dönüşüm (dbt)</text>
+              <rect x="520" y="90" width="200" height="140" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="620" y="112" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Dashboard</text>
+              <rect x="535" y="125" width="170" height="36" rx="6" fill="none" stroke="var(--bad)" stroke-width="1.8"/>
+              <text x="620" y="147" text-anchor="middle" fill="var(--bad)" font-size="10.5" font-weight="700">Aylık Ciro — YANLIŞ</text>
+              <rect x="535" y="172" width="170" height="36" rx="6" fill="none" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="620" y="194" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="600">Aktif Kullanıcı — sağlam</text>
+              <path d="M175 67 C215 67 215 104 251 104" fill="none" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrvk1)"/>
+              <path d="M175 142 C215 142 215 104 251 104" fill="none" stroke="var(--bad)" stroke-width="2.2" marker-end="url(#arrvk2)"/>
+              <path d="M425 104 C480 104 480 143 531 143" fill="none" stroke="var(--bad)" stroke-width="2.2" marker-end="url(#arrvk2)"/>
+              <path d="M175 217 L251 217" fill="none" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrvk1)"/>
+              <path d="M425 217 C480 217 480 190 531 190" fill="none" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrvk1)"/>
+              <line x1="200" y1="272" x2="235" y2="272" stroke="var(--bad)" stroke-width="2.2"/>
+              <text x="245" y="276" fill="var(--muted)" font-size="10.5">bozulmanın yayıldığı yol — etki analizi bu izi sürer</text>
+              <defs>
+                <marker id="arrvk1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+                <marker id="arrvk2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--bad)"/></marker>
+              </defs>
+            </g>
+          </svg>
+          <figcaption>Lineage grafı: <code>odeme.islemler</code> bozulunca kirlilik yalnızca kendi soyunu izler; oturum hattı sağlam kalır. Hangi raporun etkilendiğini graf söyler.</figcaption>
+        </figure>
+
+        <h2>Governance: katalog, sahiplik, erişim</h2>
+        <p>Şirket büyüdükçe sorular teknik olmaktan çıkar: "Bu <code>musteri_v2_final</code> tablosu ne? Sahibi kim? Hangisi güncel? Kim erişebilir? Ne kadar süre saklanır?" <strong>Data governance (veri yönetişimi)</strong>, bu soruların keyfe değil kurala bağlanmasıdır. Üç temel ayağı var:</p>
+        <ul>
+          <li><strong>Veri kataloğu:</strong> tüm tabloların aranabilir envanteri — açıklama, sahip, güncellenme sıklığı, kalite skoru, lineage. DataHub, Amundsen, Collibra gibi araçlar bu işi yapar. Katalog, <a href="m3-warehouse-lake.html">data lake'in</a> bataklığa dönmesini engelleyen ilk settir.</li>
+          <li><strong>Sahiplik:</strong> her veri setinin adı konmuş bir sahibi olmalı. "Herkesin verisi" pratikte "kimsenin verisi"dir; sahipsiz tablo, çürümeye terk edilmiş tablodur.</li>
+          <li><strong>Erişim kontrolü:</strong> herkes her veriyi görmemeli. "Görev için gereken en dar yetki" (least privilege) ilkesini ve teknik altyapısını <a href="m3-bulut.html">Bulut Platformları konusundaki</a> IAM bölümünde ayrıntılı göreceğiz.</li>
+        </ul>
+        <p>Governance'ın en hassas bölgesi <strong>PII (Personally Identifiable Information — kişisel veri)</strong>: ad, T.C. kimlik no, telefon, e-posta, IP adresi gibi bir kişiyi işaret eden her alan. Türkiye'de <strong>KVKK</strong>, Avrupa'da <strong>GDPR</strong> bu verinin işlenmesini yasal çerçeveye bağlar: veriyi yalnızca belirli amaçla toplayabilir, gereken süre kadar saklayabilir (saklama süresi / retention), kişi isterse silmek zorundasın. Mühendislikteki karşılığı somuttur: PII kolonlarını maskeleme (<code>a***@gmail.com</code>), analitik ortama takma adla (pseudonymization) taşıma, erişimi loglama ve "unutulma talebi" geldiğinde veriyi her kopyadan silebilecek altyapı.</p>
+        <div class="warn"><b>PII en çok loglardan sızar.</b> Tablolarını maskeleyip uygulama loglarına e-posta ve telefon basmak, klasik ve pahalı bir ihlaldir. Log satırları da veridir: aynı maskeleme ve saklama kuralları onlar için de geçerli.</div>
+
+        <h2>Data mesh: sahipliği alanlara dağıtmak</h2>
+        <p>Merkezi veri ekibi bir noktada darboğaza dönüşür: her alanın (ödeme, lojistik, pazarlama) verisini tek ekip taşır, ama o verinin anlamını en iyi bilen insanlar başka takımlardadır. <strong>Data mesh</strong>, sahipliği tersine çevirir: veriyi <em>üreten</em> alan ekibi (domain), onu şeması, kalite garantileri ve dokümantasyonuyla bir <em>ürün</em> gibi sunar ("data as a product"); merkezi ekip ise taşıyıcı olmaktan çıkıp ortak platformu ve standartları sağlar. Data contract'lar bu modelin doğal yapıştırıcısıdır. Büyük organizasyonlar için güçlü bir fikirdir; beş kişilik bir veri ekibinde ise mesh kurmaya çalışmak, tek odalı eve asansör yaptırmaya benzer.</p>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Kalite ve yönetişim işleri, veri mühendisliğinin "görünmez ama vazgeçilmez" katmanıdır:</p>
+        <ul>
+          <li><strong>Pipeline bekçileri:</strong> <a href="m3-orkestrasyon.html">Airflow DAG'inde</a> yükleme task'ından hemen sonra bir kalite task'ı koşar; kırılırsa sonraki adımlar hiç başlamaz.</li>
+          <li><strong>PR rutini:</strong> yeni bir dbt modeli açtığında review'da ilk soru "testleri nerede?" olur — <code>not_null</code> ve <code>unique</code> artık nezaket değil zorunluluktur.</li>
+          <li><strong>Değişiklik talebi:</strong> "şu kolonu kaldıracağız" e-postasına cevabın lineage grafından gelir: etkilenecek modellerin ve dashboard'ların listesi.</li>
+          <li><strong>KVKK talebi:</strong> "verilerimi silin" başvurusu geldiğinde kişinin verisinin <em>hangi sistemlerde</em> olduğunu katalog ve lineage olmadan bulamazsın.</li>
+          <li><strong>ML tarafı:</strong> bozuk etiketle eğitilen model sessizce kötüleşir; <a href="m5-ml-giris.html">Modül 5'te</a> göreceğin "modelin tavanı verisinin kalitesidir" cümlesinin altyapısı burada kurulur.</li>
+          <li><strong>Mülakat sorusu:</strong> "Veri kalitesini nasıl garanti edersin?" — cevabın iskeleti: boyutlar → otomatik testler → contract → lineage → sahiplik.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>"Garbage in, garbage out" neden dashboard'daki yanlış sayıdan daha pahalıdır?</summary>
+            <div class="answer">Tek seferlik yanlış rakam düzeltilir; asıl maliyet <b>güven kaybıdır</b>. Yanlış gösterdiği bir kez görülen dashboard'a kullanıcılar bir daha inanmaz, kendi Excel'lerine döner ve veri platformunun tüm yatırımı boşa düşer. Bu yüzden kalite kontrolü, hata dashboard'a <b>ulaşmadan</b>, pipeline içinde yapılır.</div>
+          </details>
+          <details class="quiz">
+            <summary>"Aynı müşteri iki satırda" ve "sipariş toplamı kalemler toplamına eşit değil" hangi kalite boyutlarının ihlalidir?</summary>
+            <div class="answer">İlki <b>uniqueness (teklik)</b> ihlali — aynı gerçek varlık birden çok kez kayıtlı, ciro çift sayılır. İkincisi <b>consistency (tutarlılık)</b> ihlali — aynı bilgi iki yerde birbirini tutmuyor. İkisi de <code>unique</code> testi ve çapraz karşılaştırma sorgusuyla otomatik yakalanabilir.</div>
+          </details>
+          <details class="quiz">
+            <summary>Data contract, klasik "tüketici tarafında test" yaklaşımına göre neyi daha iyi yapar?</summary>
+            <div class="answer">Tüketici testleri bozulmayı <b>veri geldikten sonra</b> yakalar; contract ise sorumluluğu <b>üreticiye</b> taşır. Şema, anlam ve SLA yazılı olduğu için üretici alan silmeye/tip değiştirmeye kalktığında kendi CI'ında sözleşme testi kırılır — bozuk veri hiç yola çıkmaz ve değişiklik önceden duyurulur.</div>
+          </details>
+          <details class="quiz">
+            <summary>Lineage grafının "geriye" ve "ileriye" okunması hangi iki farklı işe yarar?</summary>
+            <div class="answer"><b>Geriye:</b> kök neden analizi — bozuk rapordan yola çıkıp hangi kaynak/dönüşüm halkasında sorunun başladığını bulursun. <b>İleriye:</b> etki analizi — bir kaynağı değiştirmeden önce hangi modellerin, dashboard'ların ve feature'ların kırılacağını görürsün. Biri yangını söndürür, öteki yangını önler.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Veri Kalitesi</span><span class="term-en">Data Quality</span><span class="lvl lvl-orta">Orta</span></div><p>Verinin amaca uygunluğunun ölçüsü; eksiksizlik, teklik, geçerlilik gibi boyutlarla ölçülür ve test edilir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Bütünlük (Eksiksizlik)</span><span class="term-en">Completeness</span><span class="lvl lvl-orta">Orta</span></div><p>Olması gereken değerlerin gerçekten dolu olması; null oranı en temel eksiksizlik metriğidir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Tutarlılık</span><span class="term-en">Consistency</span><span class="lvl lvl-orta">Orta</span></div><p>Aynı bilginin farklı tablo ve sistemlerde birbirini tutması; "iki rapor iki farklı ciro söylüyor" bunun ihlalidir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Veri Testi</span><span class="term-en">Data Testing</span><span class="lvl lvl-orta">Orta</span></div><p>Tablolara tanımlı beklentilerin (null yok, tekil, aralıkta) her pipeline koşusunda otomatik doğrulanması.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Great Expectations</span><span class="term-en">Great Expectations</span><span class="lvl lvl-ileri">İleri</span></div><p>Python tabanlı veri doğrulama çerçevesi; "beklenti" kütüphanesiyle kalite kurallarını kod olarak tanımlar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Data Contract (Veri Sözleşmesi)</span><span class="term-en">Data Contract</span><span class="lvl lvl-ileri">İleri</span></div><p>Veri üreticisi ile tüketicisi arasında şema, anlam ve SLA'yı bağlayan yazılı anlaşma; kırılma CI'da yakalanır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Lineage (Veri Soyağacı)</span><span class="term-en">Data Lineage</span><span class="lvl lvl-ileri">İleri</span></div><p>Verinin kaynaktan rapora izlediği yolun grafı; kök neden ve etki analizinin haritasıdır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Veri Kataloğu</span><span class="term-en">Data Catalog</span><span class="lvl lvl-orta">Orta</span></div><p>Tüm veri varlıklarının aranabilir envanteri: açıklama, sahip, güncellik ve lineage tek yerde.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Governance (Veri Yönetişimi)</span><span class="term-en">Data Governance</span><span class="lvl lvl-orta">Orta</span></div><p>Verinin sahipliğini, erişimini, kalitesini ve yaşam döngüsünü kurala bağlayan politika ve süreçler bütünü.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">PII (Kişisel Veri)</span><span class="term-en">Personally Identifiable Information</span><span class="lvl lvl-orta">Orta</span></div><p>Bir kişiyi doğrudan ya da dolaylı tanımlayan veri: ad, kimlik no, telefon, IP. Maskeleme ve sıkı erişim ister.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">KVKK &amp; GDPR</span><span class="term-en">KVKK &amp; GDPR</span><span class="lvl lvl-orta">Orta</span></div><p>Türkiye'nin ve AB'nin kişisel veri koruma kanunları; amaç sınırlaması, saklama süresi ve silme hakkını zorunlu kılar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Data Mesh</span><span class="term-en">Data Mesh</span><span class="lvl lvl-ileri">İleri</span></div><p>Veri sahipliğini merkezi ekipten alan (domain) ekiplerine dağıtan, veriyi "ürün" olarak sunduran organizasyon modeli.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m3-veri-kalitesi">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m3-dbt.html"><span>← Önceki</span><b>dbt ve Analytics Engineering</b></a>
+          <a class="next" href="m3-bulut.html"><span>Sonraki →</span><b>Bulut Platformları</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

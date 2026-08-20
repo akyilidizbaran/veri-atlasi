@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linux, Terminal ve Git — Veri Atlası</title>
+<meta name="description" content="Terminal komutları, dosya sistemi, pipe, ortam değişkenleri, SSH ve Git ile versiyon kontrolü: bir veri mühendisinin günlük araç seti buradan başlar.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m1" data-slug="m1-linux-git">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m1">1. Temeller ve Hazırlık</a><span class="sep">/</span>
+        <span>Linux, Terminal ve Git</span>
+      </nav>
+      <span class="mod-badge">Modül 1 · Temeller ve Hazırlık</span>
+      <h1>Linux, Terminal ve Git</h1>
+      <p class="en-title">Linux, Terminal &amp; Git</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-baslangic">Başlangıç</span>
+        <span class="chip">⏱️ ~15 dk okuma</span>
+        <span class="chip">🔤 12 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Neden fare değil klavye?</h2>
+        <p>Grafik arayüz (GUI) dururken neden siyah bir ekrana komut yazasın? Üç somut sebep:</p>
+        <ul>
+          <li><strong>Sunucularda GUI yok.</strong> Verinin yaşadığı makineler — bulutta kiraladığın sanal sunucular, Spark cluster'ları — neredeyse tamamen Linux çalıştırır ve masaüstü arayüzü yoktur. O makinelere bağlandığında elindeki tek şey komut satırıdır.</li>
+          <li><strong>Otomasyon.</strong> Fare tıklamaları kaydedilip tekrarlanamaz; komutlar bir dosyaya (script) yazılıp her gece otomatik çalıştırılabilir. "Her sabah 06:00'da veriyi çek, temizle, yükle" diyen bir pipeline, özünde zamanlanmış komutlar dizisidir.</li>
+          <li><strong>Her veri aracının bir CLI'ı var.</strong> <code>git</code>, <code>docker</code>, <code>aws</code>, <code>kubectl</code>, <code>spark-submit</code>… Araçların en güncel ve en güçlü yüzü her zaman komut satırı arayüzüdür; GUI'ler sonradan ve eksik gelir.</li>
+        </ul>
+        <p>Üç terimi ayıralım: <strong>terminal (uçbirim)</strong> yazı yazdığın penceredir; <strong>shell (kabuk)</strong> — bash, zsh gibi — o pencerede yazdıklarını yorumlayıp çalıştıran programdır; <strong>CLI (command line interface, komut satırı arayüzü)</strong> ise bu etkileşim biçiminin genel adıdır. Restoran analojisiyle: terminal masadır, shell garsondur, komutlar siparişindir.</p>
+
+        <div class="note"><b>Windows kullanıyorsan.</b> WSL (Windows Subsystem for Linux) ile Windows içinde gerçek bir Ubuntu terminali açabilirsin; bu sayfadaki her komut orada aynen çalışır. macOS zaten Unix ailesinden geldiği için Terminal uygulaması doğrudan yeterlidir.</div>
+
+        <h2>Dosya sisteminde gezinmek</h2>
+        <p>Linux'ta her şey tek bir ağacın dallarıdır ve ağacın kökü <code>/</code> (root) ile gösterilir. Senin kişisel alanın <code>/home/kullanici</code> dizinidir ve kısaca <code>~</code> ile anılır. Bir dosyanın ağaçtaki tam adresi olan <strong>path (yol)</strong> kavramını <a href="m1-bilgisayar-temelleri.html">bilgisayar temelleri konusunda</a> görmüştük; burada onun üzerinde yürümeyi öğreniyoruz: kökten başlayan yola <em>mutlak</em> (<code>/home/veri/projeler</code>), bulunduğun yerden hesaplanana <em>göreli</em> (<code>projeler/satis.csv</code>) path denir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 640 345" width="640" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Linux dosya ağacı: kök dizinden home, veri ve projeler klasörlerine inen yapı">
+            <g font-family="inherit">
+              <text x="320" y="25" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Linux dosya ağacı: her şey kökten ( / ) başlar</text>
+
+              <text x="44" y="55" fill="var(--acc)" font-size="15" font-weight="700">/</text>
+              <path d="M50 64 L50 166" stroke="var(--dg-line)" stroke-width="1.4" fill="none"/>
+              <path d="M50 76 L82 76" stroke="var(--dg-line)" stroke-width="1.4" fill="none"/>
+              <path d="M50 106 L82 106" stroke="var(--dg-line)" stroke-width="1.4" fill="none"/>
+              <path d="M50 136 L82 136" stroke="var(--dg-line)" stroke-width="1.4" fill="none"/>
+              <path d="M50 166 L82 166" stroke="var(--dg-line)" stroke-width="1.4" fill="none"/>
+
+              <text x="88" y="80" fill="var(--ink)" font-size="12.5" font-weight="600">bin/</text>
+              <text x="200" y="80" fill="var(--muted)" font-size="11">temel komutlar</text>
+              <text x="88" y="110" fill="var(--ink)" font-size="12.5" font-weight="600">etc/</text>
+              <text x="200" y="110" fill="var(--muted)" font-size="11">sistem ayarları</text>
+              <text x="88" y="140" fill="var(--ink)" font-size="12.5" font-weight="600">tmp/</text>
+              <text x="200" y="140" fill="var(--muted)" font-size="11">geçici dosyalar</text>
+              <text x="88" y="170" fill="var(--ink)" font-size="12.5" font-weight="600">home/</text>
+              <text x="200" y="170" fill="var(--muted)" font-size="11">kullanıcı dizinleri</text>
+
+              <path d="M96 178 L96 196" stroke="var(--dg-line)" stroke-width="1.4" fill="none"/>
+              <path d="M96 196 L128 196" stroke="var(--dg-line)" stroke-width="1.4" fill="none"/>
+              <text x="134" y="200" fill="var(--acc)" font-size="12.5" font-weight="700">veri/</text>
+              <text x="200" y="200" fill="var(--acc)" font-size="11">← senin ev dizinin, kısaca ~</text>
+
+              <path d="M142 208 L142 286" stroke="var(--dg-line)" stroke-width="1.4" fill="none"/>
+              <path d="M142 226 L174 226" stroke="var(--dg-line)" stroke-width="1.4" fill="none"/>
+              <text x="180" y="230" fill="var(--ink)" font-size="12.5" font-weight="600">indirilenler/</text>
+              <path d="M142 256 L174 256" stroke="var(--dg-line)" stroke-width="1.4" fill="none"/>
+              <text x="180" y="260" fill="var(--ink)" font-size="12.5" font-weight="600">projeler/</text>
+              <path d="M142 286 L174 286" stroke="var(--dg-line)" stroke-width="1.4" fill="none"/>
+              <text x="180" y="290" fill="var(--ink)" font-size="12.5" font-weight="600">notlar.md</text>
+
+              <path d="M188 268 L188 316" stroke="var(--dg-line)" stroke-width="1.4" fill="none"/>
+              <path d="M188 316 L220 316" stroke="var(--dg-line)" stroke-width="1.4" fill="none"/>
+              <text x="226" y="320" fill="var(--ink)" font-size="12.5" font-weight="600">satis-pipeline/</text>
+              <text x="345" y="320" fill="var(--muted)" font-size="11.5">temizle.py · satis.csv</text>
+
+              <rect x="392" y="80" width="228" height="120" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="506" y="106" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Path (yol) nasıl okunur?</text>
+              <text x="506" y="132" text-anchor="middle" fill="var(--acc)" font-size="11.5" font-weight="600">/home/veri/projeler/</text>
+              <text x="506" y="150" text-anchor="middle" fill="var(--acc)" font-size="11.5" font-weight="600">satis-pipeline/satis.csv</text>
+              <text x="506" y="178" text-anchor="middle" fill="var(--muted)" font-size="10.5">kökten dosyaya, adım adım iniş</text>
+            </g>
+          </svg>
+          <figcaption>Windows'taki C:\ ve D:\ sürücülerinin aksine Linux'ta tek bir ağaç vardır; her dosyanın adresi kökten başlayan bir path'tir.</figcaption>
+        </figure>
+
+        <p>Bu ağaçta dolaşmak için beş komut yeter: <code>pwd</code> "neredeyim?", <code>ls</code> "burada ne var?", <code>cd</code> "şuraya git", <code>mkdir</code> "klasör aç", <code>cp / mv / rm</code> "kopyala / taşı / sil". Küçük bir oturum:</p>
+
+        <figure class="codebox">
+          <figcaption>Bash — gezinme ve dosya işlemleri mini oturumu</figcaption>
+          <pre><code data-lang="bash">pwd                      # neredeyim? → /home/veri
+ls -lh                   # neler var? (-l: detay, -h: okunur boyutlar)
+
+mkdir projeler           # yeni klasör oluştur
+cd projeler              # içine gir
+cd ..                    # bir üst dizine çık
+cd ~                     # nereden olursan ol, ev dizinine dön
+
+cp satis.csv yedek.csv   # kopyala
+mv yedek.csv arsiv/      # taşı (aynı komut yeniden adlandırmada da kullanılır)
+rm eski_rapor.txt        # sil</code></pre>
+        </figure>
+
+        <div class="warn"><b>Terminalde çöp kutusu yoktur.</b> <code>rm</code> ile silinen dosya geri gelmez. Hele <code>rm -rf</code> (klasörü tüm içeriğiyle, sormadan sil) komutunu yazarken path'i iki kez kontrol et — yanlış dizinde çalıştırılan bir <code>rm -rf</code>, sektörün en acı klasik hikâyesidir.</div>
+
+        <h2>Dosya içeriğiyle çalışmak</h2>
+        <p>Veri işinde dosyaların <em>içine</em> bakmak günlük rutindir: <code>cat</code> dosyanın tamamını basar, <code>head</code> ve <code>tail</code> baştan/sondan birkaç satır gösterir (10 GB'lık log'u açmadan göz atmanın yolu!), <code>grep</code> bir kalıba uyan satırları süzer, <code>wc -l</code> satır sayar.</p>
+        <p>Asıl sihir, bu küçük komutları <strong>pipe (boru)</strong> karakteri <code>|</code> ile zincirlemektir: soldaki komutun çıktısı, sağdaki komutun girdisi olur. Unix felsefesi tam olarak budur — her komut tek bir işi iyi yapar, sen onları <strong>LEGO gibi birleştirip</strong> kendi aracını kurarsın:</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 215" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pipe zinciri: cat log.csv, grep ERROR ve wc -l komutlarının bağlanışı">
+            <defs>
+              <marker id="arr_pipe" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="350" y="28" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">cat log.csv | grep ERROR | wc -l</text>
+
+              <rect x="40" y="60" width="150" height="54" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="115" y="84" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">cat log.csv</text>
+              <text x="115" y="102" text-anchor="middle" fill="var(--muted)" font-size="11">dosyayı oku</text>
+              <text x="115" y="140" text-anchor="middle" fill="var(--muted)" font-size="11">çıktı: 10.000 satır</text>
+
+              <path d="M192 87 L273 87" stroke="var(--acc)" stroke-width="2" marker-end="url(#arr_pipe)"/>
+              <text x="233" y="77" text-anchor="middle" fill="var(--acc)" font-size="16" font-weight="700">|</text>
+
+              <rect x="275" y="60" width="150" height="54" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="350" y="84" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">grep ERROR</text>
+              <text x="350" y="102" text-anchor="middle" fill="var(--muted)" font-size="11">satırları süz</text>
+              <text x="350" y="140" text-anchor="middle" fill="var(--muted)" font-size="11">çıktı: ERROR içeren 142 satır</text>
+
+              <path d="M427 87 L508 87" stroke="var(--acc)" stroke-width="2" marker-end="url(#arr_pipe)"/>
+              <text x="468" y="77" text-anchor="middle" fill="var(--acc)" font-size="16" font-weight="700">|</text>
+
+              <rect x="510" y="60" width="150" height="54" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="585" y="84" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">wc -l</text>
+              <text x="585" y="102" text-anchor="middle" fill="var(--muted)" font-size="11">satırları say</text>
+              <text x="585" y="140" text-anchor="middle" fill="var(--ok)" font-size="11.5" font-weight="700">ekrana yazılan: 142</text>
+
+              <text x="350" y="185" text-anchor="middle" fill="var(--muted)" font-size="11.5">pipe ( | ): soldaki komutun çıktısı sağdakinin girdisi olur — küçük parçalar, LEGO gibi birleşir</text>
+            </g>
+          </svg>
+          <figcaption>Her kutu tek bir iş yapar; zincir üçünü tek satırlık bir "log analiz aracına" dönüştürür.</figcaption>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Bash — grep ve pipe ile log analizi</figcaption>
+          <pre><code data-lang="bash"># Log dosyasına hızlı bakış
+head -5 uygulama.log        # ilk 5 satır: format nasıl?
+tail -5 uygulama.log        # son 5 satır: en taze kayıtlar
+wc -l uygulama.log          # toplam satır sayısı
+
+# İçinde ERROR geçen satırlardan birkaç örnek
+grep "ERROR" uygulama.log | head -3
+
+# Kaç ERROR var? Komutları zincirle:
+grep "ERROR" uygulama.log | wc -l          # 142
+
+# En çok hata üreten 3 servis (zincirin gücü)
+grep "ERROR" uygulama.log | cut -d" " -f3 | sort | uniq -c | sort -rn | head -3
+#   87 odeme-servisi
+#   41 stok-servisi
+#   14 rapor-servisi</code></pre>
+        </figure>
+
+        <div class="tip"><b>Kılavuz her zaman yanında.</b> Bir komutun ne yaptığını unuttuysan <code>komut --help</code> kısa özet, <code>man komut</code> tam kılavuz verir. Komut ezberlemek değil, "böyle bir araç vardı" diye hatırlayıp kılavuza bakmak yeterlidir.</div>
+
+        <h2>Ortam ve süreçler</h2>
+        <p>Programlar çalıştıkları ortamdan bilgi okur: <strong>ortam değişkenleri (environment variables)</strong>, shell'in tuttuğu <code>İSİM=değer</code> çiftleridir. <code>export API_KEY="gizli-anahtar"</code> dedikten sonra o terminaldeki her program bu değeri okuyabilir. Altın kural: <strong>parolalar ve API anahtarları koda değil, ortam değişkenine yazılır</strong> — böylece kodun GitHub'a çıkarken sırların makinede kalır. Bu değişkenlerin en ünlüsü <code>PATH</code>'tir: shell, yazdığın komutu <code>PATH</code> içinde listelenen klasörlerde arar; "command not found" hatasının sık sebebi, aracın kurulu olup <code>PATH</code>'te olmamasıdır.</p>
+        <p>Çalışan programları da terminalden yönetirsin: <code>ps</code> aktif süreçleri (process — <a href="m1-bilgisayar-temelleri.html">bilgisayar temellerinde</a> tanımıştık) listeler, <code>kill</code> takılan bir sürece kapanma sinyali gönderir. Sonsuz döngüye giren bir eğitim script'ini durdurmak için buna ihtiyacın olacak.</p>
+        <p>Peki uzaktaki sunucuya nasıl ulaşırsın? <strong>SSH (Secure Shell)</strong> ile: <code>ssh kullanici@sunucu-adresi</code> yazdığında, şifreli bir tünel üzerinden o makinenin terminaline bağlanırsın. Bulutta kiraladığın GPU'lu makinede model eğitmek, pratikte "SSH ile bağlan, komutları orada çalıştır" demektir — <a href="m3-bulut.html">bulut platformları konusunda</a> bunu bolca yapacağız.</p>
+
+        <h2>Git: kod için zaman makinesi</h2>
+        <p>Şu dosya adları tanıdık mı: <code>rapor_final.docx</code>, <code>rapor_final_v2.docx</code>, <code>rapor_final_v2_GERCEK_SON.docx</code>? Bu, elle yapılmış ve kötü çalışan bir versiyon kontrolüdür. <strong>Git</strong>, aynı ihtiyacın profesyonel çözümü: projenin her anlamlı anının fotoğrafını çeker, istediğin ana geri dönmeni sağlar ve aynı dosyada birden fazla kişinin çalışmasını yönetir. Dört kavramla düşün:</p>
+        <ul>
+          <li><strong>Repository (repo / depo)</strong> — projenin klasörü + tüm tarihçesi. Zaman makinesinin kendisi.</li>
+          <li><strong>Commit</strong> — bir anın fotoğrafı: "ne değişti + neden" mesajıyla kaydedilir. Zaman çizgisindeki bir nokta.</li>
+          <li><strong>Branch (dal)</strong> — paralel bir zaman çizgisi. Ana hattı (<code>main</code>) bozmadan yeni bir özelliği denediğin güvenli alan.</li>
+          <li><strong>Merge (birleştirme)</strong> — dalda biten işin ana hatta katılması. İki çizgi tek çizgiye döner.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 250" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Git dal şeması: main hattından ayrılan feature dalı iki commit sonra merge oluyor">
+            <defs>
+              <marker id="arr_git" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--ok)"/></marker>
+              <marker id="arr_git2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="350" y="25" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Dal aç, rahatça çalış, bitince merge et — main hep sağlam kalır</text>
+
+              <!-- main hattı -->
+              <path d="M60 150 L640 150" stroke="var(--acc)" stroke-width="2.4" marker-end="url(#arr_git2)"/>
+              <text x="68" y="136" fill="var(--acc)" font-size="12.5" font-weight="700">main</text>
+              <text x="612" y="172" text-anchor="middle" fill="var(--muted)" font-size="10.5">zaman →</text>
+
+              <!-- feature dalı -->
+              <path d="M180 150 C 220 150, 230 80, 271 80" stroke="var(--ok)" stroke-width="2.2" fill="none" marker-end="url(#arr_git)"/>
+              <path d="M280 80 L400 80" stroke="var(--ok)" stroke-width="2.2"/>
+              <path d="M400 80 C 460 80, 500 100, 530 143" stroke="var(--ok)" stroke-width="2.2" fill="none" marker-end="url(#arr_git)"/>
+              <text x="340" y="60" text-anchor="middle" fill="var(--ok)" font-size="12.5" font-weight="700">feature/rapor</text>
+
+              <!-- commit'ler -->
+              <circle cx="100" cy="150" r="9" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="2"/>
+              <circle cx="180" cy="150" r="9" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="2"/>
+              <circle cx="330" cy="150" r="9" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="2"/>
+              <circle cx="280" cy="80" r="9" fill="var(--dg-box)" stroke="var(--ok)" stroke-width="2"/>
+              <circle cx="400" cy="80" r="9" fill="var(--dg-box)" stroke="var(--ok)" stroke-width="2"/>
+              <circle cx="540" cy="150" r="10" fill="rgba(var(--acc-rgb),.3)" stroke="var(--acc)" stroke-width="2.2"/>
+
+              <text x="100" y="178" text-anchor="middle" fill="var(--muted)" font-size="10.5">ilk commit</text>
+              <text x="180" y="178" text-anchor="middle" fill="var(--muted)" font-size="10.5">dal buradan açıldı</text>
+              <text x="330" y="178" text-anchor="middle" fill="var(--muted)" font-size="10.5">main ilerlemeye devam eder</text>
+              <text x="280" y="106" text-anchor="middle" fill="var(--muted)" font-size="10.5">yeni özellik</text>
+              <text x="400" y="106" text-anchor="middle" fill="var(--muted)" font-size="10.5">düzeltme</text>
+              <text x="540" y="200" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">merge commit:</text>
+              <text x="540" y="216" text-anchor="middle" fill="var(--muted)" font-size="10.5">iki çizgi birleşti</text>
+            </g>
+          </svg>
+          <figcaption>Daireler commit'lerdir. Dal, main'e dokunmadan deneme alanı açar; merge, biten işi ana hatta katar.</figcaption>
+        </figure>
+
+        <h2>Günlük Git akışı ve GitHub</h2>
+        <p>Git bilgisayarında çalışır; <strong>GitHub</strong> ise repo'ların internetteki buluşma noktasıdır: yedek, ekip çalışması ve kod inceleme platformu (GitLab ve Bitbucket da aynı rolü oynar). İkisinin arasındaki köprü iki komuttur: <code>push</code> yerel commit'lerini GitHub'a gönderir, <code>pull</code> oradaki yenilikleri sana indirir. Ekipçe çalışmanın kalbi ise <strong>pull request (PR)</strong>'tir: "dalımdaki değişiklikleri main'e katmak istiyorum, bakar mısınız?" talebi. Kod, ancak bir ekip arkadaşının incelemesinden geçtikten sonra merge edilir — bu inceleme kültürü, yazılımı tek kişilik bir işten takım sporuna çevirir.</p>
+        <p>Gerçek hayattaki döngü hep aynıdır: <em>clone → branch → düzenle → add → commit → push → pull request → merge</em>. Kasların buna alışsın:</p>
+
+        <figure class="codebox">
+          <figcaption>Bash — günlük Git akışı, baştan sona</figcaption>
+          <pre><code data-lang="bash"># 1) Projeyi bilgisayarına indir (yalnızca ilk seferde)
+git clone https://github.com/ekip/veri-pipeline.git
+cd veri-pipeline
+
+# 2) İşin için yeni bir dal aç
+git checkout -b temizlik-adimi
+
+# ... dosyaları düzenle ...
+
+# 3) Değişiklikleri kaydet
+git status                          # ne değişmiş, ne sahnede?
+git add temizle.py                  # değişikliği sahneye al (staging)
+git commit -m "Null satirlari temizleyen adim eklendi"
+
+# 4) Dalı GitHub'a gönder
+git push origin temizlik-adimi
+
+# 5) GitHub arayüzünde: Pull Request aç → inceleme → merge
+# Ertesi gün: main'deki yenilikleri kendine çek
+git checkout main
+git pull</code></pre>
+        </figure>
+
+        <div class="tip"><b>Küçük ve sık commit at.</b> "3 haftalık her şey" içeren dev bir commit incelenemez ve geri alınamaz. Her commit tek bir mantıklı değişiklik taşısın, mesajı da onu anlatsın: "Eksik tarihler için varsayilan deger eklendi" gibi. Gelecekteki sen, git tarihçesini bir günlük gibi okuyabilmeli.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Bu sayfadaki araçlar, veri işinin görünmez altyapısıdır; şu sahnelerde tekrar tekrar karşılaşacaksın:</p>
+        <ul>
+          <li><strong>Gece yarısı pipeline alarmı →</strong> sunucuya <code>ssh</code> ile bağlan, <code>tail</code> ve <code>grep</code> ile log'da hatayı bul. Yukarıdaki pipe zinciri, gerçek bir nöbet gecesinin özetidir.</li>
+          <li><strong>Zamanlanmış işler →</strong> "her gece 02:00'de çalışsın" dediğin script'ler; bu fikrin kurumsal hâli <a href="m3-orkestrasyon.html">Airflow ve DAG'ler konusunda</a>.</li>
+          <li><strong>Bulut makineleri →</strong> GPU'lu sunucu kiralayıp SSH ile bağlanmak, model eğitiminin standart kurulumudur (<a href="m3-bulut.html">bulut platformları</a>).</li>
+          <li><strong>Ekip çalışması →</strong> her veri ekibi kodu Git ile yönetir; PR incelemeleri hem kalite kapısı hem de en hızlı öğrenme okulundur.</li>
+          <li><strong>İş başvurusu →</strong> GitHub profilin, portföyündür. Düzenli commit'lerle büyüyen bir proje, CV'deki "Git biliyorum" satırından çok daha inandırıcıdır.</li>
+          <li><strong>Ortam değişkenleri →</strong> Docker container'ları ve bulut servisleri yapılandırmayı env üzerinden alır; "config'i koddan ayır" ilkesi her yerde geçerlidir.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Grafik arayüz varken terminal öğrenmenin üç pratik gerekçesi nedir?</summary>
+            <div class="answer"><b>1)</b> Sunucularda GUI yoktur; uzak makinede tek arayüz komut satırıdır. <b>2)</b> Komutlar script'e dökülüp otomatikleştirilebilir, tıklamalar dökülmez. <b>3)</b> Veri araçlarının (git, docker, aws, spark-submit) asıl yüzü CLI'dır; GUI'ler eksik kalır.</div>
+          </details>
+          <details class="quiz">
+            <summary><code>cat satis.csv | grep "İstanbul" | wc -l</code> zinciri ne yapar?</summary>
+            <div class="answer">Dosyayı okur, içinde "İstanbul" geçen satırları süzer ve <b>bu satırların sayısını</b> ekrana yazar. Her <code>|</code>, soldaki komutun çıktısını sağdakine girdi yapar; üç küçük araç birleşip "İstanbul'lu kayıt sayacı"na dönüşür.</div>
+          </details>
+          <details class="quiz">
+            <summary><code>git commit</code> ile <code>git push</code> arasındaki fark nedir?</summary>
+            <div class="answer"><code>commit</code> değişikliğin fotoğrafını <b>yerel</b> repo tarihçesine kaydeder — internet gerekmez. <code>push</code> ise birikmiş commit'leri GitHub'daki uzak repoya <b>gönderir</b>. Commit atıp push'u unutursan, ekip arkadaşların işini göremez; bilgisayarın bozulursa yedeklenmemiş commit'ler de gider.</div>
+          </details>
+          <details class="quiz">
+            <summary>Neden doğrudan main dalına commit atmak yerine yeni bir branch açılır?</summary>
+            <div class="answer">Main, <b>her an çalışır durumda</b> olması gereken ana hattır. Branch, işin bitmemiş hâlini main'i bozmadan geliştirebileceğin izole bir alan açar; iş bitince pull request ile <b>incelemeden geçip</b> merge edilir. Böylece hem hatalar main'e sızmadan yakalanır hem de kim neyi neden değiştirmiş, izlenebilir kalır.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Terminal (Uçbirim)</span><span class="term-en">Terminal</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Komut yazıp çıktı gördüğün metin tabanlı pencere; shell ile aranda duran arayüz.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Kabuk (Shell)</span><span class="term-en">Shell</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Yazdığın komutları yorumlayıp çalıştıran program: bash, zsh gibi. Script'lerin de çalışma ortamı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Komut Satırı</span><span class="term-en">Command Line (CLI)</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Yazılı komutlarla çalışma biçiminin genel adı; veri araçlarının asıl ve en güçlü arayüzü.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Pipe (Boru)</span><span class="term-en">Pipe</span><span class="lvl lvl-orta">Orta</span></div><p>Bir komutun çıktısını diğerine girdi yapan | işareti; küçük araçlardan güçlü zincirler kurar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Ortam Değişkeni</span><span class="term-en">Environment Variable</span><span class="lvl lvl-orta">Orta</span></div><p>Programların ortamdan okuduğu İSİM=değer çifti; API anahtarları ve yapılandırma buraya konur, koda değil.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">SSH</span><span class="term-en">SSH</span><span class="lvl lvl-orta">Orta</span></div><p>Uzak makinenin terminaline şifreli bağlanma protokolü; bulut sunucularıyla çalışmanın kapısı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Git</span><span class="term-en">Git</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Dağıtık versiyon kontrol sistemi; projenin tüm tarihçesini tutar, geriye dönüş ve ekip çalışması sağlar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Depo (Repo)</span><span class="term-en">Repository</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Proje dosyaları + tüm commit tarihçesi. Yerelde ve GitHub gibi uzak platformlarda kopyaları yaşar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Commit</span><span class="term-en">Commit</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Projenin bir anının mesajlı fotoğrafı; Git tarihçesinin yapı taşı. Küçük ve sık olması makbuldür.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Dal (Branch)</span><span class="term-en">Branch</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Ana hattı bozmadan çalışmayı sürdürdüğün paralel çizgi; her yeni iş için yeni dal açılır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Merge (Birleştirme)</span><span class="term-en">Merge</span><span class="lvl lvl-orta">Orta</span></div><p>Bir daldaki değişikliklerin başka bir dala katılması; aynı satır iki yerde değiştiyse conflict çözülür.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Pull Request</span><span class="term-en">Pull Request</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>"Dalımı main'e katın" talebi; kod incelemesinin yapıldığı yer. Ekip çalışmasının kalite kapısı.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m1-linux-git">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m1-matematik.html"><span>← Önceki</span><b>Matematik Temelleri</b></a>
+          <a class="next" href="m2-veri-kavramlari.html"><span>Sonraki →</span><b>Veri Tipleri ve Formatları</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

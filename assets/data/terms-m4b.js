@@ -1,0 +1,18 @@
+/* Sözlük verisi — Modül 4 / Konu: m4-zaman-serisi */
+window.GLOSSARY = (window.GLOSSARY || []).concat([
+  { tr: "Zaman Serisi", en: "Time Series", lvl: "baslangic", mod: "m4", topic: "m4-zaman-serisi", def: "Zamana göre sıralanmış gözlemler dizisi. Satırlar birbirinden bağımsız değildir; sıranın kendisi bilgi taşır ve bu, analiz kurallarının çoğunu değiştirir." },
+  { tr: "Trend", en: "Trend", lvl: "baslangic", mod: "m4", topic: "m4-zaman-serisi", def: "Serinin uzun vadeli yönü: büyüme ya da küçülme eğilimi. Ayrıştırmanın en görünür bileşenidir." },
+  { tr: "Mevsimsellik", en: "Seasonality", lvl: "baslangic", mod: "m4", topic: "m4-zaman-serisi", def: "Sabit ve bilinen periyotta tekrar eden desen: haftanın günleri, aylar, yıllık dönemler. Periyodu belirsiz olan uzun dalgalanmalar ise döngüdür (cycle)." },
+  { tr: "Ayrıştırma", en: "Decomposition", lvl: "orta", mod: "m4", topic: "m4-zaman-serisi", def: "Seriyi trend, mevsimsellik ve artık bileşenlerine bölme. Toplamsal ya da çarpımsal olabilir; artıkta desen kalmışsa model bir şeyi kaçırıyordur." },
+  { tr: "Durağanlık", en: "Stationarity", lvl: "ileri", mod: "m4", topic: "m4-zaman-serisi", def: "İstatistiksel özelliklerin (ortalama, varyans) zaman içinde değişmemesi. ARIMA ailesinin ön şartıdır; ADF testiyle sınanır." },
+  { tr: "Fark Alma", en: "Differencing", lvl: "ileri", mod: "m4", topic: "m4-zaman-serisi", def: "Seriyi kendi gecikmiş hâlinden çıkararak durağanlaştırma. Trendi yok eder ve \"seviye\" yerine \"değişim\" modellenir." },
+  { tr: "Lag (Gecikme)", en: "Lag", lvl: "orta", mod: "m4", topic: "m4-zaman-serisi", def: "Serinin geçmiş bir değeri (dün, geçen hafta aynı gün). Makine öğrenmesi yaklaşımında en güçlü feature ailesidir." },
+  { tr: "Otokorelasyon (ACF)", en: "Autocorrelation", lvl: "ileri", mod: "m4", topic: "m4-zaman-serisi", def: "Serinin kendi gecikmiş hâliyle korelasyonu. ACF grafiğindeki 7, 14, 21. gecikmelerdeki sivrilmeler haftalık mevsimselliğin parmak izidir." },
+  { tr: "Hareketli Ortalama", en: "Moving Average", lvl: "baslangic", mod: "m4", topic: "m4-zaman-serisi", def: "Son k dönemin ortalaması. Gürültüyü bastırıp trendi görünür kılan en basit araçtır; feature olarak kullanılırken önce shift(1) yapılmalıdır." },
+  { tr: "Üstel Düzleştirme", en: "Exponential Smoothing", lvl: "orta", mod: "m4", topic: "m4-zaman-serisi", def: "Geçmişe üstel azalan ağırlık veren tahmin ailesi. Holt-Winters uzantısı trend ve mevsimselliği de modeller; hafif ve hâlâ çok yaygındır." },
+  { tr: "ARIMA & SARIMA", en: "ARIMA & SARIMA", lvl: "ileri", mod: "m4", topic: "m4-zaman-serisi", def: "AR (geçmiş değerler), I (fark alma) ve MA (geçmiş hatalar) bileşenlerini birleştiren klasik tahmin modeli; SARIMA mevsimsel uzantısıdır." },
+  { tr: "Prophet", en: "Prophet", lvl: "orta", mod: "m4", topic: "m4-zaman-serisi", def: "Tatil, kampanya ve kırılma noktalarını isimlendirerek eklemeye izin veren, eksik veriye toleranslı iş odaklı tahmin kütüphanesi." },
+  { tr: "Naive Baseline", en: "Naive Forecast", lvl: "baslangic", mod: "m4", topic: "m4-zaman-serisi", def: "\"Yarın bugün kadar olur\" ya da \"gelecek cumartesi geçen cumartesi kadar\" tahmini. Basit görünür ama geçilmesi gereken çıtadır; yenmesi şaşırtıcı derecede zordur." },
+  { tr: "Walk-Forward Backtesting", en: "Walk-Forward Validation", lvl: "ileri", mod: "m4", topic: "m4-zaman-serisi", def: "Kesim noktasını ileri kaydırarak birden çok turda değerlendirme. Cross-validation'ın zamana saygılı hâlidir; tek kesimin şansını ortadan kaldırır." },
+  { tr: "Tahmin Ufku", en: "Forecast Horizon", lvl: "orta", mod: "m4", topic: "m4-zaman-serisi", def: "Kaç adım ileriyi tahmin ettiğin. Model, gerçekte kullanılacağı ufukta değerlendirilmelidir; 1 gün ile 90 gün bambaşka zorluklardır." }
+]);

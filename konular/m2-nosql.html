@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NoSQL ve Dağıtık Veritabanları — Veri Atlası</title>
+<meta name="description" content="MongoDB, Redis, Cassandra ve Neo4j ile dört NoSQL ailesi; sharding, replikasyon, CAP teoremi, eventual consistency ve SQL–NoSQL karar rehberi.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m2" data-slug="m2-nosql">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m2">2. Veri Dünyası</a><span class="sep">/</span>
+        <span>NoSQL ve Dağıtık Veritabanları</span>
+      </nav>
+      <span class="mod-badge">Modül 2 · Veri Dünyası</span>
+      <h1>NoSQL ve Dağıtık Veritabanları</h1>
+      <p class="en-title">NoSQL &amp; Distributed Databases</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~16 dk okuma</span>
+        <span class="chip">🔤 12 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>İlişkisel model nerede zorlanır?</h2>
+        <p><a href="m2-sql.html">SQL konusunda</a> tabloların, JOIN'lerin ve ACID garantilerinin ne kadar güçlü olduğunu gördün. Peki elimizde bu kadar sağlam bir model varken neden yepyeni veritabanı aileleri icat edildi? Çünkü 2000'lerin ortasında web şirketleri aynı anda üç duvara tosladı:</p>
+        <ul>
+          <li><strong>Esnek şema ihtiyacı.</strong> Bir e-ticaret kataloğunda telefonun "ekran boyutu", tişörtün "beden" alanı var. Hepsini tek tabloya sıkıştırmak, çoğu NULL duran yüzlerce sütun demek; her yeni alan için <code>ALTER TABLE</code> ise milyarlarca satırlık tabloda saatler süren riskli bir operasyon.</li>
+          <li><strong>Yatay ölçekleme.</strong> Tek sunucu ne kadar büyürse büyüsün bir tavanı var. İlişkisel motorların JOIN ve transaction garantileri veri tek makinedeyken ucuz; veriyi 50 makineye yaydığında çok pahalı hale geliyor.</li>
+          <li><strong>Devasa trafik.</strong> Milyonlarca eşzamanlı kullanıcı milisaniyelik yanıt bekliyor; okuma/yazma hacmi tek makinenin diskinin ve ağının kaldıramayacağı seviyeye çıkıyor.</li>
+        </ul>
+        <p>Cevap olarak doğan ailenin adı <strong>NoSQL</strong>. İsim "SQL düşmanlığı" değil, <strong>"Not Only SQL"</strong> (yalnızca SQL değil) diye okunur: bazı ilişkisel garantileri bilinçli olarak gevşetip karşılığında esneklik ve ölçek kazanan sistemler. Bu sayfada dört NoSQL ailesini, dağıtık sistemlerin iki temel hamlesi olan sharding ile replication'ı, meşhur CAP teoremini ve "hangisini ne zaman seçmeli?" sorusunun cevabını göreceğiz.</p>
+
+        <h2>Dört NoSQL ailesi</h2>
+        <p>NoSQL tek bir teknoloji değil, bir şemsiye. Şemsiyenin altında her biri belirli bir erişim desenine göre optimize edilmiş dört ana aile var:</p>
+        <ul>
+          <li><strong>Document store (belge veritabanı)</strong> — veriyi JSON benzeri <em>belgelerde</em> tutar; her belge kendi yapısını taşır, iki belgenin alanları birbirinden farklı olabilir. En bilinen örnek <strong>MongoDB</strong>. Gerçek senaryo: e-ticaret ürün kataloğu — her ürün kendi niteliklerini içeren bir belge olur, "yeni alan eklemek" için şema değişikliği gerekmez.</li>
+          <li><strong>Key-value store (anahtar-değer deposu)</strong> — dev bir sözlük: anahtarı ver, değeri al. Sorgu modeli bu kadar; karşılığında erişim inanılmaz hızlıdır. <strong>Redis</strong> bu ailenin bellek içi (in-memory) yıldızı. Gerçek senaryo: oturum ve önbellek — kullanıcı girişinde oturum bilgisi <code>oturum:8f3a</code> gibi bir anahtarla yazılır, her sayfa isteğinde mikrosaniyeler içinde okunur.</li>
+          <li><strong>Wide-column store (geniş sütunlu veritabanı)</strong> — satır anahtarının altında çok sayıda (ve satırdan satıra değişebilen) sütun tutar; yazma yükü ağır işler için tasarlanmıştır. <strong>Cassandra</strong> bu ailenin amiral gemisi. Gerçek senaryo: IoT sensör okumaları — milyonlarca cihazın saniyede bastığı zaman serisi ölçümler, cihaz anahtarı altında sütun sütun birikir.</li>
+          <li><strong>Graph database (graf veritabanı)</strong> — veriyi düğümler (node) ve kenarlar (edge) olarak saklar; ilişkinin kendisi birinci sınıf vatandaştır. <strong>Neo4j</strong> en yaygın örneği. Gerçek senaryo: öneri motoru — "arkadaşlarımın beğendiği ama benim görmediğim ürünler" sorgusu SQL'de üç-dört JOIN'lik bir zincirken graf'ta doğal bir gezinmedir (traversal).</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 780 290" width="780" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dört NoSQL ailesi: belge, anahtar-değer, geniş sütunlu ve graf">
+            <g>
+              <text x="390" y="20" text-anchor="middle" fill="var(--muted)" font-size="11.5" font-weight="600">Aynı soruya dört farklı cevap: veriyi hangi biçimde saklarsın?</text>
+
+              <!-- Belge -->
+              <rect x="12" y="36" width="180" height="230" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="102" y="62" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Belge (Document)</text>
+              <path d="M62 95 L127 95 L142 110 L142 180 L62 180 Z" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.3"/>
+              <path d="M127 95 L127 110 L142 110" fill="none" stroke="var(--acc)" stroke-width="1.3"/>
+              <text x="70" y="122" fill="var(--ink)" font-size="8.5">{ urun: "Kupa",</text>
+              <text x="70" y="138" fill="var(--ink)" font-size="8.5">fiyat: 90,</text>
+              <text x="70" y="154" fill="var(--ink)" font-size="8.5">renk: "gri" }</text>
+              <text x="102" y="210" text-anchor="middle" fill="var(--acc)" font-size="12.5" font-weight="700">MongoDB</text>
+              <text x="102" y="230" text-anchor="middle" fill="var(--muted)" font-size="10.5">ürün kataloğu,</text>
+              <text x="102" y="246" text-anchor="middle" fill="var(--muted)" font-size="10.5">kullanıcı profilleri</text>
+
+              <!-- Anahtar-Değer -->
+              <rect x="204" y="36" width="180" height="230" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="294" y="62" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Anahtar-Değer</text>
+              <rect x="214" y="115" width="76" height="34" rx="6" fill="rgba(var(--acc-rgb),.2)" stroke="var(--acc)" stroke-width="1.2"/>
+              <text x="252" y="136" text-anchor="middle" fill="var(--ink)" font-size="9">oturum:8f3a</text>
+              <path d="M293 132 L306 132" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arrkv)"/>
+              <rect x="310" y="115" width="64" height="34" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="342" y="136" text-anchor="middle" fill="var(--muted)" font-size="9">{sepet…}</text>
+              <text x="294" y="176" text-anchor="middle" fill="var(--muted)" font-size="9.5">sorgu: anahtarı ver, değeri al</text>
+              <text x="294" y="210" text-anchor="middle" fill="var(--acc)" font-size="12.5" font-weight="700">Redis</text>
+              <text x="294" y="230" text-anchor="middle" fill="var(--muted)" font-size="10.5">önbellek, oturum,</text>
+              <text x="294" y="246" text-anchor="middle" fill="var(--muted)" font-size="10.5">canlı skor tabloları</text>
+
+              <!-- Geniş Sütunlu -->
+              <rect x="396" y="36" width="180" height="230" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="486" y="62" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Geniş Sütunlu</text>
+              <rect x="406" y="110" width="52" height="26" rx="4" fill="rgba(var(--acc-rgb),.2)" stroke="var(--acc)" stroke-width="1"/>
+              <text x="432" y="127" text-anchor="middle" fill="var(--ink)" font-size="8.5">cihaz:1</text>
+              <rect x="460" y="110" width="26" height="26" rx="4" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+              <rect x="488" y="110" width="26" height="26" rx="4" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+              <rect x="516" y="110" width="26" height="26" rx="4" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+              <rect x="544" y="110" width="26" height="26" rx="4" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+              <text x="473" y="127" text-anchor="middle" fill="var(--muted)" font-size="8.5">t1</text>
+              <text x="501" y="127" text-anchor="middle" fill="var(--muted)" font-size="8.5">t2</text>
+              <text x="529" y="127" text-anchor="middle" fill="var(--muted)" font-size="8.5">t3</text>
+              <text x="557" y="127" text-anchor="middle" fill="var(--muted)" font-size="8.5">t4</text>
+              <rect x="406" y="142" width="52" height="26" rx="4" fill="rgba(var(--acc-rgb),.2)" stroke="var(--acc)" stroke-width="1"/>
+              <text x="432" y="159" text-anchor="middle" fill="var(--ink)" font-size="8.5">cihaz:2</text>
+              <rect x="460" y="142" width="26" height="26" rx="4" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+              <rect x="488" y="142" width="26" height="26" rx="4" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+              <text x="473" y="159" text-anchor="middle" fill="var(--muted)" font-size="8.5">t1</text>
+              <text x="501" y="159" text-anchor="middle" fill="var(--muted)" font-size="8.5">t2</text>
+              <text x="530" y="159" fill="var(--muted)" font-size="10">…</text>
+              <text x="486" y="186" text-anchor="middle" fill="var(--muted)" font-size="9.5">her satır farklı genişlikte</text>
+              <text x="486" y="210" text-anchor="middle" fill="var(--acc)" font-size="12.5" font-weight="700">Cassandra</text>
+              <text x="486" y="230" text-anchor="middle" fill="var(--muted)" font-size="10.5">sensör zaman serileri,</text>
+              <text x="486" y="246" text-anchor="middle" fill="var(--muted)" font-size="10.5">yazma-ağır log akışı</text>
+
+              <!-- Graf -->
+              <rect x="588" y="36" width="180" height="230" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="678" y="62" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Graf (Graph)</text>
+              <line x1="646" y1="118" x2="710" y2="118" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="678" y="110" text-anchor="middle" fill="var(--muted)" font-size="7.5">ARKADAŞ</text>
+              <line x1="638" y1="130" x2="668" y2="155" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="640" y="150" text-anchor="end" fill="var(--muted)" font-size="7.5">ALDI</text>
+              <line x1="718" y1="130" x2="688" y2="155" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="716" y="150" fill="var(--muted)" font-size="7.5">BAKTI</text>
+              <circle cx="630" cy="118" r="15" fill="rgba(var(--acc-rgb),.2)" stroke="var(--acc)" stroke-width="1.3"/>
+              <text x="630" y="122" text-anchor="middle" fill="var(--ink)" font-size="8.5" font-weight="600">Ali</text>
+              <circle cx="726" cy="118" r="15" fill="rgba(var(--acc-rgb),.2)" stroke="var(--acc)" stroke-width="1.3"/>
+              <text x="726" y="122" text-anchor="middle" fill="var(--ink)" font-size="8.5" font-weight="600">Ece</text>
+              <circle cx="678" cy="166" r="15" fill="rgba(var(--acc-rgb),.2)" stroke="var(--acc)" stroke-width="1.3"/>
+              <text x="678" y="170" text-anchor="middle" fill="var(--ink)" font-size="8.5" font-weight="600">Kupa</text>
+              <text x="678" y="210" text-anchor="middle" fill="var(--acc)" font-size="12.5" font-weight="700">Neo4j</text>
+              <text x="678" y="230" text-anchor="middle" fill="var(--muted)" font-size="10.5">öneri motoru,</text>
+              <text x="678" y="246" text-anchor="middle" fill="var(--muted)" font-size="10.5">dolandırıcılık ağları</text>
+
+              <defs>
+                <marker id="arrkv" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              </defs>
+            </g>
+          </svg>
+          <figcaption>Dört aile, dört erişim deseni: belge bütün nesneyi, anahtar-değer tek kaydı, geniş sütun zaman serisini, graf ilişkiyi merkeze alır.</figcaption>
+        </figure>
+
+        <p>MongoDB'nin sorgu diline bakınca "SQL'siz hayat" nasıl görünüyor, hemen anlarsın — tablo yerine koleksiyon, satır yerine belge:</p>
+
+        <figure class="codebox">
+          <figcaption>JavaScript — MongoDB shell: belge ekleme ve sorgulama</figcaption>
+          <pre><code data-lang="javascript">// Şema zorunluluğu yok: belge, alanlarını kendisi taşır
+// SQL karşılığı: INSERT INTO users (ad, sehir, ...) VALUES (...)
+db.users.insertOne({
+    ad: "Zeynep",
+    sehir: "İzmir",
+    ilgi: ["ml", "sql"],                      // dizi alan — tek belgede
+    uyelik: { tip: "pro", bitis: "2027-01-01" } // iç içe belge
+})
+
+// SQL karşılığı: SELECT ad, ilgi FROM users
+//                WHERE sehir = 'İzmir' AND yas &gt; 25
+db.users.find(
+    { sehir: "İzmir", yas: { $gt: 25 } },   // filtre koşulu
+    { ad: 1, ilgi: 1 }                      // sadece bu alanları getir
+)</code></pre>
+        </figure>
+
+        <div class="note"><b>İsim yanıltmasın.</b> NoSQL dünyası SQL bilgini çöpe atmaz: Cassandra'nın sorgu dili CQL, SQL'e şaşırtıcı derecede benzer; MongoDB'ye bile SQL arayüzü ekleyen araçlar var. Değişen şey sorgu dili değil, verinin dağıtılma ve saklanma modelidir.</div>
+
+        <p>Redis tarafında ise sorgu dili diye bir şey neredeyse yok — komutlar doğrudan anahtarla konuşur. Oturum önbelleği pratikte şöyle görünür:</p>
+
+        <figure class="codebox">
+          <figcaption>Bash — Redis CLI: oturum önbelleği deseni</figcaption>
+          <pre><code data-lang="bash"># Oturum verisini yaz (anahtar -&gt; değer)
+SET oturum:8f3a '{"kullanici": 42, "sepet": ["kupa", "tisort"]}'
+
+# 30 dakika sonra kendiliğinden silinsin (saniye cinsinden TTL)
+EXPIRE oturum:8f3a 1800
+
+# Her sayfa isteğinde: veritabanına inmeden mikrosaniyede oku
+GET oturum:8f3a
+
+# Kalan yaşam süresini kontrol et
+TTL oturum:8f3a          # 1794 döner (saniye)</code></pre>
+        </figure>
+
+        <p>Dört aileyi tanıdın. Şimdi hepsinin ortak süper gücüne bakalım: bu sistemler nasıl oluyor da yüzlerce makineye yayılabiliyor?</p>
+
+        <h2>Ölçekleme: dikeyden yataya, sharding ve replication</h2>
+        <p>Bir veritabanı yük altında ezilmeye başlayınca iki yol var. <strong>Dikey ölçekleme (vertical scaling)</strong>: makineyi büyüt — daha çok RAM, daha çok çekirdek. Basittir, kodun değişmez; ama fiyat eğrisi acımasızdır ve en büyük makinenin de bir tavanı vardır. <strong>Yatay ölçekleme (horizontal scaling)</strong>: makine ekle — 1 sunucu yerine 10 orta boy sunucu. Teoride sınırsız büyür; ama "veriyi bu makinelere nasıl dağıtacağız?" sorusunu doğurur. O sorunun iki cevabı var ve ikisi <em>farklı dertleri</em> çözer:</p>
+        <ul>
+          <li><strong>Sharding (parçalama)</strong> — veriyi bir anahtara göre (örn. kullanıcı ID'si) parçalara böl, her parçayı farklı sunucuya ver. Çözdüğü dert: <em>kapasite ve yazma hızı</em> — hiçbir makine verinin tamamını taşımak zorunda kalmaz. Bedeli: shard anahtarını kötü seçersen trafik tek parçaya yığılır (hot spot) ve parçalar arası JOIN/sorgu çok zorlaşır.</li>
+          <li><strong>Replication (replikasyon)</strong> — aynı verinin birden fazla kopyasını farklı sunucularda tut. Çözdüğü dert: <em>dayanıklılık ve okuma hızı</em> — bir sunucu çökse veri kaybolmaz, okuma istekleri kopyalara dağılır. Bedeli: kopyaları senkron tutmak; yazma anında tüm kopyalar beklenirse sistem yavaşlar, beklenmezse bir süre "eski veri" okunabilir.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 320" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sharding veriyi parçalara böler, replication aynı verinin kopyalarını dağıtır">
+            <defs>
+              <marker id="arrsr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g>
+              <text x="180" y="26" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Sharding — veriyi BÖL</text>
+              <rect x="105" y="48" width="150" height="36" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <rect x="111" y="53" width="44" height="26" rx="4" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)"/>
+              <rect x="159" y="53" width="44" height="26" rx="4" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)"/>
+              <rect x="207" y="53" width="44" height="26" rx="4" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)"/>
+              <text x="133" y="70" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">A</text>
+              <text x="181" y="70" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">B</text>
+              <text x="229" y="70" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">C</text>
+              <path d="M180 86 L77 146" stroke="var(--acc)" stroke-width="1.5" marker-end="url(#arrsr)"/>
+              <path d="M180 86 L180 146" stroke="var(--acc)" stroke-width="1.5" marker-end="url(#arrsr)"/>
+              <path d="M180 86 L283 146" stroke="var(--acc)" stroke-width="1.5" marker-end="url(#arrsr)"/>
+              <rect x="30" y="150" width="90" height="110" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="75" y="172" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">Sunucu 1</text>
+              <rect x="53" y="185" width="44" height="26" rx="4" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)"/>
+              <text x="75" y="202" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">A</text>
+              <text x="75" y="240" text-anchor="middle" fill="var(--muted)" font-size="9.5">sadece A</text>
+              <rect x="135" y="150" width="90" height="110" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="180" y="172" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">Sunucu 2</text>
+              <rect x="158" y="185" width="44" height="26" rx="4" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)"/>
+              <text x="180" y="202" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">B</text>
+              <text x="180" y="240" text-anchor="middle" fill="var(--muted)" font-size="9.5">sadece B</text>
+              <rect x="240" y="150" width="90" height="110" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="285" y="172" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">Sunucu 3</text>
+              <rect x="263" y="185" width="44" height="26" rx="4" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)"/>
+              <text x="285" y="202" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">C</text>
+              <text x="285" y="240" text-anchor="middle" fill="var(--muted)" font-size="9.5">sadece C</text>
+              <text x="180" y="292" text-anchor="middle" fill="var(--muted)" font-size="10.5">Her sunucu farklı parçayı tutar:</text>
+              <text x="180" y="307" text-anchor="middle" fill="var(--muted)" font-size="10.5">kapasite ve yazma hızı ölçeklenir</text>
+
+              <text x="540" y="26" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Replication — veriyi KOPYALA</text>
+              <rect x="465" y="48" width="150" height="36" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <rect x="471" y="53" width="44" height="26" rx="4" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)"/>
+              <rect x="519" y="53" width="44" height="26" rx="4" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)"/>
+              <rect x="567" y="53" width="44" height="26" rx="4" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)"/>
+              <text x="493" y="70" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">A</text>
+              <text x="541" y="70" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">B</text>
+              <text x="589" y="70" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">C</text>
+              <path d="M540 86 L437 146" stroke="var(--acc)" stroke-width="1.5" marker-end="url(#arrsr)"/>
+              <path d="M540 86 L540 146" stroke="var(--acc)" stroke-width="1.5" marker-end="url(#arrsr)"/>
+              <path d="M540 86 L643 146" stroke="var(--acc)" stroke-width="1.5" marker-end="url(#arrsr)"/>
+              <rect x="390" y="150" width="90" height="110" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="435" y="172" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">Sunucu 1</text>
+              <rect x="396" y="184" width="24" height="22" rx="4" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)"/>
+              <rect x="423" y="184" width="24" height="22" rx="4" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)"/>
+              <rect x="450" y="184" width="24" height="22" rx="4" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)"/>
+              <text x="408" y="199" text-anchor="middle" fill="var(--ink)" font-size="9" font-weight="700">A</text>
+              <text x="435" y="199" text-anchor="middle" fill="var(--ink)" font-size="9" font-weight="700">B</text>
+              <text x="462" y="199" text-anchor="middle" fill="var(--ink)" font-size="9" font-weight="700">C</text>
+              <text x="435" y="240" text-anchor="middle" fill="var(--muted)" font-size="9.5">tam kopya</text>
+              <rect x="495" y="150" width="90" height="110" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="540" y="172" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">Sunucu 2</text>
+              <rect x="501" y="184" width="24" height="22" rx="4" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)"/>
+              <rect x="528" y="184" width="24" height="22" rx="4" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)"/>
+              <rect x="555" y="184" width="24" height="22" rx="4" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)"/>
+              <text x="513" y="199" text-anchor="middle" fill="var(--ink)" font-size="9" font-weight="700">A</text>
+              <text x="540" y="199" text-anchor="middle" fill="var(--ink)" font-size="9" font-weight="700">B</text>
+              <text x="567" y="199" text-anchor="middle" fill="var(--ink)" font-size="9" font-weight="700">C</text>
+              <text x="540" y="240" text-anchor="middle" fill="var(--muted)" font-size="9.5">tam kopya</text>
+              <rect x="600" y="150" width="90" height="110" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="645" y="172" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">Sunucu 3</text>
+              <rect x="606" y="184" width="24" height="22" rx="4" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)"/>
+              <rect x="633" y="184" width="24" height="22" rx="4" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)"/>
+              <rect x="660" y="184" width="24" height="22" rx="4" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)"/>
+              <text x="618" y="199" text-anchor="middle" fill="var(--ink)" font-size="9" font-weight="700">A</text>
+              <text x="645" y="199" text-anchor="middle" fill="var(--ink)" font-size="9" font-weight="700">B</text>
+              <text x="672" y="199" text-anchor="middle" fill="var(--ink)" font-size="9" font-weight="700">C</text>
+              <text x="645" y="240" text-anchor="middle" fill="var(--muted)" font-size="9.5">tam kopya</text>
+              <text x="540" y="292" text-anchor="middle" fill="var(--muted)" font-size="10.5">Her sunucu aynı kopyayı tutar:</text>
+              <text x="540" y="307" text-anchor="middle" fill="var(--muted)" font-size="10.5">biri çökse veri kaybolmaz, okumalar dağılır</text>
+            </g>
+          </svg>
+          <figcaption>İki hamle, iki dert: sharding kapasiteyi, replication dayanıklılığı çözer. Üretim sistemlerinde ikisi birlikte kullanılır — her parçanın 2–3 kopyası olur.</figcaption>
+        </figure>
+
+        <div class="tip"><b>Önce dikey dene.</b> Yatay ölçekleme havalı ama karmaşıklığı da beraberinde getirir. Bugünün bulut makineleri terabaytlarca RAM'e çıkabiliyor; çoğu uygulama için "daha büyük sunucu + iyi index" en ucuz çözümdür. Sharding'in derdini, gerçekten o ölçeğe gelince üstlen.</div>
+
+        <p>Replication'daki "kopyalar ne zaman aynı olur?" sorusu masum görünür ama dağıtık sistemlerin en ünlü teoremine açılan kapıdır.</p>
+
+        <h2>CAP teoremi: dağıtık dünyanın pazarlığı</h2>
+        <p>2000 yılında Eric Brewer'ın ortaya attığı <strong>CAP teoremi</strong> üç özellik tanımlar:</p>
+        <ul>
+          <li><strong>C — Consistency (tutarlılık):</strong> her okuma, en son yazılan değeri (ya da hata) döndürür; hangi kopyaya sorarsan sor cevap aynıdır.</li>
+          <li><strong>A — Availability (erişilebilirlik):</strong> her istek, makul sürede bir cevap alır — sistem "şu an cevap veremem" demez.</li>
+          <li><strong>P — Partition tolerance (bölünme toleransı):</strong> sunucular arasındaki ağ koptuğunda (partition) sistem çalışmaya devam eder.</li>
+        </ul>
+        <p>Teoremin popüler özeti "üçünden ikisini seç"tir ve aşağıdaki üçgen bu sadeleştirmeyle çizilir:</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 660 390" width="660" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CAP üçgeni: tutarlılık, erişilebilirlik ve bölünme toleransı köşeleri, kenarlarda örnek sistemler">
+            <g>
+              <polygon points="330,64 110,302 550,302" fill="rgba(var(--acc-rgb),.06)"/>
+              <line x1="330" y1="64" x2="110" y2="302" stroke="var(--dg-line)" stroke-width="1.6" stroke-dasharray="5 5"/>
+              <line x1="330" y1="64" x2="550" y2="302" stroke="var(--dg-line)" stroke-width="1.6"/>
+              <line x1="110" y1="302" x2="550" y2="302" stroke="var(--dg-line)" stroke-width="1.6"/>
+
+              <circle cx="330" cy="64" r="22" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.8"/>
+              <text x="330" y="69" text-anchor="middle" fill="var(--acc)" font-size="15" font-weight="700">C</text>
+              <text x="330" y="16" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">Consistency</text>
+              <text x="330" y="32" text-anchor="middle" fill="var(--muted)" font-size="10">herkes aynı veriyi görür</text>
+
+              <circle cx="110" cy="302" r="22" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.8"/>
+              <text x="110" y="307" text-anchor="middle" fill="var(--acc)" font-size="15" font-weight="700">A</text>
+              <text x="110" y="338" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">Availability</text>
+              <text x="110" y="354" text-anchor="middle" fill="var(--muted)" font-size="10">her istek yanıt alır</text>
+
+              <circle cx="550" cy="302" r="22" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.8"/>
+              <text x="550" y="307" text-anchor="middle" fill="var(--acc)" font-size="15" font-weight="700">P</text>
+              <text x="550" y="338" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">Partition Tolerance</text>
+              <text x="550" y="354" text-anchor="middle" fill="var(--muted)" font-size="10">ağ bölünse de çalışır</text>
+
+              <text x="192" y="160" text-anchor="end" fill="var(--acc)" font-size="11" font-weight="700">CA</text>
+              <text x="192" y="176" text-anchor="end" fill="var(--muted)" font-size="9.5">klasik RDBMS (tek sunucu,</text>
+              <text x="192" y="190" text-anchor="end" fill="var(--muted)" font-size="9.5">bölünme yokmuş gibi)</text>
+
+              <text x="472" y="160" fill="var(--acc)" font-size="11" font-weight="700">CP</text>
+              <text x="472" y="176" fill="var(--muted)" font-size="9.5">MongoDB benzeri:</text>
+              <text x="472" y="190" fill="var(--muted)" font-size="9.5">tutarlılık için bekletir</text>
+
+              <text x="330" y="326" text-anchor="middle" fill="var(--acc)" font-size="11" font-weight="700">AP</text>
+              <text x="330" y="342" text-anchor="middle" fill="var(--muted)" font-size="9.5">Cassandra benzeri: eski veri dönebilir</text>
+
+              <text x="330" y="380" text-anchor="middle" fill="var(--muted)" font-size="10.5">Sadeleştirilmiş yerleşim — modern sistemlerde P vazgeçilmezdir; asıl seçim bölünme anında C ile A arasındadır.</text>
+            </g>
+          </svg>
+          <figcaption>CAP üçgeni. Kenarlardaki yerleşim ders kitabı sadeleştirmesidir; gerçek sistemler ayarlarına göre bu eksende kayar (Cassandra bile "quorum" ayarıyla tutarlılığa yaklaşır).</figcaption>
+        </figure>
+
+        <div class="warn"><b>"Üçünden ikisi" tam doğru değil.</b> Ağ bölünmesi senin seçtiğin bir özellik değil, kabloların ve veri merkezlerinin gerçeğidir — dağıtık bir sistemde P'den vazgeçemezsin. Teoremin dürüst okuması şudur: <em>bölünme yaşandığı anda</em> ya tutarlılıktan (eski veri dönebilir) ya erişilebilirlikten (bazı istekler bekler/hata alır) taviz verirsin. Bölünme yokken ikisine birden büyük ölçüde sahip olabilirsin.</div>
+
+        <p>Bu pazarlığın A tarafını seçen sistemlerin verdiği söz ise <strong>eventual consistency (nihai tutarlılık)</strong>: "yazdığın değer şu an her kopyada görünmeyebilir; ama yeni yazma gelmezse bütün kopyalar <em>sonunda</em> aynı değere yakınsar." Somut örnek: bir gönderiyi beğendin, sayaç senin ekranında 43 oldu; arkadaşının telefonu birkaç saniye daha 42 gösterdi. Kimsenin hayatı kararmadı — üç saniye sonra herkes 43'ü gördü. Ama aynı gevşekliği banka bakiyesinde kabul edemezsin; orada güçlü tutarlılık (strong consistency) şarttır.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 290" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Eventual consistency zaman çizgisi: yazma önce birincil kopyaya, gecikmeyle replikalara yayılır">
+            <defs>
+              <marker id="arrtime" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--muted)"/></marker>
+            </defs>
+            <g>
+              <text x="200" y="44" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="600">① yazma: 42 → 43</text>
+              <text x="390" y="44" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="600">② kısa gecikme penceresi</text>
+              <text x="580" y="44" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="600">③ yakınsama: hepsi 43</text>
+
+              <text x="15" y="94" fill="var(--ink)" font-size="11" font-weight="600">Birincil kopya</text>
+              <line x1="150" y1="90" x2="685" y2="90" stroke="var(--dg-line)" stroke-width="1" stroke-dasharray="3 4"/>
+              <text x="15" y="149" fill="var(--ink)" font-size="11" font-weight="600">Replika 1</text>
+              <line x1="150" y1="145" x2="685" y2="145" stroke="var(--dg-line)" stroke-width="1" stroke-dasharray="3 4"/>
+              <text x="15" y="204" fill="var(--ink)" font-size="11" font-weight="600">Replika 2</text>
+              <line x1="150" y1="200" x2="685" y2="200" stroke="var(--dg-line)" stroke-width="1" stroke-dasharray="3 4"/>
+
+              <rect x="168" y="76" width="64" height="28" rx="6" fill="rgba(var(--acc-rgb),.12)" stroke="var(--ok)" stroke-width="1.6"/>
+              <text x="200" y="95" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">43</text>
+              <rect x="168" y="131" width="64" height="28" rx="6" fill="var(--dg-box)" stroke="var(--warn)" stroke-width="1.6"/>
+              <text x="200" y="150" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">42</text>
+              <rect x="168" y="186" width="64" height="28" rx="6" fill="var(--dg-box)" stroke="var(--warn)" stroke-width="1.6"/>
+              <text x="200" y="205" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">42</text>
+
+              <rect x="358" y="76" width="64" height="28" rx="6" fill="rgba(var(--acc-rgb),.12)" stroke="var(--ok)" stroke-width="1.6"/>
+              <text x="390" y="95" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">43</text>
+              <rect x="358" y="131" width="64" height="28" rx="6" fill="rgba(var(--acc-rgb),.12)" stroke="var(--ok)" stroke-width="1.6"/>
+              <text x="390" y="150" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">43</text>
+              <rect x="358" y="186" width="64" height="28" rx="6" fill="var(--dg-box)" stroke="var(--warn)" stroke-width="1.6"/>
+              <text x="390" y="205" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">42</text>
+              <text x="390" y="230" text-anchor="middle" fill="var(--warn)" font-size="9.5">bu anda okuyan kullanıcı hâlâ 42 görür</text>
+
+              <rect x="548" y="76" width="64" height="28" rx="6" fill="rgba(var(--acc-rgb),.12)" stroke="var(--ok)" stroke-width="1.6"/>
+              <text x="580" y="95" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">43</text>
+              <rect x="548" y="131" width="64" height="28" rx="6" fill="rgba(var(--acc-rgb),.12)" stroke="var(--ok)" stroke-width="1.6"/>
+              <text x="580" y="150" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">43</text>
+              <rect x="548" y="186" width="64" height="28" rx="6" fill="rgba(var(--acc-rgb),.12)" stroke="var(--ok)" stroke-width="1.6"/>
+              <text x="580" y="205" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">43</text>
+
+              <line x1="150" y1="256" x2="685" y2="256" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrtime)"/>
+              <text x="685" y="276" text-anchor="end" fill="var(--muted)" font-size="10.5">zaman (genelde milisaniye–saniye)</text>
+            </g>
+          </svg>
+          <figcaption>Beğeni sayacının yolculuğu: yazma birincil kopyaya düşer, replikalara gecikmeyle yayılır. Sarı çerçeveli kutular "tutarsızlık penceresi"ni gösterir — sistem sonunda yakınsar.</figcaption>
+        </figure>
+
+        <h2>SQL mi NoSQL mi? Karar rehberi</h2>
+        <p>"Hangisi daha iyi?" yanlış soru; doğru soru "bu iş yükü için hangisi?" Dört kritere bakarak karar ver:</p>
+        <ul>
+          <li><strong>İlişki yoğunluğu.</strong> Verin doğal olarak tablolar arası ilişkilerden oluşuyorsa ve JOIN'ler işin kalbiyse ilişkisel model kazanır. Kayıtlar birbirinden bağımsız belgelerse document store rahat ettirir; derin ilişki gezinmeleri ("arkadaşımın arkadaşı") graf ister.</li>
+          <li><strong>Tutarlılık ihtiyacı.</strong> Para, stok, rezervasyon gibi "asla yanlış olmamalı" veriler ACID transaction'ları olan bir sisteme aittir. Beğeni sayısı, görüntülenme, öneri listesi gibi veriler eventual consistency'yi rahatça tolere eder.</li>
+          <li><strong>Ölçek ve coğrafya.</strong> Tek bölgede GB–birkaç TB veri için iyi ayarlanmış tek bir PostgreSQL seni şaşırtıcı derecede ileri götürür. Küresel dağıtım, on TB'lar ve saniyede yüz binlerce yazma konuşuyorsan baştan yatay ölçeklenen bir tasarım gerekir.</li>
+          <li><strong>Sorgu esnekliği.</strong> Yarın hangi soruyu soracağını bilmiyorsan (ad-hoc analiz, raporlama) SQL'in esnekliği paha biçilmezdir. Erişim desenlerin belliyse ("ID ile getir", "son 100 olayı yaz") key-value ve wide-column tasarımları parlar.</li>
+        </ul>
+        <div class="tip"><b>Kararsızsan PostgreSQL ile başla.</b> JSONB kolon tipi sayesinde belge esnekliğini ilişkisel dünyanın içinde denersin; gerçek darboğazı görünce özelleşmiş bir sisteme geçersin. Modern mimarilerin çoğu zaten "poliglot"tur: siparişler PostgreSQL'de, oturumlar Redis'te, katalog MongoDB'de yaşar — <a href="m2-veri-modelleme.html">bir sonraki konuda</a> bu verinin nasıl modellendiğini göreceğiz.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Bu sayfadaki kavramlar veri kariyerinde şu kılıklarda geri gelecek:</p>
+        <ul>
+          <li><strong>İş ilanlarında →</strong> "PostgreSQL + Redis + MongoDB deneyimi" kalıbı; şirketler tek veritabanı değil, poliglot bir mimari işletiyor.</li>
+          <li><strong>Streaming'de →</strong> <a href="m3-streaming.html">Kafka konusunda</a> göreceğin partition kavramı sharding'in, replication factor ise replikasyonun birebir akrabasıdır.</li>
+          <li><strong>Veri ambarlarında →</strong> BigQuery ve Snowflake (<a href="m3-warehouse-lake.html">warehouse konusu</a>) veriyi senin yerine sessizce shard'lar ve replike eder; sen sadece SQL yazarsın ama altta bu sayfa çalışır.</li>
+          <li><strong>AI tarafında →</strong> <a href="m7-rag.html">RAG konusundaki</a> vektör veritabanları, "embedding'e göre en yakını getir" erişim desenine özelleşmiş yeni bir aile — NoSQL geleneğinin devamıdır.</li>
+          <li><strong>Mülakatlarda →</strong> "CAP teoremini açıkla" ve "bu senaryoda SQL mi NoSQL mi?" klasik sorulardır; bu sayfadaki karar kriterleri cevabının iskeletidir.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>NoSQL, SQL'in yerini almak için mi icat edildi?</summary>
+            <div class="answer">Hayır. NoSQL <b>"Not Only SQL"</b> demektir: ilişkisel modelin zorlandığı yerlerde (esnek şema, yatay ölçek, devasa trafik) bazı garantileri gevşeterek çözüm üretir. Pratikte ikisi yan yana yaşar — siparişler ilişkisel veritabanında, oturumlar Redis'te, katalog MongoDB'de tutulur.</div>
+          </details>
+          <details class="quiz">
+            <summary>Sharding ile replication'ı bir cümlede ayırt et: hangisi hangi derdi çözer?</summary>
+            <div class="answer"><b>Sharding veriyi böler</b> — kapasite ve yazma hızı sorununu çözer; <b>replication veriyi kopyalar</b> — dayanıklılık ve okuma hızı sorununu çözer. Rakip değildirler: üretimde her shard'ın 2–3 replikası olur.</div>
+          </details>
+          <details class="quiz">
+            <summary>CAP teoreminin "üçünden ikisini seç" özeti neden eksiktir?</summary>
+            <div class="answer">Çünkü ağ bölünmesi (P) bir tercih değil, dağıtık sistemlerin kaçınılmaz gerçeğidir. Doğru okuma: <b>bölünme yaşandığı anda</b> tutarlılık (C) ile erişilebilirlik (A) arasında seçim yaparsın. Banka CP tarafını (yanlış cevap vermektense bekletir), sosyal medya AP tarafını (eski de olsa cevap verir) seçer.</div>
+          </details>
+          <details class="quiz">
+            <summary>Beğeni sayısının iki telefonda birkaç saniye farklı görünüp sonra eşitlenmesi hangi kavramdır? Banka bakiyesi için kabul edilebilir mi?</summary>
+            <div class="answer">Bu <b>eventual consistency (nihai tutarlılık)</b>: yazma, replikalara gecikmeyle yayılır ve sistem sonunda aynı değere yakınsar. Beğeni sayacı için zararsızdır; banka bakiyesi içinse kabul edilemez — orada her okumanın son yazmayı görmesi (güçlü tutarlılık) gerekir.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">NoSQL</span><span class="term-en">NoSQL</span><span class="lvl lvl-orta">Orta</span></div><p>"Not Only SQL": ilişkisel modelin dışına çıkan veritabanı ailelerinin şemsiye adı; esneklik ve yatay ölçek için tasarlandı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Belge Veritabanı</span><span class="term-en">Document Store</span><span class="lvl lvl-orta">Orta</span></div><p>Veriyi JSON benzeri belgelerde tutar; her belge kendi yapısını taşıyabilir. MongoDB en bilinen örneğidir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Anahtar-Değer Deposu</span><span class="term-en">Key-Value Store</span><span class="lvl lvl-orta">Orta</span></div><p>En yalın NoSQL modeli: anahtarı ver, değeri al. Önbellek ve oturum verisinin standart çözümüdür.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Geniş Sütunlu Veritabanı</span><span class="term-en">Wide-Column Store</span><span class="lvl lvl-ileri">İleri</span></div><p>Satır anahtarı altında satırdan satıra değişebilen çok sayıda sütun tutar; yazma-ağır zaman serisi yükleri için tasarlanmıştır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Graf Veritabanı</span><span class="term-en">Graph Database</span><span class="lvl lvl-orta">Orta</span></div><p>Veriyi düğüm ve kenarlarla saklar; "arkadaşımın arkadaşı" gibi ilişki gezinmelerinde JOIN zincirlerini yener.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Yatay Ölçekleme</span><span class="term-en">Horizontal Scaling</span><span class="lvl lvl-orta">Orta</span></div><p>Daha güçlü tek makine yerine makine ekleyerek büyüme; dağıtık sistemlerin temel stratejisi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Sharding (Parçalama)</span><span class="term-en">Sharding</span><span class="lvl lvl-ileri">İleri</span></div><p>Veriyi bir anahtara göre parçalara bölüp farklı sunuculara dağıtma; kapasiteyi ve yazma hızını ölçekler.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Replikasyon</span><span class="term-en">Replication</span><span class="lvl lvl-orta">Orta</span></div><p>Aynı verinin birden çok kopyasını farklı sunucularda tutma; sunucu çökse de veri kaybolmaz, okumalar dağılır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">CAP Teoremi</span><span class="term-en">CAP Theorem</span><span class="lvl lvl-ileri">İleri</span></div><p>Ağ bölünmesi anında dağıtık bir sistemin tutarlılık ile erişilebilirlikten birinden taviz vermek zorunda olduğunu söyler.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Nihai Tutarlılık</span><span class="term-en">Eventual Consistency</span><span class="lvl lvl-ileri">İleri</span></div><p>Yazmaların kopyalara zamanla yayıldığı model; kısa süre eski veri okunabilir ama sistem sonunda aynı değere yakınsar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">MongoDB</span><span class="term-en">MongoDB</span><span class="lvl lvl-orta">Orta</span></div><p>En yaygın belge veritabanı; esnek şemalı BSON belgeleri ve zengin sorgu diliyle katalog/profil verilerinin standardı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Redis</span><span class="term-en">Redis</span><span class="lvl lvl-orta">Orta</span></div><p>Bellek içi anahtar-değer deposu; önbellek, oturum, kuyruk ve skor tablolarının İsviçre çakısı.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m2-nosql">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m2-sql.html"><span>← Önceki</span><b>SQL ve İlişkisel Veritabanları</b></a>
+          <a class="next" href="m2-veri-modelleme.html"><span>Sonraki →</span><b>Veri Modelleme</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

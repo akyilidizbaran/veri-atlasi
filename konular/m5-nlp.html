@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Klasik NLP: Metni Sayıya Çevirmek — Veri Atlası</title>
+<meta name="description" content="Metin ön işleme, tokenization, stopword, stemming ve lemmatization; Bag-of-Words, TF-IDF, n-gram ve BM25; metin sınıflandırma, NER ve word2vec ile embedding'e geçiş.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m5" data-slug="m5-nlp">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular" class="active">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m5">5. Makine Öğrenmesi</a><span class="sep">/</span>
+        <span>Klasik NLP: Metni Sayıya Çevirmek</span>
+      </nav>
+      <span class="mod-badge">Modül 5 · Makine Öğrenmesi</span>
+      <h1>Klasik NLP: Metni Sayıya Çevirmek</h1>
+      <p class="en-title">Classical NLP: Turning Text into Numbers</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~17 dk okuma</span>
+        <span class="chip">🔤 14 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>LLM çağında bu konu neden hâlâ duruyor?</h2>
+        <p>Makul bir itiraz: "Claude'a bir cümle yollayıp duygu analizini saniyede alabiliyorken, neden TF-IDF öğreneyim?" Üç sağlam cevabı var.</p>
+        <ul>
+          <li><strong>Arama motorlarının belkemiği hâlâ klasik.</strong> <a href="m7-rag.html">RAG sistemlerindeki</a> hybrid search'ün "keyword" kanadı BM25'tir — yani doğrudan bu sayfanın konusudur. Ürün kodu, hata numarası, özel isim aramalarında bu yöntemler embedding'leri yener.</li>
+          <li><strong>Ölçek ve maliyet.</strong> Günde 50 milyon yorumu sınıflandırman gerekiyorsa, milisaniyede çalışan ve kuruş maliyeti olmayan bir TF-IDF + logistic regression modeli; her biri için API çağrısı yapan bir LLM'den kat kat mantıklıdır.</li>
+          <li><strong>Açıklanabilirlik.</strong> Klasik modelde "bu yorumu neden olumsuz saydın?" sorusunun cevabı nettir: <em>berbat</em>, <em>iade</em>, <em>kırık</em> kelimeleri. Regülasyonlu alanlarda bu şeffaflık pazarlık konusu değildir.</li>
+        </ul>
+        <p>Üstelik bu konu, <a href="m6-transformer.html">Transformer'lara</a> giden yolun zorunlu ilk adımıdır: metni sayıya çevirme fikri burada doğar, orada mükemmelleşir.</p>
+
+        <h2>Temel sorun: model sadece sayı anlar</h2>
+        <p>Bir makine öğrenmesi modeli matris bekler; elindeyse "Kargo çok geç geldi!!!" yazan bir metin var. <strong>NLP (doğal dil işleme)</strong>, insan dilini makinenin işleyebileceği sayısal temsile çevirme ve üzerinde çıkarım yapma disiplinidir. Üzerinde çalıştığın metin yığınına <strong>corpus (derlem)</strong> denir.</p>
+        <p>Metin, yapısal olarak zor bir veri türüdür: uzunluğu değişkendir, sırası anlam taşır, aynı şey binlerce farklı biçimde söylenebilir ve dil sürekli değişir. Klasik yaklaşım bu zorluğu, kontrollü bir <strong>ön işleme hattıyla</strong> ehlileştirir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 236" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Metin ön işleme boru hattının adımları">
+            <defs>
+              <marker id="nlArr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g>
+              <text x="360" y="20" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="700">Ham metinden model girdisine</text>
+
+              <rect x="14" y="36" width="124" height="120" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="76" y="58" text-anchor="middle" fill="var(--acc)" font-size="11" font-weight="800">1 · Ham metin</text>
+              <text x="76" y="88" text-anchor="middle" fill="var(--ink)" font-size="10">"Kargolar ÇOK</text>
+              <text x="76" y="103" text-anchor="middle" fill="var(--ink)" font-size="10">geç geldi!!!"</text>
+              <text x="76" y="132" text-anchor="middle" fill="var(--muted)" font-size="9.5">büyük harf, noktalama,</text>
+              <text x="76" y="144" text-anchor="middle" fill="var(--muted)" font-size="9.5">emoji, yazım hataları</text>
+
+              <rect x="156" y="36" width="124" height="120" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="218" y="58" text-anchor="middle" fill="var(--acc)" font-size="11" font-weight="800">2 · Normalize</text>
+              <text x="218" y="88" text-anchor="middle" fill="var(--ink)" font-size="10">"kargolar çok</text>
+              <text x="218" y="103" text-anchor="middle" fill="var(--ink)" font-size="10">geç geldi"</text>
+              <text x="218" y="132" text-anchor="middle" fill="var(--muted)" font-size="9.5">küçült, noktalama at,</text>
+              <text x="218" y="144" text-anchor="middle" fill="var(--muted)" font-size="9.5">boşlukları düzelt</text>
+
+              <rect x="298" y="36" width="124" height="120" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="360" y="58" text-anchor="middle" fill="var(--acc)" font-size="11" font-weight="800">3 · Tokenize</text>
+              <text x="360" y="86" text-anchor="middle" fill="var(--ink)" font-size="9.5">["kargolar", "çok",</text>
+              <text x="360" y="100" text-anchor="middle" fill="var(--ink)" font-size="9.5">"geç", "geldi"]</text>
+              <text x="360" y="132" text-anchor="middle" fill="var(--muted)" font-size="9.5">metni kelime</text>
+              <text x="360" y="144" text-anchor="middle" fill="var(--muted)" font-size="9.5">birimlerine böl</text>
+
+              <rect x="440" y="36" width="124" height="120" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="502" y="58" text-anchor="middle" fill="var(--acc)" font-size="11" font-weight="800">4 · Stopword</text>
+              <text x="502" y="86" text-anchor="middle" fill="var(--ink)" font-size="9.5">["kargolar",</text>
+              <text x="502" y="100" text-anchor="middle" fill="var(--ink)" font-size="9.5">"geç", "geldi"]</text>
+              <text x="502" y="132" text-anchor="middle" fill="var(--muted)" font-size="9.5">"çok", "ve", "bir"</text>
+              <text x="502" y="144" text-anchor="middle" fill="var(--muted)" font-size="9.5">gibi taşıyıcıları at</text>
+
+              <rect x="582" y="36" width="124" height="120" rx="10" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.7"/>
+              <text x="644" y="58" text-anchor="middle" fill="var(--acc)" font-size="11" font-weight="800">5 · Lemma</text>
+              <text x="644" y="86" text-anchor="middle" fill="var(--ink)" font-size="9.5">["kargo", "geç",</text>
+              <text x="644" y="100" text-anchor="middle" fill="var(--ink)" font-size="9.5">"gel"]</text>
+              <text x="644" y="132" text-anchor="middle" fill="var(--muted)" font-size="9.5">kelimeleri sözlük</text>
+              <text x="644" y="144" text-anchor="middle" fill="var(--muted)" font-size="9.5">hâline indirge</text>
+
+              <path d="M140 96 L152 96" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#nlArr)"/>
+              <path d="M282 96 L294 96" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#nlArr)"/>
+              <path d="M424 96 L436 96" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#nlArr)"/>
+              <path d="M566 96 L578 96" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#nlArr)"/>
+
+              <text x="360" y="186" text-anchor="middle" fill="var(--muted)" font-size="10.5">Her adım kelime dağarcığını (vocabulary) küçültür: daha az sütun, daha az gürültü, daha iyi genelleme.</text>
+              <text x="360" y="208" text-anchor="middle" fill="var(--warn)" font-size="10.5" font-weight="600">Ama her adım bilgi de siler — duygu analizinde "değil" bir stopword değildir!</text>
+            </g>
+          </svg>
+          <figcaption>Ön işleme, tarifi ezberlenerek değil; göreve göre seçilerek uygulanır.</figcaption>
+        </figure>
+
+        <p>Hattın adımlarına daha yakından bakalım:</p>
+        <ul>
+          <li><strong>Tokenization</strong> — metni birimlere ayırma. Klasik NLP'de birim genelde <em>kelimedir</em>; bu, <a href="m7-llm-temelleri.html">LLM'lerdeki alt-kelime (subword) token</a> kavramından farklıdır.</li>
+          <li><strong>Stopword temizliği</strong> — "ve", "bir", "de" gibi çok sık geçen ama ayırt edici olmayan kelimeleri atma. Dikkat: olumsuzluk ekleri ve "değil" gibi kelimeler duygu analizinde <em>hayati</em>dir; hazır listeyi düşünmeden uygulamak modeli sakatlar.</li>
+          <li><strong>Stemming</strong> — kelimenin sonunu kesip kaba bir gövde bırakma ("kitapları" → "kitap"). Hızlıdır, bazen anlamsız gövdeler üretir.</li>
+          <li><strong>Lemmatization</strong> — dilbilgisi bilgisiyle kelimeyi gerçek sözlük hâline indirgeme ("geldi" → "gelmek"). Daha doğru, daha yavaş, dil desteği gerektirir.</li>
+        </ul>
+
+        <div class="warn"><b>Türkçe, klasik NLP için zor bir dildir.</b> Sondan eklemeli yapı yüzünden tek kökten yüzlerce yüzey biçimi doğar: <em>ev, evler, evlerimizden, evlendirilemeyenlerden…</em> İngilizce için yeterli olan basit stemming Türkçe'de çuvallar; morfolojik analiz gerekir (Zemberek, spaCy'nin Türkçe modelleri, HuggingFace'teki Türkçe tokenizer'lar). Ayrıca <code>"I".lower()</code> Python'da <code>"i"</code> verir — Türkçe'de doğrusu <code>"ı"</code>dır. Bu, <a href="m1-bilgisayar-temelleri.html">karakter kodlama</a> derdinin dilbilimsel akrabasıdır.</div>
+
+        <figure class="codebox">
+          <figcaption>Python — elle ön işleme hattı</figcaption>
+          <pre><code data-lang="python">import re
+
+metin = "Kargolar ÇOK geç geldi!!! Ürün de hasarlıydı :("
+
+# 1) Normalize: küçült, harf ve rakam dışını temizle, boşlukları tekle
+kucuk = metin.lower()
+temiz = re.sub(r"[^a-zçğıöşü0-9\s]", " ", kucuk)
+temiz = re.sub(r"\s+", " ", temiz).strip()
+# 'kargolar çok geç geldi ürün de hasarlıydı'
+
+# 2) Tokenize: kelimelere böl
+tokenlar = temiz.split()
+# ['kargolar', 'çok', 'geç', 'geldi', 'ürün', 'de', 'hasarlıydı']
+
+# 3) Stopword: taşıyıcı kelimeleri at (listeyi göreve göre gözden geçir!)
+STOPWORDS = {"ve", "de", "da", "bir", "bu", "ile", "için"}
+tokenlar = [t for t in tokenlar if t not in STOPWORDS]
+# ['kargolar', 'çok', 'geç', 'geldi', 'ürün', 'hasarlıydı']
+
+# 4) Lemmatization: Türkçe için morfolojik analiz gerekir (zemberek, spaCy tr)
+# ['kargo', 'çok', 'geç', 'gelmek', 'ürün', 'hasar']</code></pre>
+        </figure>
+
+        <h2>Bag-of-Words: kelime torbası</h2>
+        <p>En basit sayısallaştırma yöntemi: tüm derlemdeki benzersiz kelimeleri bir sözlüğe koy, her belgeyi "hangi kelimeden kaç tane var" vektörüyle temsil et. Sonuç, satırların belge, sütunların kelime olduğu bir matristir.</p>
+        <p>Adındaki "torba" kelimesi zayıflığını da anlatır: <strong>sıra tamamen kaybolur.</strong> "Köpek adamı ısırdı" ile "Adam köpeği ısırdı" aynı vektöre düşer. Ayrıca matris çok geniş ve seyrektir — 50 bin kelimelik bir sözlükte her belge 50 bin uzunlukta ve neredeyse tamamen sıfırlarla dolu bir satır olur.</p>
+
+        <h2>TF-IDF: her kelime eşit değildir</h2>
+        <p>Bag-of-Words'ün ikinci sorunu şudur: en çok geçen kelimeler genelde en az bilgi taşıyanlardır. <strong>TF-IDF</strong> bunu iki çarpanla düzeltir:</p>
+        <ul>
+          <li><strong>TF (term frequency)</strong> — kelime bu belgede ne sıklıkta geçiyor? Sık geçiyorsa bu belge için önemlidir.</li>
+          <li><strong>IDF (inverse document frequency)</strong> — kelime kaç belgede geçiyor? <em>Her</em> belgede geçiyorsa ayırt edici değildir, ağırlığı düşürülür.</li>
+        </ul>
+        <p>Sonuç sezgisel bir kuraldır: <em>bu belgede sık, diğerlerinde nadir</em> geçen kelimeler yüksek puan alır — çünkü belgeyi karakterize eden tam olarak onlardır. "ve" her belgede geçtiği için ağırlığı sıfıra yaklaşır; stopword listesi tutmasan bile TF-IDF onu kendiliğinden söndürür.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 300" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bag-of-Words sayımları ile TF-IDF ağırlıklarının karşılaştırması">
+            <g>
+              <text x="176" y="20" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="700">Bag-of-Words (ham sayım)</text>
+              <text x="544" y="20" text-anchor="middle" fill="var(--acc)" font-size="11.5" font-weight="700">TF-IDF (ağırlıklı)</text>
+
+              <g font-size="10" text-anchor="middle" fill="var(--muted)" font-weight="700">
+                <text x="96" y="46">ve</text><text x="140" y="46">kargo</text><text x="184" y="46">hızlı</text><text x="228" y="46">geç</text><text x="272" y="46">ürün</text>
+                <text x="464" y="46">ve</text><text x="508" y="46">kargo</text><text x="552" y="46">hızlı</text><text x="596" y="46">geç</text><text x="640" y="46">ürün</text>
+              </g>
+
+              <text x="66" y="72" text-anchor="end" fill="var(--ink)" font-size="10.5" font-weight="700">B1</text>
+              <text x="66" y="106" text-anchor="end" fill="var(--ink)" font-size="10.5" font-weight="700">B2</text>
+              <text x="66" y="140" text-anchor="end" fill="var(--ink)" font-size="10.5" font-weight="700">B3</text>
+              <text x="434" y="72" text-anchor="end" fill="var(--ink)" font-size="10.5" font-weight="700">B1</text>
+              <text x="434" y="106" text-anchor="end" fill="var(--ink)" font-size="10.5" font-weight="700">B2</text>
+              <text x="434" y="140" text-anchor="end" fill="var(--ink)" font-size="10.5" font-weight="700">B3</text>
+
+              <g font-size="11" font-weight="700" text-anchor="middle">
+                <rect x="76" y="56" width="40" height="24" rx="5" fill="rgba(var(--acc-rgb),.22)" stroke="var(--dg-line)" stroke-width="0.8"/><text x="96" y="72" fill="var(--ink)">1</text>
+                <rect x="120" y="56" width="40" height="24" rx="5" fill="rgba(var(--acc-rgb),.22)" stroke="var(--dg-line)" stroke-width="0.8"/><text x="140" y="72" fill="var(--ink)">1</text>
+                <rect x="164" y="56" width="40" height="24" rx="5" fill="rgba(var(--acc-rgb),.22)" stroke="var(--dg-line)" stroke-width="0.8"/><text x="184" y="72" fill="var(--ink)">1</text>
+                <rect x="208" y="56" width="40" height="24" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="0.8"/><text x="228" y="72" fill="var(--faint)">0</text>
+                <rect x="252" y="56" width="40" height="24" rx="5" fill="rgba(var(--acc-rgb),.22)" stroke="var(--dg-line)" stroke-width="0.8"/><text x="272" y="72" fill="var(--ink)">1</text>
+
+                <rect x="76" y="90" width="40" height="24" rx="5" fill="rgba(var(--acc-rgb),.22)" stroke="var(--dg-line)" stroke-width="0.8"/><text x="96" y="106" fill="var(--ink)">1</text>
+                <rect x="120" y="90" width="40" height="24" rx="5" fill="rgba(var(--acc-rgb),.22)" stroke="var(--dg-line)" stroke-width="0.8"/><text x="140" y="106" fill="var(--ink)">1</text>
+                <rect x="164" y="90" width="40" height="24" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="0.8"/><text x="184" y="106" fill="var(--faint)">0</text>
+                <rect x="208" y="90" width="40" height="24" rx="5" fill="rgba(var(--acc-rgb),.22)" stroke="var(--dg-line)" stroke-width="0.8"/><text x="228" y="106" fill="var(--ink)">1</text>
+                <rect x="252" y="90" width="40" height="24" rx="5" fill="rgba(var(--acc-rgb),.22)" stroke="var(--dg-line)" stroke-width="0.8"/><text x="272" y="106" fill="var(--ink)">1</text>
+
+                <rect x="76" y="124" width="40" height="24" rx="5" fill="rgba(var(--acc-rgb),.22)" stroke="var(--dg-line)" stroke-width="0.8"/><text x="96" y="140" fill="var(--ink)">1</text>
+                <rect x="120" y="124" width="40" height="24" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="0.8"/><text x="140" y="140" fill="var(--faint)">0</text>
+                <rect x="164" y="124" width="40" height="24" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="0.8"/><text x="184" y="140" fill="var(--faint)">0</text>
+                <rect x="208" y="124" width="40" height="24" rx="5" fill="rgba(var(--acc-rgb),.22)" stroke="var(--dg-line)" stroke-width="0.8"/><text x="228" y="140" fill="var(--ink)">1</text>
+                <rect x="252" y="124" width="40" height="24" rx="5" fill="rgba(var(--acc-rgb),.22)" stroke="var(--dg-line)" stroke-width="0.8"/><text x="272" y="140" fill="var(--ink)">1</text>
+              </g>
+
+              <text x="330" y="106" text-anchor="middle" fill="var(--acc)" font-size="15" font-weight="800">→</text>
+
+              <g font-size="10.5" font-weight="700" text-anchor="middle">
+                <rect x="444" y="56" width="40" height="24" rx="5" fill="var(--dg-box)" stroke="var(--bad)" stroke-width="1.2"/><text x="464" y="72" fill="var(--bad)">0.0</text>
+                <rect x="488" y="56" width="40" height="24" rx="5" fill="rgba(var(--acc-rgb),.24)" stroke="var(--dg-line)" stroke-width="0.8"/><text x="508" y="72" fill="var(--ink)">.29</text>
+                <rect x="532" y="56" width="40" height="24" rx="5" fill="rgba(var(--acc-rgb),.55)" stroke="var(--acc)" stroke-width="1.6"/><text x="552" y="72" fill="var(--ink)">.72</text>
+                <rect x="576" y="56" width="40" height="24" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="0.8"/><text x="596" y="72" fill="var(--faint)">0.0</text>
+                <rect x="620" y="56" width="40" height="24" rx="5" fill="var(--dg-box)" stroke="var(--bad)" stroke-width="1.2"/><text x="640" y="72" fill="var(--bad)">0.0</text>
+
+                <rect x="444" y="90" width="40" height="24" rx="5" fill="var(--dg-box)" stroke="var(--bad)" stroke-width="1.2"/><text x="464" y="106" fill="var(--bad)">0.0</text>
+                <rect x="488" y="90" width="40" height="24" rx="5" fill="rgba(var(--acc-rgb),.24)" stroke="var(--dg-line)" stroke-width="0.8"/><text x="508" y="106" fill="var(--ink)">.29</text>
+                <rect x="532" y="90" width="40" height="24" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="0.8"/><text x="552" y="106" fill="var(--faint)">0.0</text>
+                <rect x="576" y="90" width="40" height="24" rx="5" fill="rgba(var(--acc-rgb),.24)" stroke="var(--dg-line)" stroke-width="0.8"/><text x="596" y="106" fill="var(--ink)">.29</text>
+                <rect x="620" y="90" width="40" height="24" rx="5" fill="var(--dg-box)" stroke="var(--bad)" stroke-width="1.2"/><text x="640" y="106" fill="var(--bad)">0.0</text>
+
+                <rect x="444" y="124" width="40" height="24" rx="5" fill="var(--dg-box)" stroke="var(--bad)" stroke-width="1.2"/><text x="464" y="140" fill="var(--bad)">0.0</text>
+                <rect x="488" y="124" width="40" height="24" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="0.8"/><text x="508" y="140" fill="var(--faint)">0.0</text>
+                <rect x="532" y="124" width="40" height="24" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="0.8"/><text x="552" y="140" fill="var(--faint)">0.0</text>
+                <rect x="576" y="124" width="40" height="24" rx="5" fill="rgba(var(--acc-rgb),.24)" stroke="var(--dg-line)" stroke-width="0.8"/><text x="596" y="140" fill="var(--ink)">.29</text>
+                <rect x="620" y="124" width="40" height="24" rx="5" fill="var(--dg-box)" stroke="var(--bad)" stroke-width="1.2"/><text x="640" y="140" fill="var(--bad)">0.0</text>
+              </g>
+
+              <rect x="76" y="176" width="584" height="52" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="368" y="197" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">"ve" ve "ürün" her üç belgede de geçiyor → IDF = 0 → ağırlık sıfırlanır</text>
+              <text x="368" y="215" text-anchor="middle" fill="var(--acc)" font-size="11" font-weight="700">"hızlı" yalnızca B1'de geçiyor → en yüksek ağırlık: B1'i karakterize eden kelime bu</text>
+
+              <text x="360" y="256" text-anchor="middle" fill="var(--muted)" font-size="10.5">B1: "kargo hızlı ve ürün güzel" · B2: "kargo geç ve ürün kötü" · B3: "ve ürün geç geldi"</text>
+              <text x="360" y="280" text-anchor="middle" fill="var(--faint)" font-size="10">TF-IDF, stopword listesi tutmasan bile ayırt edici olmayan kelimeleri kendiliğinden söndürür.</text>
+            </g>
+          </svg>
+          <figcaption>Aynı üç belge, iki farklı temsille: sayımlar her kelimeyi eşit görür, TF-IDF ayırt ediciyi öne çıkarır.</figcaption>
+        </figure>
+
+        <h2>n-gram: sıranın bir kısmını geri almak</h2>
+        <p>Kelime torbası "hızlı değil" ile "değil hızlı" arasındaki farkı göremez ve ikisini de olumlu sayabilir. Kısmi çözüm <strong>n-gram</strong>'lardır: tek kelimeler (unigram) yerine ardışık kelime gruplarını da sözlüğe ekle. <em>Bigram</em> ile "hızlı değil" tek bir özellik hâline gelir ve model olumsuzluğu yakalayabilir.</p>
+        <p>Bedeli sözlük patlamasıdır: 50 bin kelime varken bigram sayısı milyonlara çıkabilir. Bu yüzden <code>min_df</code> (en az kaç belgede geçsin) gibi eşiklerle budanır. Pratik: <code>ngram_range=(1, 2)</code> metin sınıflandırmada çoğu zaman en iyi maliyet-fayda noktasıdır.</p>
+
+        <figure class="codebox">
+          <figcaption>Python — TF-IDF + logistic regression ile duygu analizi</figcaption>
+          <pre><code data-lang="python">from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import make_pipeline
+from sklearn.metrics import classification_report
+
+model = make_pipeline(
+    TfidfVectorizer(
+        ngram_range=(1, 2),     # tekli + ikili gruplar → "hızlı değil" yakalanır
+        min_df=2,               # 2'den az belgede geçen kelimeyi at (gürültü ve yazım hataları)
+        max_df=0.9,             # belgelerin %90'ından fazlasında geçeni at (bilgisiz)
+        sublinear_tf=True,      # 1+log(tf): 50 kez geçmek 5 kez geçmenin 10 katı önemli değildir
+    ),
+    LogisticRegression(max_iter=1000, class_weight="balanced"),
+)
+
+model.fit(X_train, y_train)                      # X_train: ham yorum metinleri listesi
+print(classification_report(y_test, model.predict(X_test)))
+# f1 ≈ 0.89 — LLM'e hiç uğramadan, milisaniyeler içinde
+
+# Modeli AÇIKLAYABİLİRSİN: hangi kelime hangi sınıfa itiyor?
+vec = model.named_steps["tfidfvectorizer"]
+clf = model.named_steps["logisticregression"]
+kelimeler = vec.get_feature_names_out()
+print(kelimeler[clf.coef_[0].argsort()[:8]])     # ['berbat' 'iade' 'kırık' 'rezalet' 'bozuk' ...]
+print(kelimeler[clf.coef_[0].argsort()[-8:]])    # ['harika' 'teşekkür' 'hızlı' 'mükemmel' ...]</code></pre>
+        </figure>
+
+        <h2>Klasik NLP'nin görev listesi</h2>
+        <ul>
+          <li><strong>Metin sınıflandırma</strong> — spam tespiti, konu etiketleme, destek talebi yönlendirme. TF-IDF + logistic regression ya da Naive Bayes hâlâ güçlü bir baseline'dır.</li>
+          <li><strong>Duygu analizi (sentiment analysis)</strong> — yorum ve geri bildirim tonunun ölçülmesi; ürün ekiplerinin en sık istediği NLP çıktısıdır.</li>
+          <li><strong>NER (varlık tanıma)</strong> — metin içinden kişi, kurum, yer, tarih, tutar çıkarma. Fatura okuma, sözleşme analizi, haber işlemede kritiktir.</li>
+          <li><strong>Konu modelleme (LDA)</strong> — etiketsiz binlerce belgede hangi temaların olduğunu keşfetme; <a href="m5-unsupervised.html">kümelemenin</a> metindeki karşılığı.</li>
+          <li><strong>Arama ve eşleştirme</strong> — belge getirme, benzer kayıt bulma, kayıt eşleştirme (record linkage).</li>
+        </ul>
+        <p>Arama tarafında bir isim öne çıkar: <strong>BM25</strong>. TF-IDF'in geliştirilmiş, belge uzunluğunu da hesaba katan sürümüdür ve arama motorlarının (Elasticsearch, OpenSearch) varsayılan sıralama fonksiyonudur. <a href="m7-rag.html">RAG hybrid search'te</a> "anlamsal olmayan kanal" dediğimiz şey tam olarak budur.</p>
+
+        <figure class="codebox">
+          <figcaption>Python — TF-IDF ile benzer belge bulma (retrieval'ın atası)</figcaption>
+          <pre><code data-lang="python">from sklearn.metrics.pairwise import cosine_similarity
+
+vec = TfidfVectorizer(ngram_range=(1, 2), min_df=1)
+X = vec.fit_transform(dokumanlar)          # (belge × kelime) seyrek matris
+
+sorgu = vec.transform(["kargom ne zaman gelir"])
+skor = cosine_similarity(sorgu, X).ravel() # her belgenin sorguya benzerliği
+
+for i in skor.argsort()[::-1][:3]:         # en yüksek 3 belge
+    print(round(skor[i], 3), dokumanlar[i][:60])
+
+# 0.612 Kargo teslim süresi siparişten sonra 2-3 iş günüdür...
+# 0.288 Kargo takip numaranız e-posta ile gönderilir...
+
+# Bu, RAG'deki "retrieval" adımının kelime tabanlı hâlidir.
+# Üretimde TF-IDF yerine genelde BM25 kullanılır ve embedding aramasıyla birleştirilir.</code></pre>
+        </figure>
+
+        <h2>Klasikten embedding'e giden köprü</h2>
+        <p>TF-IDF'in kapatamadığı bir boşluk var: <strong>kelimeler arasındaki anlam ilişkisini bilmez.</strong> Onun için "otomobil" ile "araba" iki alakasız sütundur; "kargo gecikti" arayan biri "sevkiyat rötar yaptı" yazan belgeyi asla bulamaz. Sözlükteki her kelime, diğerlerine dik duran ayrı bir eksendir.</p>
+        <p>2013'te <strong>word2vec</strong> bu duvarı yıktı: kelimeleri, komşularından öğrenilen yoğun vektörlerle temsil etti. Fikir bir dilbilim gözlemine dayanır — <em>bir kelimenin anlamını, birlikte göründüğü kelimeler belirler</em>. Böylece "araba" ile "otomobil" vektör uzayında birbirine yakın düşer ve ünlü <code>kral − erkek + kadın ≈ kraliçe</code> aritmetiği mümkün olur.</p>
+        <p>Ama word2vec'in de bir sınırı vardı: her kelimeye <strong>tek</strong> vektör verir. Oysa "yüz" kelimesi bağlama göre bambaşka anlamlar taşır. Bu sınırı aşmak, <a href="m6-transformer.html">Transformer'ların</a> doğuşuna giden yoldur: <strong>bağlamsal embedding</strong>'de aynı kelime, içinde bulunduğu cümleye göre farklı vektör alır.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 250" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Statik ve bağlamsal embedding karşılaştırması">
+            <defs>
+              <marker id="nlArr2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+              <marker id="nlArr3" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g>
+              <text x="180" y="20" text-anchor="middle" fill="var(--muted)" font-size="12" font-weight="800">Statik (word2vec)</text>
+              <rect x="14" y="32" width="332" height="196" rx="11" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <rect x="34" y="52" width="292" height="30" rx="7" fill="var(--surface-2)" stroke="var(--dg-line)" stroke-width="1"/>
+              <text x="180" y="72" text-anchor="middle" fill="var(--ink)" font-size="10.5">"Havuzda yüz metre yüzdüm"</text>
+              <rect x="34" y="92" width="292" height="30" rx="7" fill="var(--surface-2)" stroke="var(--dg-line)" stroke-width="1"/>
+              <text x="180" y="112" text-anchor="middle" fill="var(--ink)" font-size="10.5">"Onun yüzü gülüyordu"</text>
+              <path d="M180 124 L180 148" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#nlArr2)"/>
+              <path d="M120 84 L172 146" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#nlArr2)"/>
+              <rect x="110" y="152" width="140" height="34" rx="8" fill="var(--surface-2)" stroke="var(--bad)" stroke-width="1.5"/>
+              <text x="180" y="173" text-anchor="middle" fill="var(--bad)" font-size="11" font-weight="700">tek vektör: "yüz"</text>
+              <text x="180" y="210" text-anchor="middle" fill="var(--muted)" font-size="10.5">Bağlam ne olursa olsun aynı temsil</text>
+
+              <text x="540" y="20" text-anchor="middle" fill="var(--acc)" font-size="12" font-weight="800">Bağlamsal (Transformer)</text>
+              <rect x="374" y="32" width="332" height="196" rx="11" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.4"/>
+              <rect x="394" y="52" width="292" height="30" rx="7" fill="var(--surface-2)" stroke="var(--dg-line)" stroke-width="1"/>
+              <text x="540" y="72" text-anchor="middle" fill="var(--ink)" font-size="10.5">"Havuzda yüz metre yüzdüm"</text>
+              <rect x="394" y="92" width="292" height="30" rx="7" fill="var(--surface-2)" stroke="var(--dg-line)" stroke-width="1"/>
+              <text x="540" y="112" text-anchor="middle" fill="var(--ink)" font-size="10.5">"Onun yüzü gülüyordu"</text>
+              <path d="M460 84 L440 146" stroke="var(--acc)" stroke-width="1.5" marker-end="url(#nlArr3)"/>
+              <path d="M620 124 L640 146" stroke="var(--acc)" stroke-width="1.5" marker-end="url(#nlArr3)"/>
+              <rect x="386" y="152" width="128" height="34" rx="8" fill="rgba(var(--acc-rgb),.16)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="450" y="173" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="700">vektör: sayı/mesafe</text>
+              <rect x="566" y="152" width="128" height="34" rx="8" fill="rgba(var(--acc-rgb),.16)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="630" y="173" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="700">vektör: sima/çehre</text>
+              <text x="540" y="210" text-anchor="middle" fill="var(--muted)" font-size="10.5">Aynı kelime, cümleye göre farklı temsil</text>
+            </g>
+          </svg>
+          <figcaption>Klasik NLP'nin çözemediği bu tek problem, Modül 6'daki attention mekanizmasının varlık sebebidir.</figcaption>
+        </figure>
+
+        <div class="tip"><b>Pratik yol haritası.</b> Bir metin problemine şu sırayla yaklaş: (1) TF-IDF + logistic regression ile <b>baseline</b> kur — bir saatte biter, açıklanabilir; (2) yetmiyorsa hazır bir <b>embedding modeli</b> ile vektörleştirip aynı sınıflandırıcıyı dene; (3) hâlâ yetmiyorsa küçük bir Transformer'ı <a href="m7-fine-tuning.html">fine-tune</a> et; (4) veri azsa ya da görev karmaşıksa doğrudan <b>LLM + prompt</b> kullan. Çoğu iş probleminde 1. adım şaşırtıcı derecede sık yeterli olur.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <ul>
+          <li><strong>Destek ve operasyon:</strong> gelen taleplerin otomatik sınıflandırılması ve doğru ekibe yönlendirilmesi.</li>
+          <li><strong>Ürün analitiği:</strong> binlerce yorumun duygu ve tema kırılımı; <a href="m4-gorsellestirme.html">dashboard'lara</a> beslenen metin metrikleri.</li>
+          <li><strong>Arama:</strong> site içi arama sıralaması ve RAG'in keyword kanadı (BM25).</li>
+          <li><strong>Veri mühendisliği tarafı:</strong> metin ön işleme adımları da bir <a href="m3-etl-elt.html">pipeline'dır</a>; sözlük ve model dosyaları sürümlenmeli, aynı ön işleme hem eğitimde hem serviste birebir uygulanmalıdır (<a href="m8-feature-store.html">training-serving skew</a>).</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>TF-IDF'te "ve" kelimesinin ağırlığı neden sıfıra yaklaşır?</summary>
+            <div class="answer">Çünkü IDF çarpanı, kelimenin <b>kaç belgede geçtiğine</b> bakar. "ve" neredeyse tüm belgelerde geçtiği için hiçbir belgeyi diğerinden ayırt etmez; formül bu durumda ağırlığı sıfıra yakınsatır. Bu sayede TF-IDF, ayrı bir stopword listesi tutmasan bile bilgisiz kelimeleri kendiliğinden bastırır.</div>
+          </details>
+          <details class="quiz">
+            <summary>Duygu analizinde hazır stopword listesini olduğu gibi uygulamak neden riskli?</summary>
+            <div class="answer">Çünkü listeler genelde olumsuzluk sözcüklerini de içerir. "değil", "yok", "hiç" atılırsa <b>"hızlı değil"</b> ile <b>"hızlı"</b> aynı temsile düşer ve model olumsuz yorumu olumlu sayar. Stopword listesi göreve göre gözden geçirilmeli; ayrıca bigram kullanmak olumsuzluğu yakalamaya yardımcı olur.</div>
+          </details>
+          <details class="quiz">
+            <summary>Türkçe metinde basit stemming neden İngilizce'deki kadar iyi çalışmaz?</summary>
+            <div class="answer">Türkçe <b>sondan eklemeli</b> bir dildir: tek kökten çok sayıda ve çok katmanlı yüzey biçimi türer ("ev → evlerimizden"). Sonu kesmeye dayalı kaba kurallar ya eki tam temizleyemez ya da kökü bozar. Doğru yaklaşım morfolojik analizdir (Zemberek, spaCy'nin Türkçe modelleri gibi araçlar).</div>
+          </details>
+          <details class="quiz">
+            <summary>LLM'ler bu kadar güçlüyken BM25 hâlâ neden kullanılıyor?</summary>
+            <div class="answer">Çünkü birebir eşleşme gerektiren aramalarda daha iyidir: ürün kodu, hata numarası, özel isim, nadir terim. Embedding araması bunları "anlamca yakın" bir şeye kaydırabilir. Ayrıca çok hızlı ve çok ucuzdur. Bu yüzden modern RAG sistemleri <b>hybrid search</b> yapar: BM25 ve embedding sonuçlarını birleştirip yeniden sıralar.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">NLP (Doğal Dil İşleme)</span><span class="term-en">Natural Language Processing</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>İnsan dilini makinenin işleyebileceği temsile çevirme ve üzerinde çıkarım yapma disiplini.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Corpus (Derlem)</span><span class="term-en">Corpus</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Üzerinde çalışılan metin koleksiyonu; NLP'nin veri kümesi karşılığı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Kelime Tokenization</span><span class="term-en">Word Tokenization</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Metni kelime birimlerine ayırma; LLM'lerdeki alt-kelime (subword) tokenization'dan farklıdır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Stopword (Durak Kelime)</span><span class="term-en">Stopword</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Çok sık geçen ama ayırt edici olmayan kelimeler; atılmaları göreve bağlıdır — duygu analizinde tehlikeli olabilir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Stemming &amp; Lemmatization</span><span class="term-en">Stemming &amp; Lemmatization</span><span class="lvl lvl-orta">Orta</span></div><p>Kelimeleri ortak bir köke indirgeme: stemming kaba ve hızlı kesme, lemmatization dilbilgisi bilgisiyle sözlük hâline getirme.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Bag-of-Words</span><span class="term-en">Bag-of-Words</span><span class="lvl lvl-orta">Orta</span></div><p>Belgeyi "hangi kelimeden kaç tane" vektörüyle temsil etme; basit ama kelime sırasını tamamen kaybeder.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">TF-IDF</span><span class="term-en">Term Frequency–Inverse Document Frequency</span><span class="lvl lvl-orta">Orta</span></div><p>Bu belgede sık, diğerlerinde nadir geçen kelimelere yüksek ağırlık veren klasik metin temsili.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">n-gram</span><span class="term-en">n-gram</span><span class="lvl lvl-orta">Orta</span></div><p>Ardışık n kelimelik gruplar; bigram sayesinde "hızlı değil" gibi olumsuzluklar tek özellik olarak yakalanır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">BM25</span><span class="term-en">BM25</span><span class="lvl lvl-ileri">İleri</span></div><p>TF-IDF'in belge uzunluğunu da hesaba katan geliştirilmiş sürümü; arama motorlarının varsayılan sıralama fonksiyonu.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Metin Sınıflandırma</span><span class="term-en">Text Classification</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Belgeleri önceden tanımlı kategorilere atama: spam, konu etiketi, talep yönlendirme.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Duygu Analizi</span><span class="term-en">Sentiment Analysis</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Metnin taşıdığı olumlu/olumsuz tonu ölçme; ürün geri bildirimi analizinin en yaygın uygulaması.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">NER (Varlık Tanıma)</span><span class="term-en">Named Entity Recognition</span><span class="lvl lvl-orta">Orta</span></div><p>Metin içinden kişi, kurum, yer, tarih, tutar gibi varlıkları çıkarma; belge otomasyonunun temeli.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Konu Modelleme (LDA)</span><span class="term-en">Topic Modeling</span><span class="lvl lvl-ileri">İleri</span></div><p>Etiketsiz belge yığınında gizli temaları keşfetme; kümelemenin metin dünyasındaki karşılığı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Word2Vec</span><span class="term-en">Word2Vec</span><span class="lvl lvl-orta">Orta</span></div><p>Kelimeleri komşuluklarından öğrenilen yoğun vektörlerle temsil eden yöntem; her kelimeye tek (statik) vektör verir.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m5-nlp">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m5-oneri-sistemleri.html"><span>← Önceki</span><b>Öneri Sistemleri</b></a>
+          <a class="next" href="m6-sinir-aglari.html"><span>Sonraki →</span><b>Sinir Ağlarının Temelleri</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

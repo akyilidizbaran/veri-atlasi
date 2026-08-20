@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keşifsel Veri Analizi ve pandas — Veri Atlası</title>
+<meta name="description" content="pandas ve NumPy ile keşifsel veri analizi (EDA): DataFrame anatomisi, describe/info çıktısını okuma, groupby, merge, eksik veri, duplicate temizliği ve IQR ile outlier tespiti.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m4" data-slug="m4-eda">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m4">4. Analitik ve İstatistik</a><span class="sep">/</span>
+        <span>Keşifsel Veri Analizi ve pandas</span>
+      </nav>
+      <span class="mod-badge">Modül 4 · Analitik ve İstatistik</span>
+      <h1>Keşifsel Veri Analizi ve pandas</h1>
+      <p class="en-title">EDA &amp; pandas</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-baslangic">Başlangıç</span>
+        <span class="chip">⏱️ ~17 dk okuma</span>
+        <span class="chip">🔤 14 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Model kurmadan önce: haritayı çıkar</h2>
+        <p>Bir veri projesinin en havalı kısmı model kurmak gibi görünür; oysa işin belkemiği ondan önceki adımdır: <strong>EDA (Exploratory Data Analysis — keşifsel veri analizi)</strong>. İstatistikçi John Tukey'nin 1977'de sistemleştirdiği bu yaklaşım, hipotez doğrulamaya girişmeden önce veriyi özetlemeyi, çizmeyi, evirip çevirmeyi önerir. Amaç bir sonuç kanıtlamak değil; verinin sana <em>soru sordurmasına</em> izin vermektir.</p>
+        <p>EDA bir tanışma ritüelidir ve hep aynı soruları sorar:</p>
+        <ul>
+          <li>Kaç satır, kaç kolon var? Kolonların tipleri ne?</li>
+          <li>Değerler nasıl dağılmış — ortalama, medyan, uç değerler?</li>
+          <li>Nerelerde eksik, yinelenen ya da saçma değerler var?</li>
+          <li>Kolonlar arasında göze çarpan ilişkiler var mı?</li>
+        </ul>
+        <p>Bu soruları atlarsan ne olur? Modelin, verideki hatayı ezberler; raporun, kopyalanmış satırları iki kez sayar. Kısacası: <strong>veriye bakmadan model kuran, haritasız yola çıkar.</strong> Bu sayfada hem haritacılık zanaatını hem de aracını öğreneceğiz: Python'un veri analizi ikilisi <strong>NumPy</strong> ve <strong>pandas</strong>.</p>
+
+        <h2>NumPy: kaputun altındaki motor</h2>
+        <p>pandas'a geçmeden bir kat aşağı inelim, çünkü pandas'ın hızının sırrı NumPy'dadır. NumPy'ın temel nesnesi <strong>ndarray</strong> (n-dimensional array): <em>hepsi aynı tipte</em> elemanlardan oluşan, bellekte <em>bitişik</em> duran çok boyutlu bir dizidir. Python listesi ise her elemanı ayrı bir nesne olarak, bellekte dağınık tutar — esnektir ama yavaştır.</p>
+        <p>Bu tasarımın meyvesi <strong>vectorization (vektörleştirme)</strong>: elemanlar üzerinde tek tek döngü kurmak yerine işlemi tüm diziye bir kerede uygularsın. <code>fiyatlar * 1.20</code> yazdığında zam, milyon elemana C hızında işlenir. Neden 100 kata varan fark oluşur? Python döngüsünde her turda yorumlayıcı devreye girer, her elemanın tipi yeniden kontrol edilir; vektörleştirilmiş işlemde ise tek bir C çağrısı, bitişik belleği CPU önbelleğine akıtarak (bkz. <a href="m1-bilgisayar-temelleri.html">bellek hiyerarşisi</a>) işi topluca bitirir.</p>
+        <div class="note"><b>Zihinsel kural.</b> pandas/NumPy kodunda <code>for</code> döngüsü yazıyorsan bir dur: aynı iş büyük ihtimalle vektörleştirilmiş tek satırla yapılabilir. Döngü, "son çare" aracıdır.</div>
+
+        <h2>pandas'ın üç yapı taşı: Series, DataFrame, Index</h2>
+        <p>pandas, Wes McKinney'nin 2008'de finans verisiyle boğuşurken yazmaya başladığı, bugün veri analizinin fiilî standardı olan kütüphanedir. Üç kavramı oturttun mu gerisi ayrıntıdır:</p>
+        <ul>
+          <li><strong>Series</strong> — etiketli tek boyutlu dizi: bir kolon. Altında bir ndarray + değerlere isim veren bir Index taşır.</li>
+          <li><strong>DataFrame</strong> — aynı Index'i paylaşan Series'lerin bir araya gelmiş hâli: tablo. Excel sayfasının ya da SQL tablosunun programlanabilir kuzeni.</li>
+          <li><strong>Index</strong> — satırların etiketleri. Sıradan bir sayaç gibi görünür ama pandas'ın gizli süper gücüdür: iki tabloyu toplarken/birleştirirken değerler pozisyona göre değil <em>etikete göre</em> hizalanır.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 330" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="DataFrame anatomisi: index, kolonlar, values ve Series">
+            <defs>
+              <marker id="eda-arr-a" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--muted)"/></marker>
+              <marker id="eda-arr-b" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              <marker id="eda-arr-ok" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--ok)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <!-- kolon başlıkları -->
+              <rect x="150" y="62" width="64" height="32" fill="rgba(var(--acc-rgb),.06)" stroke="var(--dg-line)"/>
+              <rect x="214" y="62" width="140" height="32" fill="rgba(var(--acc-rgb),.18)" stroke="var(--dg-line)"/>
+              <rect x="354" y="62" width="100" height="32" fill="rgba(var(--acc-rgb),.18)" stroke="var(--dg-line)"/>
+              <rect x="454" y="62" width="110" height="32" fill="rgba(var(--acc-rgb),.18)" stroke="var(--dg-line)"/>
+              <text x="284" y="83" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">urun</text>
+              <text x="404" y="83" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">adet</text>
+              <text x="509" y="83" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">fiyat</text>
+              <!-- index hücreleri -->
+              <g fill="rgba(var(--acc-rgb),.10)" stroke="var(--dg-line)">
+                <rect x="150" y="94" width="64" height="32"/><rect x="150" y="126" width="64" height="32"/>
+                <rect x="150" y="158" width="64" height="32"/><rect x="150" y="190" width="64" height="32"/>
+              </g>
+              <g fill="var(--muted)" font-size="12" text-anchor="middle" font-weight="600">
+                <text x="182" y="115">0</text><text x="182" y="147">1</text><text x="182" y="179">2</text><text x="182" y="211">3</text>
+              </g>
+              <!-- değer hücreleri -->
+              <g fill="var(--dg-box)" stroke="var(--dg-line)">
+                <rect x="214" y="94" width="140" height="32"/><rect x="354" y="94" width="100" height="32"/><rect x="454" y="94" width="110" height="32"/>
+                <rect x="214" y="126" width="140" height="32"/><rect x="354" y="126" width="100" height="32"/><rect x="454" y="126" width="110" height="32"/>
+                <rect x="214" y="158" width="140" height="32"/><rect x="354" y="158" width="100" height="32"/><rect x="454" y="158" width="110" height="32"/>
+                <rect x="214" y="190" width="140" height="32"/><rect x="354" y="190" width="100" height="32"/><rect x="454" y="190" width="110" height="32"/>
+              </g>
+              <g fill="var(--ink)" font-size="11.5" text-anchor="middle">
+                <text x="284" y="115">elma</text><text x="404" y="115">12</text><text x="509" y="115">45.0</text>
+                <text x="284" y="147">armut</text><text x="404" y="147">5</text><text x="509" y="147">60.5</text>
+                <text x="284" y="179">elma</text><text x="404" y="179">8</text><text x="509" y="179">45.0</text>
+                <text x="284" y="211">kiraz</text><text x="404" y="211">3</text><text x="509" y="211">120.0</text>
+              </g>
+              <!-- Series vurgusu -->
+              <rect x="354" y="62" width="100" height="160" rx="6" fill="none" stroke="var(--ok)" stroke-width="2" stroke-dasharray="6 4"/>
+              <text x="642" y="122" text-anchor="middle" fill="var(--ok)" font-size="12" font-weight="700">Tek başına bir kolon</text>
+              <text x="642" y="138" text-anchor="middle" fill="var(--ok)" font-size="12" font-weight="700">= Series</text>
+              <path d="M600 148 C 545 168, 505 165, 462 152" fill="none" stroke="var(--ok)" stroke-width="1.6" marker-end="url(#eda-arr-ok)"/>
+              <!-- etiketler -->
+              <text x="394" y="28" text-anchor="middle" fill="var(--acc)" font-size="12.5" font-weight="700">columns — kolon adları</text>
+              <path d="M394 36 L394 58" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#eda-arr-b)"/>
+              <text x="70" y="138" text-anchor="middle" fill="var(--acc)" font-size="12.5" font-weight="700">index</text>
+              <text x="70" y="154" text-anchor="middle" fill="var(--muted)" font-size="10.5">satır etiketleri</text>
+              <path d="M78 164 L146 176" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#eda-arr-b)"/>
+              <text x="330" y="278" text-anchor="middle" fill="var(--muted)" font-size="12" font-weight="700">values — hücrelerin kendisi (NumPy dizisi)</text>
+              <path d="M330 262 L330 228" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#eda-arr-a)"/>
+              <text x="360" y="312" text-anchor="middle" fill="var(--faint)" font-size="11">df["adet"] → Series&#160;&#160;·&#160;&#160;df → DataFrame&#160;&#160;·&#160;&#160;df.values → ndarray</text>
+            </g>
+          </svg>
+          <figcaption>DataFrame = aynı Index'i paylaşan Series'ler topluluğu. Values katmanı NumPy'dır — hız oradan gelir.</figcaption>
+        </figure>
+
+        <p>Veriyi içeri almak tek satırdır: <code>pd.read_csv("satis.csv")</code> metin tabanlı CSV'yi, <code>pd.read_parquet("satis.parquet")</code> ise sütunsal Parquet dosyasını okur. Format farklarının neden önemli olduğunu <a href="m2-veri-kavramlari.html">Veri Tipleri ve Formatları</a> konusunda görmüştük; Türkçe karakterleri bozuk gelen CSV'lerin suçlusunun encoding olduğunu da <a href="m1-bilgisayar-temelleri.html">ilk konudan</a> hatırlıyorsun.</p>
+
+        <h2>İlk tanışma: beş komutluk keşif turu</h2>
+        <p>Yeni bir veri seti açtığında sırasıyla beş komut çalıştırılır. Kritik olan komutları ezberlemek değil, <em>çıktıyı okumayı</em> bilmektir:</p>
+        <ul>
+          <li><strong><code>df.shape</code></strong> — (satır, kolon) çifti. Beklediğin büyüklük bu mu? 10 milyon satır bekliyorken 300 satır geldiyse sorun okuma adımındadır.</li>
+          <li><strong><code>df.head()</code></strong> — ilk satırlar. Kolonlar doğru ayrışmış mı, başlık satırı veri olarak okunmuş mu, değerler göz kararı mantıklı mı?</li>
+          <li><strong><code>df.info()</code></strong> — kolon tipleri, doluluk (non-null) sayıları ve bellek kullanımı. "Sayı olması gereken kolon neden <code>object</code> görünüyor?" sorusu çoğu zaman içine karışmış metin değerini yakalar.</li>
+          <li><strong><code>df.describe()</code></strong> — sayısal kolonların özeti: ortalama, standart sapma, min/max ve çeyrekler. Ortalama ile medyan (%50) arasında uçurum varsa dağılım çarpıktır; max değeri medyanın 100 katıysa outlier kokusu vardır.</li>
+          <li><strong><code>df["kolon"].value_counts()</code></strong> — kategorik kolonun dağılımı. "İstanbul", "istanbul" ve "IST" diye üç ayrı grup görüyorsan temizlik listene ekle.</li>
+        </ul>
+
+        <figure class="codebox">
+          <figcaption>Python — beş komutluk mini keşif oturumu (yorumlar çıktının nasıl okunacağını anlatıyor)</figcaption>
+          <pre><code data-lang="python">import pandas as pd
+
+# Veriyi yükle — Parquet olsaydı: pd.read_parquet("siparisler.parquet")
+df = pd.read_csv("siparisler.csv", parse_dates=["tarih"])
+
+df.shape                 # (12480, 6) → 12.480 satır, 6 kolon: beklediğim ölçekte mi?
+df.head(3)               # ilk 3 satır: kolonlar doğru ayrışmış mı, değerler mantıklı mı?
+
+df.info()
+# &lt;class 'pandas.core.frame.DataFrame'&gt;
+#  #   Column   Non-Null Count   Dtype
+#  0   tarih    12480 non-null   datetime64[ns]
+#  1   sehir    12480 non-null   object     ← metin kolonları "object" görünür
+#  2   tutar    12102 non-null   float64    ← 12480−12102 = 378 satırda tutar EKSİK!
+# memory usage: 585.1 KB                    ← RAM'e rahat sığıyor
+
+df["tutar"].describe()
+# mean     142.7   ← ortalama
+# 50%       96.0   ← medyan; ortalamanın çok altında → dağılım sağa çarpık
+# max     9800.0   ← medyanın ~100 katı → outlier şüphesi, incelemeye değer
+
+df["sehir"].value_counts(normalize=True).head(3)
+# İstanbul  0.41  ← satırların %41'i; bir kategori ezici çoğunluktaysa
+# Ankara    0.22     analizleri şehir bazında ayrıştırmak gerekebilir
+# izmir     0.11  ← küçük harfli "izmir" ayrı grup olmuş → temizlik gerekiyor</code></pre>
+        </figure>
+
+        <div class="tip"><b>On dakika ritüeli.</b> Hangi projede olursan ol, yeni veri setinde sıra hep aynı: <code>shape → head → info → describe → isna().sum() → value_counts</code>. Bu turu alışkanlık hâline getirirsen sürprizleri model aşamasında değil, ilk on dakikada yakalarsın.</div>
+
+        <h2>Soru sormak: seçme, filtreleme, gruplama</h2>
+        <p>Keşif turu bittiğinde artık veriye soru sorarsın ve pandas'ta soruların dili üç mekanizmadan oluşur. İlki <strong>seçim</strong>: <code>loc</code> etiketle ("tarih ve tutar kolonlarını ver"), <code>iloc</code> pozisyonla ("ilk 5 satır, ilk 3 kolon") çalışır. İkincisi <strong>boolean maske</strong>: <code>df["tutar"] &gt; 100</code> ifadesi satır başına True/False üreten bir Series döndürür; bunu <code>df[...]</code> içine koyunca yalnız True satırlar kalır.</p>
+        <p>Üçüncüsü ve en güçlüsü <strong>groupby</strong>. Zihinsel modeli <em>split-apply-combine</em>'dır: tabloyu gruplara <em>böl</em>, her gruba bir fonksiyon <em>uygula</em>, sonuçları tek tabloda <em>birleştir</em>. SQL'deki <code>GROUP BY</code> ile (bkz. <a href="m2-sql.html">SQL konusu</a>) aynı zihin, Python esnekliğiyle:</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 760 340" width="760" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="groupby'ın split-apply-combine akışı">
+            <defs>
+              <marker id="eda-arr-c" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <g fill="var(--muted)" font-size="12.5" font-weight="700" text-anchor="middle">
+                <text x="228" y="30">1) split</text>
+                <text x="460" y="30">2) apply</text>
+                <text x="625" y="30">3) combine</text>
+              </g>
+              <!-- ham tablo -->
+              <rect x="25" y="60" width="150" height="26" fill="rgba(var(--acc-rgb),.15)" stroke="var(--dg-line)"/>
+              <text x="100" y="78" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">sehir · tutar</text>
+              <g stroke="var(--dg-line)">
+                <rect x="25" y="86"  width="150" height="26" fill="var(--acc)"  fill-opacity=".14"/>
+                <rect x="25" y="112" width="150" height="26" fill="var(--ok)"   fill-opacity=".14"/>
+                <rect x="25" y="138" width="150" height="26" fill="var(--acc)"  fill-opacity=".14"/>
+                <rect x="25" y="164" width="150" height="26" fill="var(--warn)" fill-opacity=".14"/>
+                <rect x="25" y="190" width="150" height="26" fill="var(--ok)"   fill-opacity=".14"/>
+                <rect x="25" y="216" width="150" height="26" fill="var(--warn)" fill-opacity=".14"/>
+              </g>
+              <g fill="var(--ink)" font-size="11" text-anchor="middle">
+                <text x="100" y="104">Ankara · 10</text><text x="100" y="130">İzmir · 20</text>
+                <text x="100" y="156">Ankara · 30</text><text x="100" y="182">İstanbul · 40</text>
+                <text x="100" y="208">İzmir · 50</text><text x="100" y="234">İstanbul · 60</text>
+              </g>
+              <!-- split okları -->
+              <path d="M178 120 L276 92"  stroke="var(--acc)" stroke-width="1.6" fill="none" marker-end="url(#eda-arr-c)"/>
+              <path d="M178 152 L276 168" stroke="var(--acc)" stroke-width="1.6" fill="none" marker-end="url(#eda-arr-c)"/>
+              <path d="M178 200 L276 244" stroke="var(--acc)" stroke-width="1.6" fill="none" marker-end="url(#eda-arr-c)"/>
+              <!-- gruplar -->
+              <rect x="280" y="58" width="150" height="60" rx="8" fill="var(--acc)" fill-opacity=".10" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="355" y="82" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">Ankara</text>
+              <text x="355" y="102" text-anchor="middle" fill="var(--muted)" font-size="11">10, 30</text>
+              <rect x="280" y="134" width="150" height="60" rx="8" fill="var(--ok)" fill-opacity=".10" stroke="var(--ok)" stroke-width="1.5"/>
+              <text x="355" y="158" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">İzmir</text>
+              <text x="355" y="178" text-anchor="middle" fill="var(--muted)" font-size="11">20, 50</text>
+              <rect x="280" y="210" width="150" height="60" rx="8" fill="var(--warn)" fill-opacity=".10" stroke="var(--warn)" stroke-width="1.5"/>
+              <text x="355" y="234" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">İstanbul</text>
+              <text x="355" y="254" text-anchor="middle" fill="var(--muted)" font-size="11">40, 60</text>
+              <!-- apply okları -->
+              <path d="M434 88 L486 88"   stroke="var(--acc)" stroke-width="1.6" fill="none" marker-end="url(#eda-arr-c)"/>
+              <path d="M434 164 L486 164" stroke="var(--acc)" stroke-width="1.6" fill="none" marker-end="url(#eda-arr-c)"/>
+              <path d="M434 240 L486 240" stroke="var(--acc)" stroke-width="1.6" fill="none" marker-end="url(#eda-arr-c)"/>
+              <text x="460" y="152" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="700">mean()</text>
+              <!-- grup sonuçları -->
+              <rect x="490" y="72" width="90" height="32" rx="7" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="535" y="93" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">ort = 20</text>
+              <rect x="490" y="148" width="90" height="32" rx="7" fill="var(--dg-box)" stroke="var(--ok)" stroke-width="1.4"/>
+              <text x="535" y="169" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">ort = 35</text>
+              <rect x="490" y="224" width="90" height="32" rx="7" fill="var(--dg-box)" stroke="var(--warn)" stroke-width="1.4"/>
+              <text x="535" y="245" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">ort = 50</text>
+              <!-- combine okları -->
+              <path d="M583 88 L638 130"  stroke="var(--acc)" stroke-width="1.6" fill="none" marker-end="url(#eda-arr-c)"/>
+              <path d="M583 164 L638 164" stroke="var(--acc)" stroke-width="1.6" fill="none" marker-end="url(#eda-arr-c)"/>
+              <path d="M583 240 L638 198" stroke="var(--acc)" stroke-width="1.6" fill="none" marker-end="url(#eda-arr-c)"/>
+              <!-- birleşik özet -->
+              <rect x="642" y="102" width="100" height="26" fill="rgba(var(--acc-rgb),.15)" stroke="var(--dg-line)"/>
+              <text x="692" y="120" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="700">sehir · ort</text>
+              <g fill="var(--dg-box)" stroke="var(--dg-line)">
+                <rect x="642" y="128" width="100" height="26"/><rect x="642" y="154" width="100" height="26"/><rect x="642" y="180" width="100" height="26"/>
+              </g>
+              <g fill="var(--ink)" font-size="10.5" text-anchor="middle">
+                <text x="692" y="146">Ankara · 20</text><text x="692" y="172">İzmir · 35</text><text x="692" y="198">İstanbul · 50</text>
+              </g>
+              <text x="380" y="322" text-anchor="middle" fill="var(--acc)" font-size="11.5" font-weight="600">df.groupby("sehir")["tutar"].mean()</text>
+            </g>
+          </svg>
+          <figcaption>split-apply-combine: tabloyu gruplara böl, her gruba fonksiyonu uygula, sonuçları tek özet tabloda birleştir.</figcaption>
+        </figure>
+
+        <p>Farklı tablolardaki bilgiyi yan yana getirmek içinse <strong>merge (birleştirme)</strong> kullanılır — SQL JOIN'in pandas karşılığı. <code>on</code> ile anahtar kolonu, <code>how</code> ile birleştirme tipini (inner/left/outer) seçersin. Hepsi bir arada, gerçekçi bir analiz:</p>
+
+        <figure class="codebox">
+          <figcaption>Python — filtrele, grupla, özetle, zenginleştir</figcaption>
+          <pre><code data-lang="python"># Soru: "Hangi şehir ne kadar ciro üretiyor; mobil kanal büyük siparişlerde güçlü mü?"
+
+# Boolean maske: koşul True/False Series döndürür, df[maske] eşleşen satırları bırakır
+gecerli = df[df["tutar"] &gt; 0]                          # iade/negatif kayıtları dışarıda tut
+buyuk_mobil = df[(df["kanal"] == "mobil") &amp; (df["tutar"] &gt; 500)]
+
+# loc: etiketle, iloc: pozisyonla seçim
+df.loc[df["sehir"] == "İzmir", ["tarih", "tutar"]]     # satır koşulu + kolon listesi
+df.iloc[:5, 0:3]                                       # ilk 5 satır, ilk 3 kolon
+
+# groupby + agg: şehir başına sipariş sayısı, ciro ve ortalama sepet
+ozet = (gecerli
+    .groupby("sehir")
+    .agg(siparis=("tutar", "count"),
+         ciro=("tutar", "sum"),
+         ort_sepet=("tutar", "mean"))
+    .sort_values("ciro", ascending=False)
+    .reset_index())
+
+# merge: SQL JOIN'in pandas karşılığı — şehirlere bölge bilgisini ekle
+ozet = ozet.merge(bolgeler, on="sehir", how="left")    # left: soldaki tüm satırlar kalır
+ozet.head()</code></pre>
+        </figure>
+
+        <h2>Kirli veriyle yüzleşme</h2>
+        <p>Gerçek dünya verisi hiç ders kitabındaki gibi gelmez; EDA'nın yarısı temizliktir. Dört klasik dertle sırayla tanışalım.</p>
+        <p><strong>1) Eksik veri (missing values).</strong> Önce ölç: <code>df.isna().sum()</code> kolon başına eksik sayısını verir. Sonra karar ver — üç strateji vardır: eksik satırları <em>silmek</em> (eksik oranı küçükse ve rastgeleyse), bir değerle <em>doldurmak</em> (sayısalda medyan, kategorikte mod, zaman serisinde bir önceki değer), ya da eksikliği <em>bilgi olarak saklamak</em> (ayrı bir "eksikti" bayrak kolonu — bazen "formu doldurmamış olmak" başlı başına sinyaldir).</p>
+        <div class="warn"><b>Eksik ≠ sıfır.</b> Refleks hâlinde <code>fillna(0)</code> çekmek en sinsi hatadır: "tutarı bilinmeyen sipariş" ile "0 TL'lik sipariş" aynı şey değildir. Sıfırla doldurulmuş eksikler ortalamayı sessizce aşağı çeker ve bu hata aylarca fark edilmeyebilir.</div>
+        <p><strong>2) Yinelenen kayıtlar (duplicates).</strong> Aynı sipariş iki kez API'den düşmüş, iki kaynak birleştirilirken satırlar çiftlenmiş olabilir. <code>df.duplicated().sum()</code> tam kopyaları sayar; asıl hüner <code>subset</code> ile "iş anahtarına göre" kontrol etmektir: aynı <code>siparis_id</code> iki satırda geçiyorsa biri fazladır — yoksa cironu iki kez sayarsın.</p>
+        <p><strong>3) Aykırı değerler (outliers).</strong> 96 TL medyanlı sepette 9.800 TL'lik sipariş bir yazım hatası mı, kurumsal alım mı, yoksa dolandırıcılık mı? Tespitin klasik aracı <strong>IQR kuralı</strong>dır: veriyi sıralayıp çeyreklere böl; Q1 ile Q3 arasındaki mesafeye IQR (interquartile range — çeyrekler açıklığı) denir. <code>Q1 − 1.5×IQR</code> altı ve <code>Q3 + 1.5×IQR</code> üstü "aykırı" işaretlenir. Bu kural, box plot'un da iskeletidir:</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 310" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Box plot anatomisi ve IQR aykırı değer kuralı">
+            <defs>
+              <marker id="eda-arr-d" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--muted)"/></marker>
+              <marker id="eda-arr-e" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--bad)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <!-- bıyıklar -->
+              <line x1="140" y1="145" x2="250" y2="145" stroke="var(--dg-line)" stroke-width="2"/>
+              <line x1="140" y1="128" x2="140" y2="162" stroke="var(--dg-line)" stroke-width="2"/>
+              <line x1="440" y1="145" x2="565" y2="145" stroke="var(--dg-line)" stroke-width="2"/>
+              <line x1="565" y1="128" x2="565" y2="162" stroke="var(--dg-line)" stroke-width="2"/>
+              <!-- kutu -->
+              <rect x="250" y="110" width="190" height="70" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.6"/>
+              <line x1="320" y1="110" x2="320" y2="180" stroke="var(--acc)" stroke-width="3"/>
+              <!-- aykırı noktalar -->
+              <circle cx="92" cy="145" r="5" fill="var(--bad)"/>
+              <circle cx="635" cy="145" r="5" fill="var(--bad)"/>
+              <circle cx="668" cy="145" r="5" fill="var(--bad)"/>
+              <!-- üst etiketler -->
+              <text x="320" y="66" text-anchor="middle" fill="var(--acc)" font-size="12.5" font-weight="700">medyan (%50)</text>
+              <path d="M320 74 L320 104" stroke="var(--acc)" stroke-width="1.4" fill="none" marker-end="url(#eda-arr-d)"/>
+              <text x="178" y="94" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="600">bıyık (whisker)</text>
+              <path d="M186 102 L196 138" stroke="var(--muted)" stroke-width="1.3" fill="none" marker-end="url(#eda-arr-d)"/>
+              <text x="620" y="94" text-anchor="middle" fill="var(--bad)" font-size="11.5" font-weight="700">aykırı değerler (outlier)</text>
+              <path d="M628 102 L636 134" stroke="var(--bad)" stroke-width="1.3" fill="none" marker-end="url(#eda-arr-e)"/>
+              <!-- alt etiketler -->
+              <text x="250" y="205" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">Q1 (%25)</text>
+              <text x="440" y="205" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">Q3 (%75)</text>
+              <text x="140" y="205" text-anchor="middle" fill="var(--muted)" font-size="10.5">Q1 − 1.5×IQR</text>
+              <text x="565" y="205" text-anchor="middle" fill="var(--muted)" font-size="10.5">Q3 + 1.5×IQR</text>
+              <!-- eksen -->
+              <line x1="50" y1="230" x2="690" y2="230" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <!-- IQR parantezi -->
+              <path d="M250 248 L250 260 L440 260 L440 248" fill="none" stroke="var(--muted)" stroke-width="1.4"/>
+              <text x="345" y="284" text-anchor="middle" fill="var(--muted)" font-size="11.5" font-weight="600">IQR = Q3 − Q1 (kutunun boyu; verinin ortadaki %50'si)</text>
+            </g>
+          </svg>
+          <figcaption>Box plot anatomisi: kutu verinin ortadaki %50'sini, çizgi medyanı gösterir; bıyıkların 1.5×IQR sınırı dışında kalan noktalar aykırı sayılır.</figcaption>
+        </figure>
+
+        <p>Aykırı değeri bulmak ayrı, ne yapacağına karar vermek ayrı iştir: veri giriş hatasıysa düzelt ya da sil; gerçek ama uç bir olaysa <em>bayrakla ve analize göre karar ver</em>. Fraud tespitinde outlier'lar gürültü değil, aradığın sinyalin ta kendisidir — bu yüzden refleksle silinmez. <strong>4) Tip dönüşümleri</strong> de temizliğin son adımıdır: tarihi metinden <code>datetime</code>'a, tekrar eden metinleri <code>category</code>'ye çevirmek hem doğru davranış hem ciddi bellek kazancı sağlar.</p>
+
+        <figure class="codebox">
+          <figcaption>Python — eksik, duplicate ve outlier temizliği uçtan uca</figcaption>
+          <pre><code data-lang="python"># 1) Eksik veri: önce GÖR, sonra karar ver
+df.isna().sum()                          # kolon başına eksik sayısı
+df["tutar"] = df["tutar"].fillna(df["tutar"].median())   # sayısal → medyanla doldur
+df = df.dropna(subset=["musteri_id"])    # kimliği olmayan satır kullanılamaz → sil
+
+# 2) Yinelenen kayıtlar: iş anahtarına göre kontrol et
+df.duplicated().sum()                    # tam kopya satır sayısı
+df = df.drop_duplicates(subset=["siparis_id"], keep="first")
+
+# 3) IQR kuralıyla outlier BAYRAKLA (hemen silme — önce incele!)
+q1, q3 = df["tutar"].quantile([0.25, 0.75])
+iqr = q3 - q1
+alt, ust = q1 - 1.5 * iqr, q3 + 1.5 * iqr
+df["aykiri_mi"] = (df["tutar"] &lt; alt) | (df["tutar"] &gt; ust)
+print(df["aykiri_mi"].mean())            # satırların ne kadarı aykırı? (oran)
+
+# 4) Tip dönüşümleri: doğru tip = doğru davranış + daha az bellek
+df["tarih"] = pd.to_datetime(df["tarih"], errors="coerce")  # bozuk tarih → NaT
+df["sehir"] = df["sehir"].str.strip().str.title().astype("category")</code></pre>
+        </figure>
+
+        <div class="note"><b>describe() herkese eşit davranmaz.</b> Varsayılan hâliyle yalnız sayısal kolonları özetler; kategorik kolonlar için <code>df.describe(include="object")</code> dersin — bu kez sana benzersiz değer sayısını ve en sık değeri gösterir.</div>
+
+        <h2>Notebook hijyeni: en çok vakit geçireceğin ortam</h2>
+        <p><strong>Jupyter Notebook</strong> (ve JupyterLab, VS Code notebook'ları, Google Colab) keşifsel analizin doğal ortamıdır: kodu parça parça çalıştırır, çıktıyı hemen altında görürsün. Bu döngü EDA için mükemmeldir — ama bir tuzağı vardır.</p>
+        <p>Notebook'ta <strong>çalıştırma sırası ile yazılma sırası aynı olmak zorunda değildir.</strong> Bir hücreyi silebilir, yukarıdakini atlayıp aşağıdakini koşturabilir, bir değişkeni tanımlayan hücreyi değiştirdikten sonra onu kullanan hücreyi yeniden çalıştırmayı unutabilirsin. Sonuç: sende çalışan notebook, baştan sona koşturulduğunda hata verir. "Bende çalışıyordu"nun veri bilimindeki hâli budur.</p>
+        <ul>
+          <li><strong>Düzenli olarak "Restart &amp; Run All" yap.</strong> Notebook baştan sona hatasız koşmuyorsa o notebook bozuktur — sonucu da güvenilmezdir.</li>
+          <li><strong>Hücre numaralarına bak.</strong> Solda <code>[12]</code>, <code>[3]</code>, <code>[27]</code> gibi karışık sıralar görüyorsan, tekrarlanabilirliği çoktan kaybetmişsin demektir.</li>
+          <li><strong>Notebook keşif içindir, üretim için değil.</strong> Olgunlaşan kodu <code>.py</code> dosyalarına taşı ve notebook'tan <code>import</code> et. <a href="m3-orkestrasyon.html">Pipeline'lar</a> notebook değil, modül çalıştırır.</li>
+          <li><strong>Çıktıları temizleyerek commit et.</strong> Notebook dosyaları aslında JSON'dur; grafik çıktılarıyla birlikte commit edilirse <a href="m1-linux-git.html">Git</a> geçmişi okunamaz hâle gelir. <code>nbstripout</code> bu temizliği otomatikleştirir.</li>
+          <li><strong>Gizli bilgi yazma.</strong> API anahtarını hücreye gömme; ortam değişkeninden oku — notebook'lar en kolay paylaşılan, dolayısıyla en kolay sızdıran dosyalardır.</li>
+        </ul>
+
+        <div class="note"><b>Hangi ortam?</b> Google Colab kurulum istemez ve ücretsiz GPU sunar — <a href="m6-sinir-aglari.html">derin öğrenme</a> denemeleri için ideal başlangıçtır. VS Code notebook'ları kod tamamlama ve hata ayıklama araçlarını notebook'a taşır. Hangisini seçersen seç, yukarıdaki hijyen kuralları değişmez.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>EDA, bu sitedeki neredeyse her modülün giriş kapısıdır:</p>
+        <ul>
+          <li><strong>Veri analistliği →</strong> her yeni tablo, dashboard'a girmeden önce bir keşif turundan geçer; "bu kolona güvenilir mi?" sorusunun cevabı <code>info + describe + value_counts</code> üçlüsüdür.</li>
+          <li><strong>Makine öğrenmesi →</strong> <a href="m5-feature-engineering.html">feature engineering</a> EDA bulgularıyla başlar: hangi kolon eksik, hangisi çarpık, hangisi outlier dolu — hepsi özellik tasarımını belirler.</li>
+          <li><strong>Veri mühendisliği →</strong> pipeline'lara koyulan <a href="m3-veri-kalitesi.html">veri kalitesi kontrolleri</a>, aslında otomatikleştirilmiş EDA'dır: "tutar kolonunun eksik oranı %2'yi geçerse alarm çal".</li>
+          <li><strong>Büyük veri →</strong> tablo RAM'e sığmadığında <a href="m3-spark.html">Spark DataFrame'leri</a> devreye girer; API farklı, split-apply-combine zihni aynıdır.</li>
+          <li><strong>İstatistik →</strong> "İki grubun ortalaması farklı görünüyor, ama bu fark gerçek mi?" sorusunu bir sonraki konuda, <a href="m4-istatistiksel-cikarim.html">istatistiksel çıkarımla</a> cevaplayacağız; bulgularını görsele dökmeyi ise <a href="m4-gorsellestirme.html">görselleştirme</a> konusunda göreceğiz.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>describe() çıktısında ortalama 143, medyan 96 çıktı. Bu sana ne fısıldar?</summary>
+            <div class="answer">Dağılım <b>sağa çarpık</b>tır: az sayıda çok büyük değer (muhtemel outlier'lar) ortalamayı yukarı çekiyor, ama medyan etkilenmiyor. Böyle durumlarda "tipik değer" olarak medyanı raporlamak, outlier'ları da IQR kuralıyla inceleme listesine almak gerekir.</div>
+          </details>
+          <details class="quiz">
+            <summary>Vectorization, Python döngüsünden neden kat kat hızlıdır?</summary>
+            <div class="answer">Döngüde her eleman için <b>yorumlayıcı devreye girer ve tip kontrolü tekrarlanır</b>; vektörleştirilmiş işlemde ise tek bir C çağrısı, aynı tipteki elemanları <b>bitişik bellekten</b> topluca işler — CPU önbelleği verimli kullanılır. Sonuç, milyonlarca satırda 10–100 kata varan hız farkıdır.</div>
+          </details>
+          <details class="quiz">
+            <summary>loc ile iloc'un farkı nedir? df.loc[3] ile df.iloc[3] aynı satırı vermeyebilir — neden?</summary>
+            <div class="answer"><b>loc etikete, iloc pozisyona</b> bakar. Filtreleme sonrası index 0,1,2… düzeninde olmayabilir: <code>df.loc[3]</code> "etiketi 3 olan satırı", <code>df.iloc[3]</code> "baştan 4. satırı" getirir. Filtrelenmiş bir tabloda bu ikisi tamamen farklı satırlar olabilir.</div>
+          </details>
+          <details class="quiz">
+            <summary>IQR kuralına göre aykırı değer sınırları nasıl hesaplanır ve bulunca ilk iş ne olmalı?</summary>
+            <div class="answer">Sınırlar <b>Q1 − 1.5×IQR</b> ve <b>Q3 + 1.5×IQR</b>'dır (IQR = Q3 − Q1). İlk iş silmek değil, <b>bayraklayıp incelemektir</b>: veri giriş hatası mı, gerçek bir uç olay mı? Fraud gibi problemlerde outlier, gürültü değil aranan sinyaldir.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">EDA (Keşifsel Veri Analizi)</span><span class="term-en">Exploratory Data Analysis</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Modellemeden önce veriyi özetleyerek, çizerek ve sorgulayarak tanıma süreci; analizin ilk adımı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">NumPy</span><span class="term-en">NumPy</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Python'un sayısal hesaplama kütüphanesi; pandas dahil tüm veri yığınının altındaki hızlı dizi motorudur.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">ndarray</span><span class="term-en">ndarray</span><span class="lvl lvl-orta">Orta</span></div><p>NumPy'ın çok boyutlu dizisi: aynı tipte elemanlar, bitişik bellek, C hızında işlem.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Vectorization (Vektörleştirme)</span><span class="term-en">Vectorization</span><span class="lvl lvl-orta">Orta</span></div><p>Döngü yerine işlemi tüm diziye bir kerede uygulama; yorumlayıcı yükünü atlayarak 10–100 kat hız kazandırır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">pandas</span><span class="term-en">pandas</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Python'da tablo verisiyle çalışmanın standart kütüphanesi; okuma, temizlik, dönüştürme ve özetlemenin ana aracı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">DataFrame</span><span class="term-en">DataFrame</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Satır ve etiketli kolonlardan oluşan iki boyutlu tablo yapısı; pandas'ın merkez nesnesi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Series</span><span class="term-en">Series</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Etiketli tek boyutlu dizi — DataFrame'in tek kolonu. Altında bir ndarray ve bir Index taşır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Index</span><span class="term-en">Index</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Satır etiketleri. İşlemlerde veriler pozisyona göre değil etikete göre hizalanır; loc seçimi bununla çalışır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">groupby</span><span class="term-en">groupby</span><span class="lvl lvl-orta">Orta</span></div><p>split-apply-combine deseni: gruplara böl, fonksiyon uygula, sonuçları birleştir. SQL GROUP BY'ın pandas'taki karşılığı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Merge (Birleştirme)</span><span class="term-en">Merge</span><span class="lvl lvl-orta">Orta</span></div><p>İki DataFrame'i ortak anahtar kolon üzerinden birleştirme; inner/left/outer tipleriyle SQL JOIN mantığı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Eksik Veri</span><span class="term-en">Missing Data</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Hücrenin boş (NaN) olması. Silme, doldurma ya da bayraklama stratejileri bilinçli seçilmeli; eksik sıfır değildir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Duplicate (Yinelenen Kayıt)</span><span class="term-en">Duplicate</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Aynı kaydın tabloda birden fazla kez yer alması; toplamları sessizce şişirir. Anahtar kolon bazında kontrol edilir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Aykırı Değer</span><span class="term-en">Outlier</span><span class="lvl lvl-orta">Orta</span></div><p>Verinin genelinden belirgin biçimde uzak gözlem. IQR kuralı ya da z-skoruyla tespit edilir; silmeden önce anlaşılır.</p></div>
+
+          <div class="term"><div class="term-head"><span class="term-tr">Jupyter Notebook</span><span class="term-en">Jupyter Notebook</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Kodu hücre hücre çalıştırıp çıktıyı yanında gösteren keşif ortamı; gücü kadar tekrarlanabilirlik riski de taşır.</p></div>        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m4-eda">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m3-bulut.html"><span>← Önceki</span><b>Bulut Platformları</b></a>
+          <a class="next" href="m4-istatistiksel-cikarim.html"><span>Sonraki →</span><b>İstatistiksel Çıkarım ve A/B Testleri</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

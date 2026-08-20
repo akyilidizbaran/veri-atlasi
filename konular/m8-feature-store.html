@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feature Store ve Veri Versiyonlama — Veri Atlası</title>
+<meta name="description" content="Training-serving skew neden olur? Feature store mimarisi (offline/online store), point-in-time correctness, DVC ile veri versiyonlama ve Feast tanıtımı.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m8" data-slug="m8-feature-store">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m8">8. MLOps ve Üretim</a><span class="sep">/</span>
+        <span>Feature Store ve Veri Versiyonlama</span>
+      </nav>
+      <span class="mod-badge">Modül 8 · MLOps ve Üretim</span>
+      <h1>Feature Store ve Veri Versiyonlama</h1>
+      <p class="en-title">Feature Stores &amp; Data Versioning</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-ileri">İleri</span>
+        <span class="chip">⏱️ ~15 dk okuma</span>
+        <span class="chip">🔤 11 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Aynı feature, üç ekip, üç farklı sonuç</h2>
+        <p>Bir e-ticaret şirketinde sahne şu: churn modeli kuran ekip, kredi limiti modeli kuran ekip ve kampanya hedefleme ekibi — üçü de <em>"müşterinin son 30 gün harcaması"</em> feature'ına ihtiyaç duyuyor. Üçü de kendi köşesinde hesaplıyor: biri iade edilen siparişleri düşüyor, biri düşmüyor; biri "son 30 gün"ü takvim günü sayıyor, biri işlem gününden geriye 30 satır alıyor. Ortada <strong>aynı isimde üç farklı sayı</strong> dolaşıyor ve kimse hangisinin "doğru" olduğunu bilmiyor.</p>
+        <p>Daha da sinsisi: aynı ekibin <em>kendi içinde</em> bile hesap ikiye ayrılır. Eğitim sırasında feature pandas ile notebook'ta hesaplanır; üretimde ise aynı mantık düşük latency için SQL'e ya da başka bir servise <strong>yeniden yazılır</strong>. İki implementasyon zamanla ayrışır — biri iadeleri düşer, öbürü düşmez — ve sonuçlar tutmaz. Bu sayfa, bu kopukluğun adı olan <em>training-serving skew</em>'u ve ona karşı geliştirilen iki aracı anlatıyor: feature store ve veri versiyonlama.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 330" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ayrı hesaplanan feature'ların tutmaması ve feature store çözümü">
+            <defs>
+              <marker id="arr1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+              <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="360" y="22" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Sorun: iki ayrı hesap → Çözüm: tek tanım</text>
+              <!-- SORUN: üst yarı -->
+              <rect x="30" y="40" width="160" height="46" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="110" y="59" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Eğitim yolu</text>
+              <text x="110" y="76" text-anchor="middle" fill="var(--muted)" font-size="10.5">notebook + pandas</text>
+              <rect x="30" y="110" width="160" height="46" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="110" y="129" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Servis yolu</text>
+              <text x="110" y="146" text-anchor="middle" fill="var(--muted)" font-size="10.5">API + SQL</text>
+              <rect x="250" y="40" width="200" height="46" rx="10" fill="rgba(var(--acc-rgb),.10)" stroke="var(--dg-line)"/>
+              <text x="350" y="59" text-anchor="middle" fill="var(--muted)" font-size="10.5">rolling(30).sum()</text>
+              <text x="350" y="76" text-anchor="middle" fill="var(--muted)" font-size="10.5">iadeler düşülüyor</text>
+              <rect x="250" y="110" width="200" height="46" rx="10" fill="rgba(var(--acc-rgb),.10)" stroke="var(--dg-line)"/>
+              <text x="350" y="129" text-anchor="middle" fill="var(--muted)" font-size="10.5">SUM(...) son 30 gün</text>
+              <text x="350" y="146" text-anchor="middle" fill="var(--muted)" font-size="10.5">iadeler düşülmüyor!</text>
+              <path d="M192 63 L248 63" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arr1)"/>
+              <path d="M192 133 L248 133" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arr1)"/>
+              <rect x="510" y="72" width="180" height="52" rx="10" fill="var(--dg-box)" stroke="var(--bad)" stroke-width="1.8"/>
+              <text x="600" y="93" text-anchor="middle" fill="var(--bad)" font-size="12.5" font-weight="700">Sonuçlar tutmuyor!</text>
+              <text x="600" y="111" text-anchor="middle" fill="var(--muted)" font-size="10.5">4.200 TL ≠ 4.750 TL</text>
+              <path d="M452 63 L508 88" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arr1)"/>
+              <path d="M452 133 L508 108" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arr1)"/>
+              <!-- ayırıcı -->
+              <path d="M30 185 L690 185" stroke="var(--dg-line)" stroke-width="1" stroke-dasharray="6 5"/>
+              <!-- ÇÖZÜM: alt yarı -->
+              <rect x="30" y="215" width="220" height="66" rx="10" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width="1.8"/>
+              <text x="140" y="240" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Feature store: TEK tanım</text>
+              <text x="140" y="258" text-anchor="middle" fill="var(--muted)" font-size="10.5">son_30g_harcama</text>
+              <text x="140" y="272" text-anchor="middle" fill="var(--muted)" font-size="10.5">(iadeler düşülür — bir kez yazılır)</text>
+              <rect x="360" y="200" width="150" height="44" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="435" y="218" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">Eğitim okur</text>
+              <text x="435" y="234" text-anchor="middle" fill="var(--muted)" font-size="10.5">aynı değer</text>
+              <rect x="360" y="254" width="150" height="44" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="435" y="272" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">Servis okur</text>
+              <text x="435" y="288" text-anchor="middle" fill="var(--muted)" font-size="10.5">aynı değer</text>
+              <path d="M252 236 L358 222" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arr2)"/>
+              <path d="M252 262 L358 276" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arr2)"/>
+              <rect x="550" y="227" width="140" height="44" rx="10" fill="var(--dg-box)" stroke="var(--ok)" stroke-width="1.8"/>
+              <text x="620" y="245" text-anchor="middle" fill="var(--ok)" font-size="12" font-weight="700">Tutarlı</text>
+              <text x="620" y="262" text-anchor="middle" fill="var(--muted)" font-size="10.5">4.200 TL = 4.200 TL</text>
+              <path d="M512 222 L548 242" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arr1)"/>
+              <path d="M512 276 L548 256" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arr1)"/>
+            </g>
+          </svg>
+          <figcaption>Feature bir kez tanımlanır; eğitim de servis de aynı tanımdan okur. "İki kez yazılan mantık" kaynaklı tutarsızlık kökten biter.</figcaption>
+        </figure>
+
+        <h2>Training-serving skew: modelin sahada "aptallaşması"</h2>
+        <p>Eğitim sırasındaki feature hesabı ile servis anındaki feature hesabı arasındaki her fark, <strong>training-serving skew</strong> yaratır. Model eğitimde "iadeler düşülmüş harcama" görüp servise çıktığında "iadeler düşülmemiş harcama" alıyorsa, senin için aynı isimli iki kolon, model için <em>bambaşka iki dünyadır</em>. Sonuç klasiktir: offline metrikleri parlak olan model üretimde vasat sonuç verir — ekip "model sahada aptallaştı" der, oysa model aynıdır; <strong>beslenen veri değişmiştir</strong>.</p>
+        <p>Skew'un sinsi tarafı, hata fırlatmamasıdır. Tipler doğru, değerler makul aralıkta; sadece <em>anlam</em> kaymıştır. Bu yüzden fark edilmesi haftalar alabilir ve genellikle <a href="m8-monitoring.html">monitoring konusunda</a> gördüğün drift alarmları gibi dolaylı sinyallerle yakalanır. Kalıcı çözüm ise semptomu izlemek değil, kök nedeni ortadan kaldırmaktır: feature mantığını <strong>tek yerde tanımlayıp her iki dünyaya da oradan servis etmek</strong>.</p>
+
+        <h2>Feature store mimarisi: tek tanım, iki depo</h2>
+        <p><strong>Feature store (özellik deposu)</strong>, feature'ların tanımlandığı, hesaplandığı ve hem eğitime hem servise sunulduğu merkezi katmandır. Çekirdek fikir üç parçadır:</p>
+        <ul>
+          <li><strong>Feature tanımı</strong> — "son_30g_harcama = iadeler düşülmüş 30 günlük toplam" gibi mantığın <em>tek</em> ve versiyonlanan kaydı. Ekipler feature'ı yeniden yazmaz, kataloğdan bulup yeniden kullanır.</li>
+          <li><strong>Offline store</strong> — feature'ların <em>geçmiş</em> değerlerini tutan depo (genellikle Parquet dosyaları ya da warehouse tabloları). Eğitim seti oluşturmak buradan büyük toplu okumalarla yapılır; latency önemli değildir, tarihsel doğruluk önemlidir.</li>
+          <li><strong>Online store</strong> — her entity'nin (müşteri, ürün…) <em>en güncel</em> feature değerini tutan düşük latency'li depo (Redis benzeri key-value sistemler). Üretimdeki model API'si tahmin anında feature'ı milisaniyeler içinde buradan çeker.</li>
+        </ul>
+        <p>Offline'daki değerlerin online tarafa düzenli kopyalanmasına <strong>materialization</strong> denir; bu işlemin sıklığı feature'ın <strong>freshness (tazelik)</strong> gereksinimini belirler — "son 30 gün harcama" için günlük güncelleme yeterken, "son 5 dakikadaki işlem sayısı" streaming ister. Araç tarafında iki isim bilmen yeterli: <strong>Feast</strong>, bu mimariyi kuran en yaygın açık kaynak feature store'dur; <strong>Tecton</strong> ise aynı kavramların yönetilen (ticari) hâlidir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 320" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Feature store mimarisi: tanım katmanı, offline ve online store">
+            <defs>
+              <marker id="arr3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              <marker id="arr4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <!-- tanım katmanı -->
+              <rect x="200" y="30" width="300" height="58" rx="12" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width="1.8"/>
+              <text x="350" y="54" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Feature tanımı (tek kaynak)</text>
+              <text x="350" y="74" text-anchor="middle" fill="var(--muted)" font-size="10.5">son_30g_harcama · islem_sayisi_7g · ort_sepet</text>
+              <!-- iki kol -->
+              <path d="M290 90 L180 130" stroke="var(--acc)" stroke-width="2" marker-end="url(#arr3)"/>
+              <path d="M410 90 L520 130" stroke="var(--acc)" stroke-width="2" marker-end="url(#arr3)"/>
+              <!-- offline -->
+              <rect x="45" y="135" width="270" height="100" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="180" y="160" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Offline store</text>
+              <text x="180" y="180" text-anchor="middle" fill="var(--muted)" font-size="10.5">Parquet / warehouse tabloları</text>
+              <text x="180" y="196" text-anchor="middle" fill="var(--muted)" font-size="10.5">geçmiş değerler · büyük toplu okuma</text>
+              <text x="180" y="212" text-anchor="middle" fill="var(--muted)" font-size="10.5">latency önemsiz, tarih önemli</text>
+              <!-- online -->
+              <rect x="385" y="135" width="270" height="100" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="520" y="160" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Online store</text>
+              <text x="520" y="180" text-anchor="middle" fill="var(--muted)" font-size="10.5">Redis benzeri key-value</text>
+              <text x="520" y="196" text-anchor="middle" fill="var(--muted)" font-size="10.5">sadece en güncel değer</text>
+              <text x="520" y="212" text-anchor="middle" fill="var(--muted)" font-size="10.5">milisaniye okuma</text>
+              <!-- materialization -->
+              <path d="M318 185 L382 185" stroke="var(--acc)" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arr3)"/>
+              <text x="350" y="172" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="600">materialization</text>
+              <!-- tüketiciler -->
+              <rect x="70" y="265" width="220" height="42" rx="10" fill="rgba(var(--acc-rgb),.10)" stroke="var(--dg-line)"/>
+              <text x="180" y="283" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">Eğitim pipeline'ı okur</text>
+              <text x="180" y="299" text-anchor="middle" fill="var(--muted)" font-size="10">get_historical_features()</text>
+              <rect x="410" y="265" width="220" height="42" rx="10" fill="rgba(var(--acc-rgb),.10)" stroke="var(--dg-line)"/>
+              <text x="520" y="283" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="600">Model API'si okur</text>
+              <text x="520" y="299" text-anchor="middle" fill="var(--muted)" font-size="10">get_online_features()</text>
+              <path d="M180 237 L180 262" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arr4)"/>
+              <path d="M520 237 L520 262" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arr4)"/>
+            </g>
+          </svg>
+          <figcaption>Aynı tanımdan beslenen iki depo: offline geçmişi bilir (eğitim), online şu anı bilir (servis). Skew, mimariyle engellenir.</figcaption>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Python — Feast tarzı feature tanımı ve iki okuma yolu (kavramsal örnek)</figcaption>
+          <pre><code data-lang="python"># Feature bir kez tanımlanır — hem eğitim hem servis bunu kullanır
+from feast import Entity, FeatureView, Field
+from feast.types import Float32
+
+musteri = Entity(name="musteri_id")
+
+harcama_fv = FeatureView(
+    name="musteri_harcama",
+    entities=[musteri],
+    schema=[Field(name="son_30g_harcama", dtype=Float32)],
+    source=harcama_kaynagi,   # offline kaynak: Parquet / warehouse tablosu
+)
+
+# EĞİTİM: geçmişe dönük, point-in-time doğru değerler
+egitim_df = store.get_historical_features(
+    entity_df=etiketler,      # musteri_id + etiket tarihi çiftleri
+    features=["musteri_harcama:son_30g_harcama"],
+).to_df()                     # her satıra "o tarihte bilinen" değer gelir
+
+# SERVİS: aynı tanımdan, milisaniyede güncel değer
+online = store.get_online_features(
+    features=["musteri_harcama:son_30g_harcama"],
+    entity_rows=[{"musteri_id": 42}],
+).to_dict()</code></pre>
+        </figure>
+
+        <h2>Point-in-time correctness: geleceği sızdırma</h2>
+        <p>Eğitim seti kurarken kritik bir soru vardır: bir müşterinin 10 Mart tarihli etiketine (örn. "churn etti mi?") hangi feature değerini koyacaksın? Cevap: <strong>10 Mart'ta bilinen</strong> değeri — bugünkü değeri değil. Müşterinin harcaması nisan ayında patladıysa ve sen mart etiketinin yanına bugünün değerini koyarsan, model eğitimde <em>geleceği görmüş</em> olur. Buna <strong>point-in-time correctness</strong> denir ve ihlali, <a href="m5-feature-engineering.html">feature engineering konusunda</a> gördüğün <em>data leakage</em>'ın zaman boyutundaki hâlidir: offline'da şahane, üretimde hüsran.</p>
+        <p>Feature store'ların en değerli hizmetlerinden biri tam burasıdır: <code>get_historical_features</code> çağrısı, her eğitim örneğinin etiket tarihine bakar ve offline store'dan <strong>o tarihte geçerli olan</strong> feature değerini getirir. Elle yazılmış join'lerde bu kural kolayca delinir; feature store bunu sistematik garantiye çevirir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 250" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Point-in-time correctness: etiket tarihinden sonraki değerler yasak">
+            <defs>
+              <marker id="arr5" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="350" y="22" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">"son_30g_harcama" feature'ının zaman içindeki değeri</text>
+              <!-- zaman ekseni -->
+              <path d="M50 190 L660 190" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#arr5)"/>
+              <text x="90 " y="212" text-anchor="middle" fill="var(--muted)" font-size="10.5">Oca</text>
+              <text x="230" y="212" text-anchor="middle" fill="var(--muted)" font-size="10.5">Şub</text>
+              <text x="370" y="212" text-anchor="middle" fill="var(--muted)" font-size="10.5">10 Mar</text>
+              <text x="510" y="212" text-anchor="middle" fill="var(--muted)" font-size="10.5">Nis</text>
+              <text x="620" y="212" text-anchor="middle" fill="var(--muted)" font-size="10.5">bugün</text>
+              <!-- basamaklı feature değeri -->
+              <path d="M60 150 L160 150 L160 130 L300 130 L300 115 L370 115" stroke="var(--acc)" stroke-width="2.5" fill="none"/>
+              <path d="M370 115 L370 70 L480 70 L480 55 L640 55" stroke="var(--muted)" stroke-width="2" fill="none" stroke-dasharray="5 4"/>
+              <text x="150" y="120" text-anchor="middle" fill="var(--acc)" font-size="10.5">2.900 TL</text>
+              <text x="335" y="105" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="700">3.400 TL ✓</text>
+              <text x="545" y="45" text-anchor="middle" fill="var(--muted)" font-size="10.5">7.800 TL (nisanda patladı)</text>
+              <!-- etiket tarihi çizgisi -->
+              <path d="M370 35 L370 190" stroke="var(--bad)" stroke-width="1.8" stroke-dasharray="6 4"/>
+              <text x="370" y="234" text-anchor="middle" fill="var(--bad)" font-size="11" font-weight="700">etiket tarihi: 10 Mart</text>
+              <!-- yasak bölge -->
+              <rect x="371" y="35" width="269" height="155" fill="rgba(var(--acc-rgb),.05)" stroke="none"/>
+              <text x="505" y="130" text-anchor="middle" fill="var(--bad)" font-size="12" font-weight="700">Bu çizginin sağı YASAK</text>
+              <text x="505" y="148" text-anchor="middle" fill="var(--muted)" font-size="10.5">eğitim örneğine koyarsan geleceği sızdırırsın</text>
+            </g>
+          </svg>
+          <figcaption>Eğitim örneğine etiket tarihinde bilinen değer (3.400 TL) girer; sonraki değerler (7.800 TL) modele gösterilmez.</figcaption>
+        </figure>
+
+        <div class="warn"><b>Klasik hata: "en güncel tabloyla join".</b> Eğitim setini müşteri tablosunun bugünkü hâliyle join'lemek, her satıra bugünün feature'larını yazar — geçmiş etiketlerin yanına gelecek bilgisi koyar. Model offline'da uçar, üretimde çakılır. Join'i her zaman "etiket tarihi itibarıyla" kur.</div>
+
+        <h2>Veri versiyonlama: kod gibi, veri de sürümlenmeli</h2>
+        <p>Git sana kodun her sürümünü geri getirme gücü verir; peki ya veri? "Model v12 hangi veriyle eğitilmişti?" sorusuna cevap veremiyorsan deneyi tekrarlayamazsın, hatayı geriye izleyemezsin, denetime cevap veremezsin. <strong>Veri versiyonlama</strong> tam bu boşluğu doldurur ve iki yaygın yaklaşım vardır:</p>
+        <ul>
+          <li><strong>DVC (Data Version Control)</strong> — git'in yanına takılan bir araç: büyük veri dosyasının kendisini değil, içeriğinin hash'ini taşıyan <em>küçük bir işaretçi dosyasını</em> git'e commit'lersin; asıl dosya S3 gibi bir uzak depoda durur. <code>git checkout</code> + <code>dvc checkout</code> ile kod ve veri birlikte o güne döner.</li>
+          <li><strong>Lakehouse time travel</strong> — Delta Lake / Iceberg gibi tablo formatları her değişikliğin anlık görüntüsünü zaten tutar; <code>VERSION AS OF</code> sorgusuyla tablonun dünkü hâlini okursun. Detayları <a href="m3-warehouse-lake.html">warehouse ve lake konusunda</a> görmüştün.</li>
+        </ul>
+        <p>Hangi yaklaşım olursa olsun hedef aynıdır: her model sürümünün yanına <em>kod versiyonu + veri versiyonu + parametreler</em> üçlüsünü kaydetmek. Bu üçlü tamsa "bu modeli birebir yeniden üret" talebi bir komut meselesidir; eksikse arkeolojik kazıdır.</p>
+
+        <figure class="codebox">
+          <figcaption>bash — DVC temel akışı: dosya değil, işaretçi commit'lenir</figcaption>
+          <pre><code data-lang="bash"># 1) Büyük veri dosyasını DVC takibine al
+dvc add data/musteriler.csv
+# → data/musteriler.csv.dvc adında minik bir işaretçi dosyası oluşur
+#   (içinde verinin hash'i var; asıl CSV .gitignore'a eklenir)
+
+# 2) Git'e dosyanın KENDİSİNİ değil, işaretçiyi commit'le
+git add data/musteriler.csv.dvc .gitignore
+git commit -m "Müşteri verisi v1 (Mart kesiti)"
+
+# 3) Asıl veriyi uzak depoya (S3, GCS...) gönder
+dvc push
+
+# Geçmişe dönüş: kod VE veri birlikte o güne döner
+git checkout model-v12-etiketi
+dvc checkout   # işaretçideki hash'e uyan veriyi geri indirir</code></pre>
+        </figure>
+
+        <div class="note"><b>Neden dosyayı doğrudan git'e koymuyoruz?</b> Git her sürümün tam kopyasını deposunda taşır; 5 GB'lık CSV'nin 20 sürümü depoyu kullanılamaz hâle getirir. DVC işaretçisi birkaç satırlık YAML'dır — git hafif kalır, büyük dosyalar object storage'da yaşar.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Önce dürüst cevabı verelim: <strong>küçük projede feature store şart mı? Hayır.</strong> Tek model, tek ekip, batch tahmin yapan bir sistemde feature store kurmak, bir sürücü belgesi için tır ehliyeti almaya benzer — pandas + iyi organize edilmiş bir feature modülü + DVC fazlasıyla yeter. Feature store, <em>çok model + çok ekip + gerçek zamanlı servis</em> denklemi kurulduğunda değer üretir. Ama kavramları bilmek her ölçekte şarttır, çünkü:</p>
+        <ul>
+          <li><strong>Training-serving skew her ölçekte olur →</strong> feature store'un yoksa bile "eğitim ve servis aynı feature kodunu çağırsın" ilkesini kendin uygulamalısın.</li>
+          <li><strong>Point-in-time hatası her ölçekte olur →</strong> tek kişilik projede bile "en güncel tabloyla join" tuzağı offline metriklerini şişirir; <a href="m5-feature-engineering.html">leakage</a> bilgisinin zaman boyutu budur.</li>
+          <li><strong>Mülakatlarda →</strong> "offline AUC yüksek, üretim kötü — neden?" sorusunun beklenen cevaplarından biri skew'dur; "modeli nasıl yeniden üretirsin?" sorusununki veri versiyonlama.</li>
+          <li><strong>Büyük şirkette →</strong> ilk gün feature kataloğuyla tanışırsın: "bu feature zaten var, yeniden yazma" kültürü hem tutarlılık hem hız kazandırır.</li>
+          <li><strong>Denetim ve regülasyon →</strong> finans/sağlık gibi alanlarda "bu kararı veren model hangi veriyle eğitildi?" sorusu yasal zorunluluktur; versiyonlama olmadan cevabı yoktur.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Training-serving skew nedir ve en yaygın nedeni nedir?</summary>
+            <div class="answer">Eğitimde kullanılan feature değerleri ile servis anında hesaplanan değerlerin <b>ayrışmasıdır</b>. En yaygın neden, aynı feature mantığının iki kez yazılmasıdır: eğitimde pandas, üretimde SQL — iki implementasyon zamanla farklılaşır. Model aynı kalsa da beslendiği veri değiştiği için üretim performansı düşer.</div>
+          </details>
+          <details class="quiz">
+            <summary>Offline store ile online store'un görev ayrımı nedir?</summary>
+            <div class="answer"><b>Offline store</b> feature'ların geçmiş değerlerini tutar (Parquet/warehouse); eğitim seti büyük toplu okumalarla buradan kurulur, latency önemsizdir. <b>Online store</b> her entity'nin yalnızca en güncel değerini tutar (Redis benzeri); model API'si tahmin anında milisaniyede buradan okur. Offline'dan online'a düzenli kopyalamaya <b>materialization</b> denir.</div>
+          </details>
+          <details class="quiz">
+            <summary>Point-in-time correctness neden önemlidir? İhlal edilirse ne olur?</summary>
+            <div class="answer">Eğitim örneğine, etiket tarihinde <b>bilinen</b> feature değerinin konmasını garanti eder. İhlal edilirse (örn. geçmiş etiketleri bugünkü tabloyla join'lersen) model eğitimde geleceği görür — bu zaman boyutlu bir <b>data leakage</b>'dır. Offline metrikler yapay olarak yükselir, üretimde model o "gelecek bilgisine" erişemediği için performans çöker.</div>
+          </details>
+          <details class="quiz">
+            <summary>dvc add + git commit yaptığında git deposuna ne girer, asıl veri nerede durur?</summary>
+            <div class="answer">Git'e yalnızca <b>işaretçi dosyası</b> (.dvc uzantılı, verinin hash'ini taşıyan birkaç satır) girer; asıl dosya .gitignore'a eklenir ve <code>dvc push</code> ile S3/GCS gibi uzak depoya gider. Geri dönüş iki adımdır: <code>git checkout</code> işaretçinin eski sürümünü, <code>dvc checkout</code> o hash'e uyan veriyi getirir — kod ve veri birlikte sürümlenmiş olur.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Feature Store (Özellik Deposu)</span><span class="term-en">Feature Store</span><span class="lvl lvl-ileri">İleri</span></div><p>Feature'ların tek yerde tanımlanıp hem eğitime hem servise sunulduğu merkezi katman; skew'a karşı mimari çözüm.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Offline Store</span><span class="term-en">Offline Store</span><span class="lvl lvl-ileri">İleri</span></div><p>Feature'ların geçmiş değerlerini tutan depo (Parquet/warehouse); eğitim setleri buradan toplu okunur.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Online Store</span><span class="term-en">Online Store</span><span class="lvl lvl-ileri">İleri</span></div><p>En güncel feature değerlerini milisaniyede sunan düşük latency'li depo; üretimdeki model tahmin anında buradan okur.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Training-Serving Skew</span><span class="term-en">Training-Serving Skew</span><span class="lvl lvl-ileri">İleri</span></div><p>Eğitimdeki ve servisteki feature hesabının ayrışması; modelin sahada "aptallaşmasının" klasik nedeni.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Point-in-Time Correctness</span><span class="term-en">Point-in-Time Correctness</span><span class="lvl lvl-ileri">İleri</span></div><p>Eğitim örneğine etiket tarihinde bilinen feature değerini koyma garantisi; zaman boyutlu leakage'ı önler.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Feast</span><span class="term-en">Feast</span><span class="lvl lvl-ileri">İleri</span></div><p>En yaygın açık kaynak feature store; feature tanımı + offline/online store + point-in-time okuma sunar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Veri Versiyonlama</span><span class="term-en">Data Versioning</span><span class="lvl lvl-orta">Orta</span></div><p>Veri setlerinin kod gibi sürümlenmesi; "hangi model hangi veriyle eğitildi" sorusunun cevabını mümkün kılar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">DVC</span><span class="term-en">Data Version Control</span><span class="lvl lvl-ileri">İleri</span></div><p>Büyük veri dosyalarını git benzeri işaretçilerle sürümleyen araç; işaretçi git'te, asıl dosya object storage'da durur.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Feature Tanımı</span><span class="term-en">Feature Definition</span><span class="lvl lvl-orta">Orta</span></div><p>Bir feature'ın hesap mantığının tek ve versiyonlanan kaydı; ekipler yeniden yazmak yerine kataloğdan kullanır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Materialization</span><span class="term-en">Materialization</span><span class="lvl lvl-ileri">İleri</span></div><p>Offline store'daki feature değerlerinin online store'a düzenli kopyalanması; servis tarafının güncel kalma mekanizması.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Freshness (Tazelik)</span><span class="term-en">Feature Freshness</span><span class="lvl lvl-ileri">İleri</span></div><p>Feature değerinin ne kadar güncel olduğu; günlük batch mi, dakikalık streaming mi gerektiğini belirleyen gereksinim.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m8-feature-store">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m8-monitoring.html"><span>← Önceki</span><b>Monitoring ve Model Drift</b></a>
+          <a class="next" href="m8-sorumlu-ai.html"><span>Sonraki →</span><b>Sorumlu AI: Etik, Bias ve Açıklanabilirlik</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

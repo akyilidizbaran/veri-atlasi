@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Warehouse, Lake ve Lakehouse — Veri Atlası</title>
+<meta name="description" content="Data warehouse, data lake ve lakehouse mimarileri: Snowflake, BigQuery, Delta Lake, Iceberg, medallion katmanları, partitioning ve bulutta sorgu maliyeti okuryazarlığı.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m3" data-slug="m3-warehouse-lake">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m3">3. Veri Mühendisliği</a><span class="sep">/</span>
+        <span>Data Warehouse, Lake ve Lakehouse</span>
+      </nav>
+      <span class="mod-badge">Modül 3 · Veri Mühendisliği</span>
+      <h1>Data Warehouse, Lake ve Lakehouse</h1>
+      <p class="en-title">Warehouse, Lake &amp; Lakehouse</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~17 dk okuma</span>
+        <span class="chip">🔤 12 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Analitik verinin evi neresi?</h2>
+        <p>Şirketin siparişleri bir PostgreSQL veritabanında dönüyor olsun. Bir gün analist arkadaşın "son iki yılın şehir bazlı satış trendi" için kocaman bir sorgu yazar ve doğrudan bu veritabanında çalıştırır. Sorgu milyonlarca satırı tarar, veritabanının kaynaklarını yer ve o sırada sepetini onaylamaya çalışan gerçek müşteriler dönen bir yükleme simgesine bakar. Ekip haklı olarak kızar: <strong>uygulamayı ayakta tutan veritabanı, rapor koşturulacak yer değildir.</strong></p>
+        <p>Sebep tasarım farkı: <a href="m2-sql.html">SQL konusunda</a> gördüğün operasyonel (OLTP) veritabanları "çok sayıda küçük ve hızlı işlem" için kuruludur — bir sipariş ekle, bir bakiye güncelle. Analitik iş yükü ise tam tersidir: az sayıda ama <em>devasa</em> okuma; milyarlarca satırı süpürüp birkaç özet sayı çıkarmak. Bu iki iş yükü aynı evde barışmaz. Çözüm, veriyi düzenli aralıklarla kopyalayıp <strong>analitiğe özel ayrı bir depoda</strong> tutmaktır. Bu sayfa, o deponun üç kuşağını anlatıyor: warehouse, lake ve lakehouse.</p>
+
+        <h2>Data warehouse: raflı, etiketli, disiplinli depo</h2>
+        <p><strong>Data warehouse (veri ambarı)</strong>, analitik sorgular için tasarlanmış merkezi ve yapılandırılmış depodur. Kütüphane gibi düşün: içeri giren her kitap önce etiketlenir, sınıflandırılır, doğru rafa konur. Warehouse'a veri de böyle girer — tablo şeması bellidir, tipler bellidir, şemaya uymayan veri kapıdan dönür. Bu yaklaşıma <strong>schema-on-write (yazarken şema)</strong> denir: disiplin baştan uygulanır, karşılığında sorgular hızlı ve güvenilir olur.</p>
+        <p>Modern bulut warehouse'ları — <strong>Snowflake</strong>, Google <strong>BigQuery</strong>, Amazon <strong>Redshift</strong> — sütunsal depolama ve güçlü sorgu motorlarıyla milyarlarca satırlık <code>GROUP BY</code>'ları saniyeler içinde döndürür. Hepsinin paylaştığı büyük fikir ise <strong>compute-storage ayrımı</strong>dır: veri tek kopya hâlinde ucuz depolamada durur; sorgu gücü (compute) ondan bağımsız olarak açılır, büyür, küçülür ve kapanır. Eski nesil sistemlerde depoyu büyütmek için işlemci de satın almak zorundaydın; artık ikisinin faturası ayrıdır.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 315" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Compute ve depolama ayrımı şeması">
+            <g font-family="inherit">
+              <text x="350" y="20" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Aynı veri, birbirinden bağımsız üç sorgu gücü</text>
+              <rect x="60" y="90" width="170" height="75" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="145" y="115" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">BI sorguları</text>
+              <text x="145" y="134" text-anchor="middle" fill="var(--muted)" font-size="11">küçük küme (S)</text>
+              <text x="145" y="151" text-anchor="middle" fill="var(--muted)" font-size="10.5">gün boyu açık</text>
+              <rect x="265" y="70" width="170" height="95" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="350" y="97" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">ETL işleri</text>
+              <text x="350" y="116" text-anchor="middle" fill="var(--muted)" font-size="11">orta küme (M)</text>
+              <text x="350" y="133" text-anchor="middle" fill="var(--muted)" font-size="10.5">gece 02:00–04:00 açık</text>
+              <rect x="470" y="45" width="170" height="120" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="555" y="73" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Ay sonu raporları</text>
+              <text x="555" y="92" text-anchor="middle" fill="var(--muted)" font-size="11">büyük küme (XL)</text>
+              <text x="555" y="109" text-anchor="middle" fill="var(--muted)" font-size="10.5">ayda bir gün açılır,</text>
+              <text x="555" y="125" text-anchor="middle" fill="var(--muted)" font-size="10.5">işi bitince kapanır</text>
+              <path d="M145 172 L145 205" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrwl1)"/>
+              <path d="M350 172 L350 205" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrwl1)"/>
+              <path d="M555 172 L555 205" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrwl1)"/>
+              <rect x="45" y="215" width="610" height="72" rx="12" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="350" y="244" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Depolama katmanı — tek kopya veri</text>
+              <text x="350" y="264" text-anchor="middle" fill="var(--muted)" font-size="11">S3 / GCS üzerinde sütunsal dosyalar; her compute kümesi aynı tabloları görür</text>
+              <defs>
+                <marker id="arrwl1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              </defs>
+            </g>
+          </svg>
+          <figcaption>Compute-storage ayrımı: veri tek yerde durur, sorgu güçleri iş yüküne göre bağımsız büyüyüp küçülür. "Ay sonu" kümesi yılın 353 günü para yakmaz.</figcaption>
+        </figure>
+
+        <div class="note"><b>Şema tasarımı ayrı bir sanat.</b> Warehouse tablolarının star schema, fact ve dimension gibi kalıplarla nasıl düzenlendiğini <a href="m2-veri-modelleme.html">Veri Modelleme konusunda</a> işlemiştik; bu sayfadaki "gold katman" tabloları genellikle o kalıplarla kurulur.</div>
+
+        <h2>Data lake: her formatın havuzu</h2>
+        <p>Warehouse harikadır ama seçicidir: yalnızca yapılandırılmış tabloları sever. Oysa şirketin ürettiği verinin büyük kısmı öyle değildir — uygulama logları, tıklama olayları, ürün fotoğrafları, API'lerden dökülen iç içe JSON'lar. Hepsini şemaya sokup warehouse'a taşımak hem yavaş hem pahalı. Ayrıca veri bilimciler çoğu zaman verinin <em>ham</em> hâlini ister; temizlenmiş versiyonda sinyal kaybolmuş olabilir.</p>
+        <p>Bu ihtiyaçtan <strong>data lake (veri gölü)</strong> doğdu: ucuz ve neredeyse sınırsız <strong>object storage</strong> (AWS S3, Google Cloud Storage) üzerinde, her formatta ham dosyanın olduğu gibi biriktirildiği havuz. Şema dayatması yoktur; yapıyı veriyi <em>okurken</em> kurarsın — buna <strong>schema-on-read (okurken şema)</strong> denir. GB başına maliyet warehouse depolamasının çok altındadır, bu yüzden "belki bir gün lazım olur" verisini bile saklamak makul hâle gelir. Dosyalar çoğunlukla <a href="m2-veri-kavramlari.html">Veri Formatları konusundan</a> tanıdığın Parquet gibi sütunsal biçimlerde tutulur.</p>
+        <div class="warn"><b>Data swamp tehlikesi.</b> Katalog, sahiplik ve adlandırma disiplini olmayan lake, birkaç yılda "kimsenin ne olduğunu bilmediği 400 TB dosya" yığınına — bir <em>data swamp</em>'a (veri bataklığı) — dönüşür. Göl ucuz diye her şeyi atmak bedava değildir; düzeni <a href="m3-veri-kalitesi.html">governance ve katalog</a> sağlar.</div>
+
+        <h2>Lakehouse: iki dünyanın evliliği</h2>
+        <p>On yıl boyunca tipik mimari ikili oldu: ham veri lake'te, temiz raporluk veri warehouse'ta. Bu da iki sistem, iki kopya veri, ikisini senkron tutan boru hatları ve çift maliyet demek. Üstelik lake tarafının ciddi eksikleri vardı: bir yazma işlemi yarıda kesilirse dosyalar yarım kalır (transaction yok), iki iş aynı anda yazarsa veri bozulur, "bu tablonun dünkü hâli neydi?" sorusunun cevabı yoktur.</p>
+        <p><strong>Lakehouse</strong> bu açığı kapatır: lake'teki dosyaların üstüne <strong>tablo formatı</strong> denen bir katman ekler. <strong>Delta Lake</strong> ve <strong>Apache Iceberg</strong> (bir de Apache Hudi) bu işin standartlarıdır. Numara şudur: Parquet dosyalarının yanında bir <em>transaction log</em> (işlem günlüğü) tutulur; hangi dosyaların tablonun güncel hâlini oluşturduğu bu günlükten okunur. Bu küçük fikir büyük yetenekler getirir:</p>
+        <ul>
+          <li><strong>ACID transaction'lar</strong> — yazma ya tamamen olur ya hiç olmaz; yarım dosya okuyan sorgu kalmaz.</li>
+          <li><strong>Time travel (zaman yolculuğu)</strong> — her yazma yeni bir versiyon üretir; tablonun dünkü hâlini sorgulayabilir, felakette geri dönebilirsin.</li>
+          <li><strong>Schema evolution (şema evrimi)</strong> — tabloya güvenli biçimde kolon ekleyip tip genişletebilirsin; eski dosyaları yeniden yazman gerekmez.</li>
+          <li><strong>UPDATE / DELETE / MERGE</strong> — düz dosya yığınında imkânsız olan satır düzeltmeleri mümkün olur (KVKK "beni silin" talepleri için kritik).</li>
+        </ul>
+
+        <figure class="codebox">
+          <figcaption>Python (PySpark) — Delta Lake ile time travel: dünkü tabloyu okumak</figcaption>
+          <pre><code data-lang="python"># Tablonun BUGÜNKÜ hâli
+df_bugun = spark.read.format("delta").load("s3://lake/silver/musteriler")
+
+# Dün geceki yükleme her şeyi bozdu mu? Önceki versiyonu oku:
+df_dun = (spark.read.format("delta")
+    .option("versionAsOf", 41)      # her yazma yeni versiyon üretir: 0, 1, 2...
+    .load("s3://lake/silver/musteriler"))
+
+# İstersen versiyon yerine zaman damgasıyla:
+df_dun2 = (spark.read.format("delta")
+    .option("timestampAsOf", "2026-08-19 09:00:00")
+    .load("s3://lake/silver/musteriler"))
+
+# Kaç satır kaybolmuş, hızlıca karşılaştır
+print(df_bugun.count(), df_dun.count())
+
+# Felaket büyükse tabloyu SQL ile eski hâline döndürebilirsin:
+# RESTORE TABLE silver.musteriler TO VERSION AS OF 41</code></pre>
+        </figure>
+
+        <p>Lakehouse terimini Databricks popülerleştirdi ama fikir artık ekosistemin ortak malı: Snowflake ve BigQuery de Iceberg tablolarını okuyup yazabiliyor. Üç mimariyi yan yana koyalım:</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 760 330" width="760" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Warehouse, lake ve lakehouse karşılaştırması">
+            <g font-family="inherit">
+              <rect x="15" y="35" width="230" height="270" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="130" y="60" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Data Warehouse</text>
+              <rect x="42" y="78" width="52" height="24" rx="4" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width=".8"/>
+              <rect x="102" y="78" width="52" height="24" rx="4" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width=".8"/>
+              <rect x="162" y="78" width="52" height="24" rx="4" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width=".8"/>
+              <rect x="36" y="106" width="188" height="3" rx="1.5" fill="var(--dg-line)"/>
+              <rect x="42" y="120" width="52" height="24" rx="4" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width=".8"/>
+              <rect x="102" y="120" width="52" height="24" rx="4" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width=".8"/>
+              <rect x="162" y="120" width="52" height="24" rx="4" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width=".8"/>
+              <rect x="36" y="148" width="188" height="3" rx="1.5" fill="var(--dg-line)"/>
+              <text x="130" y="172" text-anchor="middle" fill="var(--muted)" font-size="10.5">düzenli raflar: şemalı tablolar</text>
+              <text x="130" y="200" text-anchor="middle" fill="var(--muted)" font-size="11">yalnız yapılandırılmış veri</text>
+              <text x="130" y="220" text-anchor="middle" fill="var(--muted)" font-size="11">schema-on-write · SQL</text>
+              <text x="130" y="240" text-anchor="middle" fill="var(--muted)" font-size="11">çok hızlı analitik sorgu</text>
+              <text x="130" y="260" text-anchor="middle" fill="var(--muted)" font-size="11">depolaması daha pahalı</text>
+              <text x="130" y="286" text-anchor="middle" fill="var(--faint)" font-size="10">Snowflake · BigQuery · Redshift</text>
+
+              <rect x="265" y="35" width="230" height="270" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="380" y="60" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Data Lake</text>
+              <ellipse cx="380" cy="122" rx="100" ry="46" fill="rgba(var(--acc-rgb),.10)" stroke="var(--dg-line)" stroke-dasharray="4 3"/>
+              <rect x="308" y="92" width="44" height="20" rx="6" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width=".7"/>
+              <text x="330" y="106" text-anchor="middle" fill="var(--ink)" font-size="10">CSV</text>
+              <rect x="392" y="96" width="48" height="20" rx="6" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width=".7"/>
+              <text x="416" y="110" text-anchor="middle" fill="var(--ink)" font-size="10">JSON</text>
+              <rect x="336" y="122" width="40" height="20" rx="6" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width=".7"/>
+              <text x="356" y="136" text-anchor="middle" fill="var(--ink)" font-size="10">log</text>
+              <rect x="392" y="128" width="42" height="20" rx="6" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width=".7"/>
+              <text x="413" y="142" text-anchor="middle" fill="var(--ink)" font-size="10">IMG</text>
+              <text x="380" y="184" text-anchor="middle" fill="var(--muted)" font-size="10.5">havuz: her tip ham dosya</text>
+              <text x="380" y="212" text-anchor="middle" fill="var(--muted)" font-size="11">her format, ham hâliyle</text>
+              <text x="380" y="232" text-anchor="middle" fill="var(--muted)" font-size="11">schema-on-read · çok ucuz</text>
+              <text x="380" y="252" text-anchor="middle" fill="var(--bad)" font-size="11">risk: data swamp</text>
+              <text x="380" y="286" text-anchor="middle" fill="var(--faint)" font-size="10">S3 · GCS · Azure Blob</text>
+
+              <rect x="515" y="35" width="230" height="270" rx="12" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.8"/>
+              <text x="630" y="60" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Lakehouse</text>
+              <text x="630" y="86" text-anchor="middle" fill="var(--muted)" font-size="10.5">SQL · BI · ML motorları</text>
+              <rect x="545" y="96" width="170" height="30" rx="8" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width="1.2"/>
+              <text x="630" y="115" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="700">tablo formatı: Delta · Iceberg</text>
+              <ellipse cx="630" cy="154" rx="95" ry="28" fill="rgba(var(--acc-rgb),.10)" stroke="var(--dg-line)" stroke-dasharray="4 3"/>
+              <text x="630" y="159" text-anchor="middle" fill="var(--muted)" font-size="10.5">ham dosyalar (lake)</text>
+              <text x="630" y="212" text-anchor="middle" fill="var(--muted)" font-size="11">lake fiyatına warehouse disiplini</text>
+              <text x="630" y="232" text-anchor="middle" fill="var(--muted)" font-size="11">ACID · time travel · evolution</text>
+              <text x="630" y="252" text-anchor="middle" fill="var(--muted)" font-size="11">BI ve ML aynı kopyayı okur</text>
+              <text x="630" y="286" text-anchor="middle" fill="var(--faint)" font-size="10">Databricks · açık tablo formatları</text>
+            </g>
+          </svg>
+          <figcaption>Üç kuşak yan yana: warehouse düzenli ama seçici, lake ucuz ama başıboş; lakehouse gölün üstüne raf disiplini kurar.</figcaption>
+        </figure>
+
+        <h2>Medallion mimarisi: bronz, gümüş, altın</h2>
+        <p>Lake ya da lakehouse'un içini nasıl düzenleyeceğine dair en yaygın kalıp <strong>medallion (madalyon) mimarisi</strong>dir. Veri, rafine edildikçe katman atlar:</p>
+        <ul>
+          <li><strong>Bronze (ham):</strong> kaynaktan gelen veri, olduğu gibi. Hiç dokunulmaz; bozuk kayıtlar bile durur. Amaç: "kaynağın o günkü fotoğrafı" her zaman elde olsun.</li>
+          <li><strong>Silver (temiz):</strong> tekilleştirilmiş, tipleri düzeltilmiş, standartlaştırılmış tablolar. Analiz ve modelleme için güvenilir zemin.</li>
+          <li><strong>Gold (iş metriği):</strong> doğrudan iş sorularına cevap veren özet tablolar — günlük ciro, müşteri 360, kampanya performansı. Dashboard'lar buradan beslenir.</li>
+        </ul>
+        <p>Bu katmanlamanın asıl değeri hata anında ortaya çıkar: silver'daki dönüşümde bir kusur bulursan, bronze hâlâ el değmemiş durduğu için <a href="m3-etl-elt.html">pipeline'ı</a> baştan koşturup silver ve gold'u yeniden üretirsin. Ham veriyi ezip geçmiş olsaydın dönüş yolun olmazdı.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 270" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Medallion mimarisi: bronze, silver, gold katmanları">
+            <g font-family="inherit">
+              <text x="360" y="30" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Her katman bir sonrakinin güvenilir girdisi</text>
+              <rect x="30" y="70" width="170" height="105" rx="12" fill="var(--dg-box)" stroke="var(--warn)" stroke-width="1.6"/>
+              <text x="115" y="96" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Bronze</text>
+              <text x="115" y="114" text-anchor="middle" fill="var(--muted)" font-size="10.5">ham / olduğu gibi</text>
+              <text x="115" y="136" text-anchor="middle" fill="var(--muted)" font-size="10.5">kaynaktan gelen JSON,</text>
+              <text x="115" y="151" text-anchor="middle" fill="var(--muted)" font-size="10.5">CSV, log dökümleri</text>
+              <text x="115" y="166" text-anchor="middle" fill="var(--muted)" font-size="10.5">değiştirilmez — arşiv</text>
+              <path d="M204 122 L271 122" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrwl2)"/>
+              <text x="239" y="112" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="700">temizle</text>
+              <rect x="275" y="70" width="170" height="105" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.6"/>
+              <text x="360" y="96" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Silver</text>
+              <text x="360" y="114" text-anchor="middle" fill="var(--muted)" font-size="10.5">temiz / standart</text>
+              <text x="360" y="136" text-anchor="middle" fill="var(--muted)" font-size="10.5">tekilleştirilmiş, tipleri</text>
+              <text x="360" y="151" text-anchor="middle" fill="var(--muted)" font-size="10.5">düzeltilmiş tablolar</text>
+              <text x="360" y="166" text-anchor="middle" fill="var(--muted)" font-size="10.5">analize hazır zemin</text>
+              <path d="M449 122 L516 122" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrwl2)"/>
+              <text x="483" y="112" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="700">özetle</text>
+              <rect x="520" y="70" width="170" height="105" rx="12" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.8"/>
+              <text x="605" y="96" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Gold</text>
+              <text x="605" y="114" text-anchor="middle" fill="var(--muted)" font-size="10.5">iş metrikleri</text>
+              <text x="605" y="136" text-anchor="middle" fill="var(--muted)" font-size="10.5">günlük ciro, müşteri 360,</text>
+              <text x="605" y="151" text-anchor="middle" fill="var(--muted)" font-size="10.5">kampanya özeti —</text>
+              <text x="605" y="166" text-anchor="middle" fill="var(--muted)" font-size="10.5">dashboard'ların kaynağı</text>
+              <text x="115" y="200" text-anchor="middle" fill="var(--faint)" font-size="10.5">ör. odeme_raw/2026-08-19.json</text>
+              <text x="360" y="200" text-anchor="middle" fill="var(--faint)" font-size="10.5">ör. silver.odemeler</text>
+              <text x="605" y="200" text-anchor="middle" fill="var(--faint)" font-size="10.5">ör. gold.gunluk_ciro</text>
+              <text x="360" y="238" text-anchor="middle" fill="var(--muted)" font-size="11">Hata mı çıktı? Bronze hep yerinde durur → silver ve gold yeniden üretilir.</text>
+              <defs>
+                <marker id="arrwl2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              </defs>
+            </g>
+          </svg>
+          <figcaption>Medallion akışı: ham veriden iş metriğine giden rafinasyon hattı. Katman adları süs değil, sorumluluk sınırıdır.</figcaption>
+        </figure>
+
+        <h2>Performans ve maliyet: az okuyan kazanır</h2>
+        <p>Bulut warehouse'larında fatura iki modelden biriyle gelir: taranan veri başına (BigQuery'nin talep bazlı modeli — bu satırlar yazılırken TiB başına yaklaşık 6 dolar) ya da compute süresi başına (Snowflake kredileri). İki modelde de aynı altın kural geçerlidir: <strong>sorgu ne kadar az veri okursa o kadar ucuz ve hızlıdır.</strong> Az okumanın iki ana aracı var:</p>
+        <ul>
+          <li><strong>Partitioning (bölümleme):</strong> tabloyu bir kolona — neredeyse her zaman tarihe — göre fiziksel klasörlere bölmek. <code>WHERE</code> filtresi partition kolonunu kullanıyorsa motor yalnızca ilgili klasörleri okur, gerisine hiç dokunmaz.</li>
+          <li><strong>Clustering (kümeleme):</strong> partition içindeki veriyi belirli kolonlara göre sıralı tutmak. Benzer değerler aynı bloklarda yan yana durunca motor işine yaramayan blokları atlar.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 310" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Partitioning: tarih filtreli sorgu tek klasörü okur">
+            <g font-family="inherit">
+              <rect x="40" y="25" width="330" height="58" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="205" y="49" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">SELECT SUM(tutar) FROM siparisler</text>
+              <text x="205" y="68" text-anchor="middle" fill="var(--acc)" font-size="12" font-weight="700">WHERE dt = '2026-08-03'</text>
+              <path d="M240 88 C260 120 420 100 420 132" fill="none" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrwl3)"/>
+              <g opacity=".55">
+                <rect x="38" y="138" width="56" height="14" rx="4" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+                <rect x="30" y="150" width="140" height="100" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+                <text x="100" y="170" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">dt=2026-08-01</text>
+                <rect x="45" y="185" width="110" height="18" rx="4" fill="rgba(var(--acc-rgb),.14)" stroke="var(--dg-line)" stroke-width=".7"/>
+                <text x="100" y="198" text-anchor="middle" fill="var(--muted)" font-size="9.5">part-000.parquet</text>
+                <rect x="45" y="210" width="110" height="18" rx="4" fill="rgba(var(--acc-rgb),.14)" stroke="var(--dg-line)" stroke-width=".7"/>
+                <text x="100" y="223" text-anchor="middle" fill="var(--muted)" font-size="9.5">part-001.parquet</text>
+              </g>
+              <g opacity=".55">
+                <rect x="198" y="138" width="56" height="14" rx="4" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+                <rect x="190" y="150" width="140" height="100" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+                <text x="260" y="170" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">dt=2026-08-02</text>
+                <rect x="205" y="185" width="110" height="18" rx="4" fill="rgba(var(--acc-rgb),.14)" stroke="var(--dg-line)" stroke-width=".7"/>
+                <text x="260" y="198" text-anchor="middle" fill="var(--muted)" font-size="9.5">part-000.parquet</text>
+                <rect x="205" y="210" width="110" height="18" rx="4" fill="rgba(var(--acc-rgb),.14)" stroke="var(--dg-line)" stroke-width=".7"/>
+                <text x="260" y="223" text-anchor="middle" fill="var(--muted)" font-size="9.5">part-001.parquet</text>
+              </g>
+              <g>
+                <rect x="358" y="138" width="56" height="14" rx="4" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)"/>
+                <rect x="350" y="150" width="140" height="100" rx="8" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.8"/>
+                <text x="420" y="170" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">dt=2026-08-03</text>
+                <rect x="365" y="185" width="110" height="18" rx="4" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width=".8"/>
+                <text x="420" y="198" text-anchor="middle" fill="var(--ink)" font-size="9.5">part-000.parquet</text>
+                <rect x="365" y="210" width="110" height="18" rx="4" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width=".8"/>
+                <text x="420" y="223" text-anchor="middle" fill="var(--ink)" font-size="9.5">part-001.parquet</text>
+              </g>
+              <g opacity=".55">
+                <rect x="518" y="138" width="56" height="14" rx="4" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+                <rect x="510" y="150" width="140" height="100" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+                <text x="580" y="170" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">dt=2026-08-04</text>
+                <rect x="525" y="185" width="110" height="18" rx="4" fill="rgba(var(--acc-rgb),.14)" stroke="var(--dg-line)" stroke-width=".7"/>
+                <text x="580" y="198" text-anchor="middle" fill="var(--muted)" font-size="9.5">part-000.parquet</text>
+                <rect x="525" y="210" width="110" height="18" rx="4" fill="rgba(var(--acc-rgb),.14)" stroke="var(--dg-line)" stroke-width=".7"/>
+                <text x="580" y="223" text-anchor="middle" fill="var(--muted)" font-size="9.5">part-001.parquet</text>
+              </g>
+              <text x="678" y="205" text-anchor="middle" fill="var(--muted)" font-size="18" font-weight="700">…</text>
+              <text x="678" y="225" text-anchor="middle" fill="var(--faint)" font-size="9.5">08-31'e kadar</text>
+              <text x="360" y="280" text-anchor="middle" fill="var(--ok)" font-size="11.5" font-weight="700">Filtreli sorgu: 31 klasörden 1'i taranır → maliyetin ~%3'ü</text>
+              <text x="360" y="300" text-anchor="middle" fill="var(--bad)" font-size="11">Tarih filtresi olmayan sorgu: 31/31 klasör, tam tarama</text>
+              <defs>
+                <marker id="arrwl3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              </defs>
+            </g>
+          </svg>
+          <figcaption>Tarih partition'lı tablo: sorgu yalnızca <code>dt=2026-08-03</code> klasörüne dokunur; diğer 30 klasör hiç okunmaz.</figcaption>
+        </figure>
+
+        <p>Bir de sütun boyutu var: warehouse'lar veriyi kolon kolon sakladığı için sorgu yalnızca istediği kolonların bloklarını okur. <code>SELECT *</code> yazdığında 200 kolonluk tablonun 200 kolonunu da okutursun — ihtiyacın 3 kolonken. "SELECT * yapma" nasihati şıklık meselesi değil, faturaya doğrudan yansıyan bir tercihtir:</p>
+
+        <figure class="codebox">
+          <figcaption>SQL (BigQuery) — partition filtresi ve kolon seçiminin maliyete etkisi</figcaption>
+          <pre><code data-lang="sql">-- Tarihe göre bölümlenmiş tablo tanımı
+CREATE TABLE satis.siparisler (
+    siparis_id STRING,
+    musteri_id STRING,
+    tutar NUMERIC,
+    olay_zamani TIMESTAMP
+)
+PARTITION BY DATE(olay_zamani);
+
+-- KÖTÜ: filtre yok, tüm kolonlar → tablonun tamamı taranır (ör. 2 TB)
+SELECT * FROM satis.siparisler;
+
+-- İYİ: tek günün partition'ı + yalnız 2 kolon → ~7 GB taranır
+-- Aynı cevap, kabaca 300 kat ucuz
+SELECT musteri_id, SUM(tutar) AS ciro
+FROM satis.siparisler
+WHERE DATE(olay_zamani) = "2026-08-19"
+GROUP BY musteri_id;</code></pre>
+        </figure>
+
+        <div class="tip"><b>Koşmadan önce tartıya çık.</b> BigQuery arayüzü sorguyu çalıştırmadan "bu sorgu X GB tarayacak" tahmini gösterir (dry run); Snowflake'te de sorgu profilinden taranan partition sayısını görebilirsin. Pahalı bir sorguyu koşmadan yakalamak, faturayı açıklamaktan kolaydır.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Bu üçlü, veri mühendisliği günlük hayatının dekorudur:</p>
+        <ul>
+          <li><strong>Mülakat klasiği:</strong> "Warehouse ile lake farkı nedir, hangisini ne zaman seçersin?" — bu sayfanın ilk üç bölümü cevabın iskeleti.</li>
+          <li><strong>Pipeline'lar:</strong> <a href="m3-spark.html">Spark job'ların</a> bronze'dan okuyup silver'a Delta tablosu yazar; <a href="m3-etl-elt.html">dbt modellerin</a> warehouse'ta gold katmanı kurar.</li>
+          <li><strong>Maliyet bileti:</strong> "Şu dashboard ayda 800 dolar tarama yapıyor" görevi önüne düşer; çözüm çoğu zaman partition filtresi eklemek ve <code>SELECT *</code>'ları temizlemektir.</li>
+          <li><strong>Kurtarma günü:</strong> hatalı bir yükleme gold tabloyu bozduğunda time travel ile dünkü versiyona döner, sonra kök nedeni ararsın.</li>
+          <li><strong>Bulut tarafı:</strong> lake'in altındaki S3/GCS mekaniğini ve depolama sınıflarını <a href="m3-bulut.html">Bulut Platformları konusunda</a>, gölün bataklığa dönmemesini sağlayan katalog ve kalite pratiklerini ise <a href="m3-veri-kalitesi.html">bir sonraki konuda</a> göreceğiz.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Raporları neden uygulamanın operasyonel veritabanında koşturmayız?</summary>
+            <div class="answer">Operasyonel (OLTP) veritabanı <b>çok sayıda küçük ve hızlı işlem</b> için tasarlanmıştır. Milyonlarca satırı tarayan analitik sorgular kaynakları tüketir ve gerçek kullanıcı işlemlerini yavaşlatır. Bu yüzden veri, analitiğe özel ayrı bir depoya (warehouse/lake) kopyalanır ve raporlar orada koşar.</div>
+          </details>
+          <details class="quiz">
+            <summary>Schema-on-write ile schema-on-read farkı nedir; hangisi hangi mimariye aittir?</summary>
+            <div class="answer"><b>Schema-on-write</b> (warehouse): veri yazılırken şemaya uymak zorundadır; disiplin baştadır, sorgular hızlı ve güvenilirdir. <b>Schema-on-read</b> (lake): veri ham hâliyle saklanır, yapı okuma anında kurulur; esneklik baştadır, düzen sorumluluğu okuyandadır.</div>
+          </details>
+          <details class="quiz">
+            <summary>Delta Lake ve Iceberg gibi tablo formatları düz bir data lake'e hangi yetenekleri ekler?</summary>
+            <div class="answer">Dosyaların yanında bir <b>transaction log</b> tutarak <b>ACID transaction</b> (yarım yazma yok), <b>time travel</b> (eski versiyonu okuma/geri dönme), <b>schema evolution</b> (güvenli kolon ekleme) ve <b>UPDATE/DELETE/MERGE</b> desteği kazandırırlar. Yani lake'i yönetilebilir bir "tabloya" çevirirler — lakehouse'un temeli budur.</div>
+          </details>
+          <details class="quiz">
+            <summary>Partitioning sorgu maliyetini nasıl düşürür? Hangi şartla?</summary>
+            <div class="answer">Tablo, partition kolonuna (genelde tarihe) göre fiziksel klasörlere bölünür; motor yalnızca filtreye uyan klasörleri okur. Şart: <b>WHERE filtresinin partition kolonunu kullanması.</b> Filtre başka bir kolondaysa (ör. yalnız <code>musteri_id</code>) tüm partition'lar taranır ve kazanç kaybolur.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Data Warehouse (Veri Ambarı)</span><span class="term-en">Data Warehouse</span><span class="lvl lvl-orta">Orta</span></div><p>Analitik sorgular için tasarlanmış, yapılandırılmış ve şema disiplinli merkezi depo; SQL ile sorgulanır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Data Lake (Veri Gölü)</span><span class="term-en">Data Lake</span><span class="lvl lvl-orta">Orta</span></div><p>Ucuz object storage üzerinde her formatta ham verinin biriktirildiği havuz; şema okuma anında kurulur.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Lakehouse</span><span class="term-en">Lakehouse</span><span class="lvl lvl-ileri">İleri</span></div><p>Lake'in ucuz depolaması üstüne tablo formatlarıyla warehouse disiplini (ACID, şema, versiyon) ekleyen mimari.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Object Storage (Nesne Depolama)</span><span class="term-en">Object Storage</span><span class="lvl lvl-orta">Orta</span></div><p>Dosyaları anahtar-nesne çiftleri olarak saklayan, neredeyse sınırsız ölçeklenen bulut depolama modeli (S3, GCS).</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Snowflake</span><span class="term-en">Snowflake</span><span class="lvl lvl-orta">Orta</span></div><p>Compute-storage ayrımını popülerleştiren bulut veri ambarı; sorgu gücü "warehouse" adlı kümelerle ayrı ölçeklenir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">BigQuery</span><span class="term-en">BigQuery</span><span class="lvl lvl-orta">Orta</span></div><p>Google'ın serverless veri ambarı; talep bazlı modelde ücret taranan veri miktarına göre hesaplanır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Delta Lake</span><span class="term-en">Delta Lake</span><span class="lvl lvl-ileri">İleri</span></div><p>Parquet dosyaları üstünde transaction log tutan açık tablo formatı; lake'e ACID ve time travel getirir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Iceberg</span><span class="term-en">Apache Iceberg</span><span class="lvl lvl-ileri">İleri</span></div><p>Motor bağımsız açık tablo formatı; Spark, Snowflake ve BigQuery aynı Iceberg tablosunu okuyup yazabilir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Time Travel</span><span class="term-en">Time Travel</span><span class="lvl lvl-ileri">İleri</span></div><p>Tablonun geçmiş bir versiyonunu sorgulama ya da o versiyona geri dönme yeteneği; hatalı yüklemelerin sigortası.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Medallion Mimarisi</span><span class="term-en">Medallion Architecture</span><span class="lvl lvl-ileri">İleri</span></div><p>Veriyi bronze (ham) → silver (temiz) → gold (iş metriği) katmanlarında kademeli rafine etme kalıbı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Partitioning (Bölümleme)</span><span class="term-en">Partitioning</span><span class="lvl lvl-orta">Orta</span></div><p>Tabloyu bir kolona (çoğunlukla tarihe) göre fiziksel parçalara bölme; filtreli sorgular yalnızca ilgili parçayı okur.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Schema Evolution (Şema Evrimi)</span><span class="term-en">Schema Evolution</span><span class="lvl lvl-ileri">İleri</span></div><p>Var olan tabloya eski veriyi bozmadan kolon ekleme/tip genişletme yeteneği; tablo formatlarının güvenli değişim mekanizması.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m3-warehouse-lake">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m3-spark.html"><span>← Önceki</span><b>Dağıtık Veri İşleme: Spark</b></a>
+          <a class="next" href="m3-dbt.html"><span>Sonraki →</span><b>dbt ve Analytics Engineering</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zaman Serisi Analizi ve Tahminleme — Veri Atlası</title>
+<meta name="description" content="Trend, mevsimsellik, durağanlık, otokorelasyon; hareketli ortalamadan ARIMA ve Prophet'e; lag feature'larıyla ML ve walk-forward backtesting ile doğru değerlendirme.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m4" data-slug="m4-zaman-serisi">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular" class="active">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m4">4. Analitik ve İstatistik</a><span class="sep">/</span>
+        <span>Zaman Serisi Analizi ve Tahminleme</span>
+      </nav>
+      <span class="mod-badge">Modül 4 · Analitik ve İstatistik</span>
+      <h1>Zaman Serisi Analizi ve Tahminleme</h1>
+      <p class="en-title">Time Series Analysis &amp; Forecasting</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~18 dk okuma</span>
+        <span class="chip">🔤 15 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Sıranın anlam taşıdığı veri</h2>
+        <p>Şimdiye kadarki bütün analizlerimiz sessiz bir varsayıma dayanıyordu: satırlar birbirinden bağımsızdır. Bir müşterinin yaşı, başka bir müşterinin gelirini etkilemez; bu yüzden veriyi karıştırıp rastgele bölebiliriz.</p>
+        <p><strong>Zaman serilerinde bu varsayım tamamen çöker.</strong> Bugünkü satış dünküyle akrabadır, geçen cumartesiyle akrabadır, geçen yılın aynı haftasıyla akrabadır. Satırların sırası bilginin kendisidir. Bu tek fark, kuralların çoğunu değiştirir:</p>
+        <ul>
+          <li>Rastgele train/test bölmesi <strong>yasaktır</strong> — geleceği görüp geçmişi tahmin etmiş olursun (<a href="m5-feature-engineering.html">data leakage</a>'in en klasik hâli).</li>
+          <li><a href="m5-model-degerlendirme.html">K-fold cross-validation</a> olduğu gibi kullanılamaz; zamana saygılı bir sürümü gerekir.</li>
+          <li>Ortalama ve varyans zamanla değişebilir; "veri şu dağılımdan geliyor" cümlesi kurulamayabilir.</li>
+        </ul>
+        <p>Karşılığında şunu kazanırsın: satış tahmini, talep planlama, stok yönetimi, enerji yükü, sunucu kapasitesi, finansal öngörü — kurumsal analitiğin en para eden soruları zaman serisi sorularıdır.</p>
+
+        <h2>Bir seriyi bileşenlerine ayırmak</h2>
+        <p>Zaman serisi analizi neredeyse her zaman aynı zihinsel hareketle başlar: karmaşık görünen çizgiyi anlaşılır parçalara ayırmak.</p>
+        <ul>
+          <li><strong>Trend</strong> — uzun vadeli yön. İş büyüyor mu, küçülüyor mu?</li>
+          <li><strong>Mevsimsellik (seasonality)</strong> — sabit periyotlu tekrar: haftanın günleri, aylar, yıllık dönemler. Bir kafede cumartesi zirvesi, e-ticarette kasım.</li>
+          <li><strong>Döngü (cycle)</strong> — sabit periyodu olmayan uzun dalgalanmalar (ekonomik konjonktür gibi); mevsimsellikle karıştırılmamalı.</li>
+          <li><strong>Artık (residual)</strong> — açıklanamayan geri kalan. Modelin hedefi bunu <em>desensiz gürültüye</em> indirmektir; artıkta hâlâ desen varsa model eksik demektir.</li>
+        </ul>
+        <p>Bu parçalar iki şekilde birleşebilir: <strong>toplamsal</strong> (mevsimsel dalganın büyüklüğü sabittir: her aralık +200 adet) ya da <strong>çarpımsal</strong> (dalga seviyeyle birlikte büyür: her aralık %20 fazla). Grafikte dalgalar zamanla genişliyorsa çarpımsal modeli seç — ya da seriyi logaritmasını alarak toplamsala çevir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 300" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Zaman serisinin trend, mevsimsellik ve artık bileşenlerine ayrıştırılması">
+            <g>
+              <text x="8" y="30" fill="var(--ink)" font-size="11.5" font-weight="700">Gözlenen</text>
+              <text x="8" y="44" fill="var(--muted)" font-size="9.5">ham seri</text>
+              <rect x="104" y="14" width="602" height="54" rx="7" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1"/>
+              <polyline points="110,47 159,55 208,63 257,47 306,37 355,51 404,53 453,40 502,30 551,40 600,47 649,31 698,21"
+                        fill="none" stroke="var(--acc)" stroke-width="2"/>
+
+              <text x="96" y="80" text-anchor="end" fill="var(--faint)" font-size="14" font-weight="800">=</text>
+
+              <text x="8" y="98" fill="var(--ink)" font-size="11.5" font-weight="700">Trend</text>
+              <text x="8" y="112" fill="var(--muted)" font-size="9.5">uzun vadeli yön</text>
+              <rect x="104" y="82" width="602" height="54" rx="7" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1"/>
+              <polyline points="110,122 159,120 208,118 257,116 306,114 355,112 404,110 453,108 502,106 551,104 600,102 649,100 698,98"
+                        fill="none" stroke="var(--ok)" stroke-width="2"/>
+
+              <text x="96" y="148" text-anchor="end" fill="var(--faint)" font-size="14" font-weight="800">+</text>
+
+              <text x="8" y="166" fill="var(--ink)" font-size="11.5" font-weight="700">Mevsimsellik</text>
+              <text x="8" y="180" fill="var(--muted)" font-size="9.5">haftalık tekrar</text>
+              <rect x="104" y="148" width="602" height="54" rx="7" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1"/>
+              <line x1="110" y1="175" x2="698" y2="175" stroke="var(--dg-line)" stroke-width="0.8" stroke-dasharray="4 4"/>
+              <polyline points="110,163 159,176 208,183 257,170 306,163 355,176 404,183 453,170 502,163 551,176 600,183 649,170 698,163"
+                        fill="none" stroke="var(--warn)" stroke-width="2"/>
+
+              <text x="96" y="214" text-anchor="end" fill="var(--faint)" font-size="14" font-weight="800">+</text>
+
+              <text x="8" y="232" fill="var(--ink)" font-size="11.5" font-weight="700">Artık</text>
+              <text x="8" y="246" fill="var(--muted)" font-size="9.5">açıklanamayan</text>
+              <rect x="104" y="214" width="602" height="54" rx="7" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1"/>
+              <line x1="110" y1="241" x2="698" y2="241" stroke="var(--dg-line)" stroke-width="0.8" stroke-dasharray="4 4"/>
+              <polyline points="110,244 159,235 208,244 257,241 306,238 355,247 404,238 453,244 502,241 551,238 600,244 649,241 698,238"
+                        fill="none" stroke="var(--muted)" stroke-width="1.6"/>
+
+              <text x="405" y="290" text-anchor="middle" fill="var(--muted)" font-size="10.5">Artıkta gözle görülür bir desen kalmışsa, model henüz bir şeyi kaçırıyor demektir.</text>
+            </g>
+          </svg>
+          <figcaption>Ayrıştırma (decomposition), tahmin yapmadan önce serinin "nesi var" sorusunu cevaplar.</figcaption>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Python — seriyi hazırlamak ve ayrıştırmak</figcaption>
+          <pre><code data-lang="python">import pandas as pd
+from statsmodels.tsa.seasonal import seasonal_decompose
+
+# Zaman sütununu index yapmak, pandas'ın tüm zaman yeteneklerinin kapısıdır
+df = pd.read_csv("gunluk_satis.csv", parse_dates=["tarih"]).set_index("tarih")
+
+df = df.asfreq("D")                            # eksik günleri NaN olarak yerine koy
+df["adet"] = df["adet"].interpolate()          # küçük boşlukları komşulardan doldur
+
+haftalik = df["adet"].resample("W").sum()      # günlükten haftalığa toplulaştır
+df["ort_7g"] = df["adet"].rolling(7).mean()    # 7 günlük hareketli ortalama: gürültüyü sil, trendi gör
+
+# Haftalık mevsimsellik için period=7 (aylık veride 12, saatlik veride 24)
+ayrisim = seasonal_decompose(df["adet"], model="additive", period=7)
+ayrisim.plot()
+
+# Mevsimsel dalga zamanla BÜYÜYORsa model="multiplicative" seç
+# (ya da np.log ile seriyi dönüştürüp toplamsal modelde kal)</code></pre>
+        </figure>
+
+        <h2>Durağanlık: klasik modellerin ön şartı</h2>
+        <p><strong>Durağan (stationary)</strong> bir seri, istatistiksel özelliklerini zaman içinde koruyan seridir: ortalaması sabit, varyansı sabit, otokorelasyon yapısı yalnızca aradaki mesafeye bağlıdır. Sürekli yükselen bir satış serisi durağan değildir — ortalaması her ay kayar.</p>
+        <p>Neden önemli? Çünkü ARIMA ailesindeki klasik modeller "yarın da bugünkü kurallar geçerli olacak" varsayımıyla çalışır; kurallar sürekli kayıyorsa öğrenecek sabit bir yapı kalmaz. Çözüm <strong>fark alma (differencing)</strong>dır: seriyi kendi bir önceki değerinden çıkarırsın (<code>y[t] − y[t−1]</code>). Böylece "seviye" yerine "değişim" modellenir ve trend yok olur. Mevsimsellik için mevsimsel fark alınır (<code>y[t] − y[t−7]</code>).</p>
+        <p>Durağanlığı gözle grafiğe bakarak, resmî olarak <strong>ADF testi</strong> (Augmented Dickey-Fuller) ile kontrol edersin — <a href="m4-istatistiksel-cikarim.html">hipotez testi</a> mantığıyla: p-değeri küçükse "durağan değil" hipotezini reddedersin.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 232" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Durağan olmayan seriden fark alarak durağan seri elde etme">
+            <defs>
+              <marker id="tsArrD" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0L7 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g>
+              <text x="150" y="24" text-anchor="middle" fill="var(--bad)" font-size="12" font-weight="800">Durağan değil</text>
+              <rect x="16" y="34" width="272" height="130" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <polyline points="30,150 52,142 74,150 96,132 118,124 140,132 162,110 184,100 206,110 228,86 250,72 274,82"
+                        fill="none" stroke="var(--bad)" stroke-width="2"/>
+              <line x1="30" y1="152" x2="274" y2="82" stroke="var(--muted)" stroke-width="1" stroke-dasharray="5 4"/>
+              <text x="152" y="182" text-anchor="middle" fill="var(--muted)" font-size="10.5">Ortalama sürekli kayıyor:</text>
+              <text x="152" y="196" text-anchor="middle" fill="var(--muted)" font-size="10.5">öğrenilecek sabit yapı yok</text>
+
+              <path d="M300 100 L404 100" stroke="var(--acc)" stroke-width="2" marker-end="url(#tsArrD)"/>
+              <text x="352" y="88" text-anchor="middle" fill="var(--acc)" font-size="11" font-weight="700">fark al</text>
+              <text x="352" y="120" text-anchor="middle" fill="var(--muted)" font-size="10">y[t] − y[t−1]</text>
+
+              <text x="570" y="24" text-anchor="middle" fill="var(--ok)" font-size="12" font-weight="800">Durağan</text>
+              <rect x="432" y="34" width="272" height="130" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <line x1="446" y1="100" x2="690" y2="100" stroke="var(--muted)" stroke-width="1" stroke-dasharray="5 4"/>
+              <polyline points="446,108 468,92 490,110 512,88 534,104 556,90 578,112 600,94 622,106 644,90 666,108 690,96"
+                        fill="none" stroke="var(--ok)" stroke-width="2"/>
+              <text x="570" y="182" text-anchor="middle" fill="var(--muted)" font-size="10.5">Sabit ortalama etrafında salınım:</text>
+              <text x="570" y="196" text-anchor="middle" fill="var(--muted)" font-size="10.5">ARIMA artık çalışabilir</text>
+            </g>
+          </svg>
+          <figcaption>Fark alma, "kaç adet sattık" sorusunu "düne göre kaç adet değişti" sorusuna çevirir.</figcaption>
+        </figure>
+
+        <h2>Otokorelasyon: geçmiş kendini ne kadar tekrarlıyor?</h2>
+        <p><strong>Lag (gecikme)</strong>, serinin kendi geçmiş değeridir: <code>lag_1</code> dün, <code>lag_7</code> geçen hafta aynı gün. <strong>Otokorelasyon</strong> ise serinin kendi gecikmiş hâliyle korelasyonudur — "dünkü değer bugünü ne kadar açıklıyor?" sorusunun sayısal cevabı.</p>
+        <p><strong>ACF</strong> (autocorrelation function) grafiği tüm gecikmeler için bu ilişkiyi çizer ve serinin kimliğini ele verir: günlük perakende verisinde 7, 14, 21. gecikmelerde belirgin sivrilmeler görürsün — haftalık mevsimselliğin parmak izi. <strong>PACF</strong> ise aradaki dolaylı etkileri temizleyerek "saf" ilişkiyi gösterir; ARIMA'nın parametrelerini seçerken bu ikisine bakılır.</p>
+        <p>Pratik faydası şudur: ACF'de hangi gecikmeler güçlüyse, makine öğrenmesi yaklaşımında <strong>tam o gecikmeleri feature olarak</strong> modele verirsin.</p>
+
+        <h2>Modeller: naif tahminden ARIMA'ya</h2>
+        <p>Sırayla güçlenen bir merdiven halinde düşün:</p>
+        <ul>
+          <li><strong>Naive:</strong> "yarın bugünkü kadar olur." Mevsimsel naive: "önümüzdeki cumartesi geçen cumartesi kadar olur." Kulağa saçma gelir ama <em>senin baseline'ındır</em> — geçemiyorsan modelin işe yaramıyor.</li>
+          <li><strong>Hareketli ortalama:</strong> son k dönemin ortalaması. Gürültülü ama desensiz serilerde şaşırtıcı derecede iyidir.</li>
+          <li><strong>Üstel düzleştirme (exponential smoothing):</strong> geçmişe azalan ağırlıklar verir — dün önemli, geçen ay daha az. Holt-Winters uzantısı trend ve mevsimselliği de modeller; hafif, hızlı ve endüstride hâlâ çok yaygındır.</li>
+          <li><strong>ARIMA(p,d,q):</strong> üç parça — <em>AR</em> (geçmiş değerlerin ağırlıklı toplamı, p), <em>I</em> (kaç kez fark alındığı, d), <em>MA</em> (geçmiş hataların ağırlıklı toplamı, q). Mevsimsel versiyonu <strong>SARIMA</strong>, dışsal değişken eklenmişi SARIMAX'tır.</li>
+        </ul>
+        <p>Modern seçenekler ise iki yöne ayrılır. <strong>Prophet</strong> (Meta) iş dünyası için tasarlanmıştır: tatilleri, kampanya günlerini ve kırılma noktalarını isimlendirerek eklersin, eksik veriye toleranslıdır, az ayarla makul sonuç verir. Diğer yön <strong>makine öğrenmesidir</strong>: seriyi lag ve takvim feature'larıyla bir tabloya çevirip <a href="m5-supervised.html">XGBoost/LightGBM</a> ile çözersin — birçok seriyi (mağaza × ürün) tek modelde öğrenmek gerektiğinde bu yaklaşım kazanır. En uçta <a href="m6-rnn.html">LSTM</a> ve <a href="m6-transformer.html">Transformer</a> tabanlı modeller vardır; çok sayıda uzun seri ve bol veri olmadan üstünlük kuramazlar.</p>
+
+        <div class="tip"><b>Basit baseline'ı yenmek gerçekten zordur.</b> Forecasting yarışmalarının tekrar eden dersi budur: iyi ayarlanmış mevsimsel naive ve üstel düzleştirme, özensiz kurulmuş derin öğrenme modellerini düzenli olarak yener. Bu yüzden her projeye naive baseline ile başla ve karmaşık modeli ancak <b>ölçülebilir bir farkla</b> öne geçtiğinde tercih et.</div>
+
+        <figure class="codebox">
+          <figcaption>Python — zaman serisini tablo problemine çevirmek (lag feature'ları)</figcaption>
+          <pre><code data-lang="python">d = df[["adet"]].copy()
+
+# Geçmişi kolona çevir: dün, geçen hafta, iki hafta önce, geçen yıl
+for lag in (1, 7, 14, 365):
+    d[f"lag_{lag}"] = d["adet"].shift(lag)
+
+# DİKKAT: önce shift(1), sonra rolling. Aksi hâlde bugünkü değer ortalamaya karışır → leakage
+d["ort_7g"] = d["adet"].shift(1).rolling(7).mean()
+d["ort_28g"] = d["adet"].shift(1).rolling(28).mean()
+
+d["haftanin_gunu"] = d.index.dayofweek          # takvim bilgisi çoğu zaman altın değerinde
+d["ay"] = d.index.month
+d["ayin_gunu"] = d.index.day
+d = d.dropna()
+
+# Bölme ASLA rastgele değil: geçmişle eğit, gelecekle test et
+kesim = "2026-06-01"
+train = d[d.index &lt; kesim]
+test = d[d.index &gt;= kesim]
+
+X_train, y_train = train.drop(columns="adet"), train["adet"]
+X_test, y_test = test.drop(columns="adet"), test["adet"]</code></pre>
+        </figure>
+
+        <h2>Doğru değerlendirme: walk-forward backtesting</h2>
+        <p>Zaman serisinde model değerlendirmesi, model seçiminden daha kritiktir — çünkü yanlış kurulmuş bir doğrulama, işe yaramaz bir modeli mükemmel gösterir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 214" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Rastgele bölme ile zaman bazlı bölmenin karşılaştırması">
+            <g>
+              <text x="16" y="24" fill="var(--bad)" font-size="12" font-weight="800">✗ Rastgele bölme — zaman serisinde YASAK</text>
+              <g>
+                <rect x="16" y="36" width="30" height="26" rx="4" fill="var(--ok)" fill-opacity="0.30" stroke="var(--ok)" stroke-width="1"/>
+                <rect x="50" y="36" width="30" height="26" rx="4" fill="var(--warn)" fill-opacity="0.35" stroke="var(--warn)" stroke-width="1"/>
+                <rect x="84" y="36" width="30" height="26" rx="4" fill="var(--ok)" fill-opacity="0.30" stroke="var(--ok)" stroke-width="1"/>
+                <rect x="118" y="36" width="30" height="26" rx="4" fill="var(--ok)" fill-opacity="0.30" stroke="var(--ok)" stroke-width="1"/>
+                <rect x="152" y="36" width="30" height="26" rx="4" fill="var(--warn)" fill-opacity="0.35" stroke="var(--warn)" stroke-width="1"/>
+                <rect x="186" y="36" width="30" height="26" rx="4" fill="var(--ok)" fill-opacity="0.30" stroke="var(--ok)" stroke-width="1"/>
+                <rect x="220" y="36" width="30" height="26" rx="4" fill="var(--ok)" fill-opacity="0.30" stroke="var(--ok)" stroke-width="1"/>
+                <rect x="254" y="36" width="30" height="26" rx="4" fill="var(--warn)" fill-opacity="0.35" stroke="var(--warn)" stroke-width="1"/>
+                <rect x="288" y="36" width="30" height="26" rx="4" fill="var(--ok)" fill-opacity="0.30" stroke="var(--ok)" stroke-width="1"/>
+                <rect x="322" y="36" width="30" height="26" rx="4" fill="var(--ok)" fill-opacity="0.30" stroke="var(--ok)" stroke-width="1"/>
+                <rect x="356" y="36" width="30" height="26" rx="4" fill="var(--warn)" fill-opacity="0.35" stroke="var(--warn)" stroke-width="1"/>
+                <rect x="390" y="36" width="30" height="26" rx="4" fill="var(--ok)" fill-opacity="0.30" stroke="var(--ok)" stroke-width="1"/>
+              </g>
+              <text x="440" y="54" fill="var(--bad)" font-size="10.5" font-weight="700">Test kutuları eğitim verisinin ARASINDA →</text>
+              <text x="440" y="68" fill="var(--muted)" font-size="10.5">model geleceği görüp geçmişi tahmin ediyor.</text>
+
+              <text x="16" y="112" fill="var(--ok)" font-size="12" font-weight="800">✓ Zaman bazlı bölme</text>
+              <g>
+                <rect x="16" y="124" width="30" height="26" rx="4" fill="var(--ok)" fill-opacity="0.30" stroke="var(--ok)" stroke-width="1"/>
+                <rect x="50" y="124" width="30" height="26" rx="4" fill="var(--ok)" fill-opacity="0.30" stroke="var(--ok)" stroke-width="1"/>
+                <rect x="84" y="124" width="30" height="26" rx="4" fill="var(--ok)" fill-opacity="0.30" stroke="var(--ok)" stroke-width="1"/>
+                <rect x="118" y="124" width="30" height="26" rx="4" fill="var(--ok)" fill-opacity="0.30" stroke="var(--ok)" stroke-width="1"/>
+                <rect x="152" y="124" width="30" height="26" rx="4" fill="var(--ok)" fill-opacity="0.30" stroke="var(--ok)" stroke-width="1"/>
+                <rect x="186" y="124" width="30" height="26" rx="4" fill="var(--ok)" fill-opacity="0.30" stroke="var(--ok)" stroke-width="1"/>
+                <rect x="220" y="124" width="30" height="26" rx="4" fill="var(--ok)" fill-opacity="0.30" stroke="var(--ok)" stroke-width="1"/>
+                <rect x="254" y="124" width="30" height="26" rx="4" fill="var(--ok)" fill-opacity="0.30" stroke="var(--ok)" stroke-width="1"/>
+                <rect x="288" y="124" width="30" height="26" rx="4" fill="var(--warn)" fill-opacity="0.35" stroke="var(--warn)" stroke-width="1"/>
+                <rect x="322" y="124" width="30" height="26" rx="4" fill="var(--warn)" fill-opacity="0.35" stroke="var(--warn)" stroke-width="1"/>
+                <rect x="356" y="124" width="30" height="26" rx="4" fill="var(--warn)" fill-opacity="0.35" stroke="var(--warn)" stroke-width="1"/>
+                <rect x="390" y="124" width="30" height="26" rx="4" fill="var(--warn)" fill-opacity="0.35" stroke="var(--warn)" stroke-width="1"/>
+              </g>
+              <text x="440" y="142" fill="var(--ok)" font-size="10.5" font-weight="700">Önce geçmişle eğit, sonra gelecekle test et —</text>
+              <text x="440" y="156" fill="var(--muted)" font-size="10.5">üretimde yaşayacağın durumun aynısı.</text>
+
+              <line x1="16" y1="176" x2="704" y2="176" stroke="var(--dg-line)" stroke-width="1"/>
+              <text x="16" y="196" fill="var(--muted)" font-size="10.5">zaman →</text>
+              <rect x="470" y="186" width="14" height="12" rx="3" fill="var(--ok)" fill-opacity="0.30" stroke="var(--ok)" stroke-width="1"/>
+              <text x="490" y="196" fill="var(--ok)" font-size="10.5" font-weight="600">eğitim</text>
+              <rect x="560" y="186" width="14" height="12" rx="3" fill="var(--warn)" fill-opacity="0.35" stroke="var(--warn)" stroke-width="1"/>
+              <text x="580" y="196" fill="var(--warn)" font-size="10.5" font-weight="600">test</text>
+            </g>
+          </svg>
+          <figcaption>Zaman serisinde tek kural: modelin gördüğü her şey, tahmin anında gerçekten bilinebilir olmalı.</figcaption>
+        </figure>
+
+        <p>Tek bir kesim noktası da yeterli değildir: o dönem tesadüfen sakin ya da kaotik geçmiş olabilir. Doğru yöntem <strong>walk-forward (rolling origin) backtesting</strong>'dir — kesim noktasını ileri kaydırarak birden çok tur yaparsın ve skorların ortalamasını alırsın. Bu, <a href="m5-model-degerlendirme.html">cross-validation'ın</a> zamana saygılı hâlidir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 248" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Walk-forward backtesting turları">
+            <g>
+              <text x="360" y="20" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="700">Her turda eğitim penceresi büyür, test penceresi ileri kayar</text>
+
+              <text x="16" y="52" fill="var(--muted)" font-size="11" font-weight="700">Tur 1</text>
+              <rect x="78" y="38" width="240" height="22" rx="5" fill="var(--ok)" fill-opacity="0.28" stroke="var(--ok)" stroke-width="1"/>
+              <rect x="318" y="38" width="72" height="22" rx="5" fill="var(--warn)" fill-opacity="0.35" stroke="var(--warn)" stroke-width="1"/>
+              <rect x="390" y="38" width="314" height="22" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="0.8" stroke-dasharray="4 4"/>
+              <text x="694" y="53" text-anchor="end" fill="var(--faint)" font-size="9.5">henüz kullanılmadı</text>
+
+              <text x="16" y="90" fill="var(--muted)" font-size="11" font-weight="700">Tur 2</text>
+              <rect x="78" y="76" width="312" height="22" rx="5" fill="var(--ok)" fill-opacity="0.28" stroke="var(--ok)" stroke-width="1"/>
+              <rect x="390" y="76" width="72" height="22" rx="5" fill="var(--warn)" fill-opacity="0.35" stroke="var(--warn)" stroke-width="1"/>
+              <rect x="462" y="76" width="242" height="22" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="0.8" stroke-dasharray="4 4"/>
+
+              <text x="16" y="128" fill="var(--muted)" font-size="11" font-weight="700">Tur 3</text>
+              <rect x="78" y="114" width="384" height="22" rx="5" fill="var(--ok)" fill-opacity="0.28" stroke="var(--ok)" stroke-width="1"/>
+              <rect x="462" y="114" width="72" height="22" rx="5" fill="var(--warn)" fill-opacity="0.35" stroke="var(--warn)" stroke-width="1"/>
+              <rect x="534" y="114" width="170" height="22" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="0.8" stroke-dasharray="4 4"/>
+
+              <text x="16" y="166" fill="var(--muted)" font-size="11" font-weight="700">Tur 4</text>
+              <rect x="78" y="152" width="456" height="22" rx="5" fill="var(--ok)" fill-opacity="0.28" stroke="var(--ok)" stroke-width="1"/>
+              <rect x="534" y="152" width="72" height="22" rx="5" fill="var(--warn)" fill-opacity="0.35" stroke="var(--warn)" stroke-width="1"/>
+              <rect x="606" y="152" width="98" height="22" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="0.8" stroke-dasharray="4 4"/>
+
+              <line x1="78" y1="190" x2="704" y2="190" stroke="var(--dg-line)" stroke-width="1"/>
+              <text x="78" y="208" fill="var(--muted)" font-size="10.5">zaman →</text>
+              <text x="360" y="232" text-anchor="middle" fill="var(--muted)" font-size="10.5">4 turun skor ortalaması, tek bir kesimin şansından çok daha güvenilirdir.</text>
+            </g>
+          </svg>
+          <figcaption>Walk-forward, modelin "farklı dönemlerde de tutarlı mı" sorusuna cevap verir.</figcaption>
+        </figure>
+
+        <p>Metrik seçiminde de tuzaklar var. <strong>MAE</strong> yorumlaması kolaydır (ortalama kaç adet yanılıyorum). <strong>MAPE</strong> yüzdeyle konuşur ama gerçek değer sıfıra yaklaşınca patlar ve düşük tahminleri kayırır. <strong>MASE</strong> ise hatayı naive tahminin hatasına böler: 1'in altındaysa modelin baseline'ı yeniyor demektir — serileri birbiriyle kıyaslamanın en dürüst yolu budur. Ayrıca <strong>tahmin ufkunu (horizon)</strong> gerçek ihtiyaçla eşleştir: 1 gün sonrasını iyi tahmin eden model, 90 gün sonrası için felaket olabilir.</p>
+
+        <figure class="codebox">
+          <figcaption>Python — walk-forward backtest ve MASE</figcaption>
+          <pre><code data-lang="python">import numpy as np
+from sklearn.metrics import mean_absolute_error
+
+def mase(gercek, tahmin, egitim_serisi, mevsim=7):
+    """Hatayı mevsimsel naive tahminin hatasına böler. 1.0'ın altı = baseline'ı yendik."""
+    naif_hata = np.mean(np.abs(egitim_serisi[mevsim:] - egitim_serisi[:-mevsim]))
+    return mean_absolute_error(gercek, tahmin) / naif_hata
+
+skorlar = []
+for kesim in pd.date_range("2026-03-01", "2026-06-01", freq="MS"):   # her ay bir tur
+    tr = d[d.index &lt; kesim]
+    te = d[(d.index &gt;= kesim) &amp; (d.index &lt; kesim + pd.DateOffset(months=1))]
+
+    model.fit(tr.drop(columns="adet"), tr["adet"])
+    tahmin = model.predict(te.drop(columns="adet"))
+
+    skorlar.append(mase(te["adet"].values, tahmin, tr["adet"].values))
+    print(kesim.date(), "MASE:", round(skorlar[-1], 3))
+
+print("Ortalama MASE:", round(np.mean(skorlar), 3))   # 0.84 → naive'den %16 daha iyi</code></pre>
+        </figure>
+
+        <div class="warn"><b>En sinsi hata: geleceği feature'a sızdırmak.</b> "Aylık toplam ciro" gibi bir kolonu günlük tahmin modeline koyarsan, o günün verisi ayın toplamında zaten vardır — test skorun mükemmel çıkar, üretimde model çöker. Her feature için tek soru: <b>tahmin anında bu değer gerçekten elimde olacak mı?</b></div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <ul>
+          <li><strong>Perakende ve tedarik zinciri:</strong> mağaza × ürün kırılımında binlerce serinin haftalık tahmini; stok ve personel planlaması buna bağlıdır.</li>
+          <li><strong>Altyapı ve kapasite:</strong> sunucu yükü, trafik ve maliyet tahmini — <a href="m3-bulut.html">bulut</a> ölçeklemesinin girdisidir.</li>
+          <li><strong>Anomali tespiti:</strong> tahmin edilen bandın dışına çıkan değerler alarm üretir; <a href="m8-monitoring.html">monitoring</a> sistemlerinin çekirdek mantığı budur.</li>
+          <li><strong>Veri mühendisliği tarafı:</strong> tahmin modelleri düzenli koşan pipeline'lardır; <a href="m3-orkestrasyon.html">Airflow</a> ile zamanlanır, sonuçları warehouse'a yazılır.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Zaman serisinde <code>train_test_split(shuffle=True)</code> kullanmak neden felakettir?</summary>
+            <div class="answer">Çünkü test kümesine geçmiş, eğitim kümesine gelecek tarihler karışır. Model, tahmin etmeye çalıştığı dönemin komşularını zaten görmüştür — bu <b>data leakage</b>'dir. Test skorun gerçek dışı biçimde yüksek çıkar, üretimde model çöker. Bölme her zaman zaman sırasına göre yapılmalıdır.</div>
+          </details>
+          <details class="quiz">
+            <summary>Mevsimsellik ile döngü (cycle) arasındaki fark nedir?</summary>
+            <div class="answer"><b>Mevsimsellik sabit ve bilinen periyottadır:</b> haftalık, aylık, yıllık — takvimden okunur (her cumartesi, her aralık). <b>Döngü ise değişken uzunluktadır:</b> ekonomik dalgalanmalar gibi; ne zaman başlayıp biteceği önceden bilinemez. Modeller mevsimselliği kolayca yakalar, döngüyü genellikle yakalayamaz.</div>
+          </details>
+          <details class="quiz">
+            <summary>MASE 0.84 çıktı. Bu ne anlama gelir; neden MAPE'den daha bilgilendiricidir?</summary>
+            <div class="answer">Model, <b>naive (mevsimsel naif) tahminden %16 daha az hata</b> yapıyor demektir — yani baseline'ı geçmiş. MASE ölçekten bağımsızdır: farklı büyüklükteki serileri kıyaslayabilirsin ve gerçek değer sıfıra yaklaştığında MAPE gibi patlamaz. MAPE ayrıca düşük tahminleri sistematik olarak kayırır.</div>
+          </details>
+          <details class="quiz">
+            <summary><code>rolling(7).mean()</code> öncesinde neden <code>shift(1)</code> yapıyoruz?</summary>
+            <div class="answer">Çünkü <code>rolling</code> penceresi varsayılan olarak <b>bugünü de içerir</b>. Bugünün değerini içeren bir ortalamayı bugünü tahmin etmek için kullanmak, cevabı feature'a sızdırmaktır. <code>shift(1)</code> pencereyi bir gün geriye kaydırır; böylece ortalama yalnızca tahmin anında gerçekten bilinen günlerden oluşur.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Zaman Serisi</span><span class="term-en">Time Series</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Zamana göre sıralanmış gözlemler dizisi; satırların sırası bilginin kendisidir, bağımsız değildirler.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Trend</span><span class="term-en">Trend</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Serinin uzun vadeli yönü — büyüme ya da küçülme eğilimi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Mevsimsellik</span><span class="term-en">Seasonality</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Sabit ve bilinen periyotta tekrar eden desen: haftanın günleri, aylar, yıllık dönemler.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Ayrıştırma</span><span class="term-en">Decomposition</span><span class="lvl lvl-orta">Orta</span></div><p>Seriyi trend + mevsimsellik + artık bileşenlerine bölme; toplamsal ya da çarpımsal olabilir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Durağanlık</span><span class="term-en">Stationarity</span><span class="lvl lvl-ileri">İleri</span></div><p>İstatistiksel özelliklerin (ortalama, varyans) zamanla değişmemesi; ARIMA ailesinin ön şartı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Fark Alma</span><span class="term-en">Differencing</span><span class="lvl lvl-ileri">İleri</span></div><p>Seriyi kendi gecikmiş hâlinden çıkararak durağanlaştırma; trendi yok eder, "seviye" yerine "değişim" modellenir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Lag (Gecikme)</span><span class="term-en">Lag</span><span class="lvl lvl-orta">Orta</span></div><p>Serinin geçmiş bir değeri (dün, geçen hafta); ML yaklaşımında en güçlü feature ailesidir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Otokorelasyon (ACF)</span><span class="term-en">Autocorrelation</span><span class="lvl lvl-ileri">İleri</span></div><p>Serinin kendi gecikmiş hâliyle korelasyonu; ACF grafiğindeki sivrilmeler mevsimselliğin parmak izidir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Hareketli Ortalama</span><span class="term-en">Moving Average</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Son k dönemin ortalaması; gürültüyü bastırıp trendi görünür kılan en basit araç.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Üstel Düzleştirme</span><span class="term-en">Exponential Smoothing</span><span class="lvl lvl-orta">Orta</span></div><p>Geçmişe üstel azalan ağırlık veren tahmin ailesi; Holt-Winters ile trend ve mevsimselliği de modeller.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">ARIMA &amp; SARIMA</span><span class="term-en">ARIMA &amp; SARIMA</span><span class="lvl lvl-ileri">İleri</span></div><p>AR (geçmiş değerler), I (fark alma) ve MA (geçmiş hatalar) bileşenlerini birleştiren klasik model; SARIMA mevsimsel uzantısıdır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Prophet</span><span class="term-en">Prophet</span><span class="lvl lvl-orta">Orta</span></div><p>Tatil, kampanya ve kırılma noktalarını isimlendirerek eklemeye izin veren, iş dünyası odaklı tahmin kütüphanesi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Naive Baseline</span><span class="term-en">Naive Forecast</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>"Yarın bugün kadar olur" ya da "gelecek cumartesi geçen cumartesi kadar" tahmini; geçilmesi gereken çıtadır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Walk-Forward Backtesting</span><span class="term-en">Walk-Forward Validation</span><span class="lvl lvl-ileri">İleri</span></div><p>Kesim noktasını ileri kaydırarak birden çok turda değerlendirme; cross-validation'ın zamana saygılı hâli.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Tahmin Ufku</span><span class="term-en">Forecast Horizon</span><span class="lvl lvl-orta">Orta</span></div><p>Kaç adım ileriyi tahmin ettiğin. Model, kullanılacağı ufukta değerlendirilmelidir; 1 gün ile 90 gün bambaşka zorluklardır.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m4-zaman-serisi">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m4-gorsellestirme.html"><span>← Önceki</span><b>Veri Görselleştirme</b></a>
+          <a class="next" href="m5-ml-giris.html"><span>Sonraki →</span><b>ML'e Giriş: Temel Kavramlar</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

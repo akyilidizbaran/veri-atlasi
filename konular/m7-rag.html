@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG ve Vektör Veritabanları — Veri Atlası</title>
+<meta name="description" content="Retrieval-Augmented Generation: chunking, embedding, cosine similarity, vektör veritabanları (FAISS, pgvector), hybrid search ve reranking ile LLM'e güncel ve özel bilgi kazandırma.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m7" data-slug="m7-rag">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m7">7. Üretken AI ve LLM'ler</a><span class="sep">/</span>
+        <span>RAG ve Vektör Veritabanları</span>
+      </nav>
+      <span class="mod-badge">Modül 7 · Üretken AI ve LLM'ler</span>
+      <h1>RAG ve Vektör Veritabanları</h1>
+      <p class="en-title">RAG &amp; Vector Databases</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~17 dk okuma</span>
+        <span class="chip">🔤 13 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>LLM'in bilmediği şeyler</h2>
+        <p>Şirketinde bir chatbot kurdun, kullanıcı soruyor: "İade politikamız kaç gün?" Model gayet emin bir tonda "30 gün" diyor. Sizin politikanız 14 gün. Ne oldu? Üç yapısal sorun birden devrede:</p>
+        <ul>
+          <li><strong>Model senin verini hiç görmedi.</strong> Eğitim verisi internetin genelinden gelir; şirket içi dokümanlar, sözleşmeler, wiki sayfaları orada yoktur.</li>
+          <li><strong>Bilgisi belli bir tarihte donmuştur.</strong> Eğitim kesim tarihinden (knowledge cutoff) sonra olan hiçbir şeyi bilmez.</li>
+          <li><strong>Bilmediğinde susmak yerine uydurabilir</strong> — buna halüsinasyon denir ve model bunu son derece ikna edici bir dille yapar.</li>
+        </ul>
+        <p>Çözüm fikri şaşırtıcı derecede basit: <strong>modeli yeniden eğitme; cevap vermeden önce İLGİLİ bilgiyi bul ve prompt'a koy.</strong> Bu yaklaşımın adı <strong>RAG — Retrieval-Augmented Generation</strong> (getirme ile zenginleştirilmiş üretim). En iyi analoji açık kitap sınavı: öğrenciden tüm kitabı ezberlemesini istemek yerine, sınava kitapla girmesine izin verirsin. Doğru sayfayı hızlı bulabildiği sürece cevapları hem doğru hem günceldir. RAG'de "doğru sayfayı bulma" işini arama sistemi, "cevabı yazma" işini LLM yapar.</p>
+
+        <h2>RAG boru hattı: iki faz</h2>
+        <p>Bir RAG sistemi iki ayrı zamanda çalışan iki boru hattından oluşur. <strong>İndeksleme fazı</strong> önceden, çevrimdışı yapılır: belgeler toplanır, küçük parçalara (chunk) bölünür, her parça bir <em>embedding</em> vektörüne çevrilir ve bu vektörler bir vektör veritabanına yazılır. <strong>Sorgu fazı</strong> ise kullanıcı her soru sorduğunda, milisaniyeler içinde çalışır: soru da aynı embedding modeliyle vektöre çevrilir, veritabanında ona en yakın chunk'lar bulunur, bulunanlar soruyla birlikte prompt'a yerleştirilir ve LLM cevabı bu kaynaklara dayanarak yazar.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 760 400" width="760" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="RAG mimarisi: indeksleme ve sorgu fazları">
+            <defs>
+              <marker id="arrA1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+              <marker id="arrA2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <!-- indeksleme bölgesi -->
+              <rect x="15" y="30" width="730" height="115" rx="12" fill="none" stroke="var(--dg-line)" stroke-width="1.2" stroke-dasharray="6 5"/>
+              <text x="30" y="52" fill="var(--acc)" font-size="12" font-weight="700">1 · İNDEKSLEME — önceden, çevrimdışı</text>
+              <rect x="40" y="68" width="130" height="50" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="105" y="89" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Belgeler</text>
+              <text x="105" y="106" text-anchor="middle" fill="var(--muted)" font-size="10.5">PDF, wiki, SSS…</text>
+              <path d="M170 93 L216 93" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrA1)"/>
+              <rect x="220" y="68" width="130" height="50" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="285" y="89" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Chunk'lara böl</text>
+              <text x="285" y="106" text-anchor="middle" fill="var(--muted)" font-size="10.5">küçük parçalar</text>
+              <path d="M350 93 L396 93" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrA1)"/>
+              <rect x="400" y="68" width="140" height="50" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="470" y="89" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Embedding modeli</text>
+              <text x="470" y="106" text-anchor="middle" fill="var(--muted)" font-size="10.5">metin → vektör</text>
+              <path d="M540 93 L586 93" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrA1)"/>
+              <rect x="590" y="68" width="130" height="50" rx="10" fill="rgba(var(--acc-rgb),.14)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="655" y="89" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Vektör DB</text>
+              <text x="655" y="106" text-anchor="middle" fill="var(--muted)" font-size="10.5">vektör + metin</text>
+              <!-- vektör DB'den retrieval'a köprü -->
+              <path d="M655 118 C655 175 425 160 425 208" stroke="var(--acc)" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#arrA2)"/>
+              <text x="575" y="182" fill="var(--acc)" font-size="10.5" font-weight="600">benzerlik araması</text>
+              <!-- sorgu bölgesi -->
+              <rect x="15" y="175" width="730" height="210" rx="12" fill="none" stroke="var(--dg-line)" stroke-width="1.2" stroke-dasharray="6 5"/>
+              <text x="30" y="197" fill="var(--acc)" font-size="12" font-weight="700">2 · SORGU — çalışma anında, her soruda</text>
+              <rect x="40" y="212" width="100" height="48" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="90" y="233" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Soru</text>
+              <text x="90" y="249" text-anchor="middle" fill="var(--muted)" font-size="10.5">"iade süresi?"</text>
+              <path d="M140 236 L181 236" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrA1)"/>
+              <rect x="185" y="212" width="120" height="48" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="245" y="233" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Embedding</text>
+              <text x="245" y="249" text-anchor="middle" fill="var(--muted)" font-size="10.5">aynı model!</text>
+              <path d="M305 236 L346 236" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrA1)"/>
+              <rect x="350" y="212" width="150" height="48" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="425" y="233" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">En yakın k chunk</text>
+              <text x="425" y="249" text-anchor="middle" fill="var(--muted)" font-size="10.5">retrieval (getirme)</text>
+              <path d="M500 236 L541 236" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrA1)"/>
+              <rect x="545" y="212" width="170" height="48" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="630" y="233" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Prompt birleştirme</text>
+              <text x="630" y="249" text-anchor="middle" fill="var(--muted)" font-size="10.5">kaynaklar + soru</text>
+              <path d="M630 260 L630 296" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrA1)"/>
+              <rect x="560" y="300" width="140" height="48" rx="10" fill="rgba(var(--acc-rgb),.14)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="630" y="321" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">LLM</text>
+              <text x="630" y="337" text-anchor="middle" fill="var(--muted)" font-size="10.5">kaynaklara dayanır</text>
+              <path d="M560 324 L501 324" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrA1)"/>
+              <rect x="360" y="300" width="140" height="48" rx="10" fill="var(--dg-box)" stroke="var(--ok)" stroke-width="1.6"/>
+              <text x="430" y="321" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Cevap</text>
+              <text x="430" y="337" text-anchor="middle" fill="var(--muted)" font-size="10.5">"İade süresi 14 gündür."</text>
+            </g>
+          </svg>
+          <figcaption>RAG'in iki fazı: indeksleme bir kere (ya da belgeler değiştikçe) çalışır; sorgu fazı her soruda milisaniyeler içinde döner.</figcaption>
+        </figure>
+
+        <p>Bu ayrımı akılda tutmak önemli, çünkü iki fazın maliyeti ve sıklığı bambaşkadır: indeksleme ağır ama seyrek; sorgu hafif ama sürekli. Sorgu fazında soruyu <em>indekslemede kullanılan embedding modelinin aynısıyla</em> vektöre çevirmek zorundasın — farklı modellerin vektör uzayları birbiriyle karşılaştırılamaz.</p>
+
+        <h2>Chunking sanatı: belgeyi nasıl böleceksin?</h2>
+        <p>Belgeleri neden bütün hâlde indekslemiyoruz? İki sebep var. Birincisi pratik: LLM'in <strong>context window</strong>'u (bağlam penceresi) sınırlıdır; 200 sayfalık PDF'leri her soruda prompt'a koyamazsın. İkincisi daha incelikli: <strong>arama kalitesi</strong>. Kocaman bir belgenin embedding'i, içindeki onlarca konunun bulanık bir ortalamasıdır; küçük ve odaklı bir parçanın embedding'i ise tek bir konuyu net temsil eder. "İade politikası" sorusuna, sadece iade politikasını anlatan paragraf, tüm el kitabından daha isabetli eşleşir.</p>
+        <p>Ama bölmek de bedava değil. Chunk çok küçük olursa bağlam kopar: "Bu süre 14 gündür" cümlesi tek başına neyin süresi olduğunu söylemez. Çok büyük olursa odak dağılır ve prompt şişer. Pratik denge iki tekniğe dayanır:</p>
+        <ul>
+          <li><strong>Boyut + overlap:</strong> Parçalar sabit boyutta (örn. 300–800 token) kesilir ama ardışık parçalar bir miktar <strong>örtüşür (chunk overlap)</strong>. Böylece tam sınırda ikiye bölünen bir cümle ya da fikir, en az bir parçada bütün hâlde bulunur.</li>
+          <li><strong>Başlık-farkında bölme:</strong> Belgeyi rastgele karakter sayısından değil, doğal sınırlarından — başlıklar, bölümler, paragraflar — bölmek. Markdown başlıklarına göre bölüp her chunk'ın başına ait olduğu bölüm başlığını eklemek, "Bu süre 14 gündür" parçasını "İade Politikası → Bu süre 14 gündür" hâline getirir ve aramayı ciddi iyileştirir.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 240" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Uzun belgenin overlap'li chunk'lara bölünmesi">
+            <defs>
+              <pattern id="hatchA" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                <rect width="7" height="7" fill="rgba(var(--acc-rgb),.12)"/>
+                <line x1="0" y1="0" x2="0" y2="7" stroke="var(--acc)" stroke-width="1.4"/>
+              </pattern>
+            </defs>
+            <g font-family="inherit">
+              <text x="350" y="26" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Uzun belge tek şerit hâlinde…</text>
+              <rect x="40" y="38" width="620" height="32" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="350" y="59" text-anchor="middle" fill="var(--muted)" font-size="11">ürün el kitabı — 10.000 karakter</text>
+              <!-- kesim kılavuzları -->
+              <line x1="280" y1="70" x2="280" y2="102" stroke="var(--dg-line)" stroke-width="1" stroke-dasharray="3 3"/>
+              <line x1="460" y1="70" x2="460" y2="142" stroke="var(--dg-line)" stroke-width="1" stroke-dasharray="3 3"/>
+              <!-- chunk 1 -->
+              <rect x="40" y="106" width="240" height="30" rx="6" fill="rgba(var(--acc-rgb),.10)" stroke="var(--acc)" stroke-width="1.4"/>
+              <rect x="220" y="106" width="60" height="30" rx="0" fill="url(#hatchA)" stroke="none"/>
+              <text x="140" y="126" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">Chunk 1</text>
+              <!-- chunk 2 -->
+              <rect x="220" y="146" width="240" height="30" rx="6" fill="rgba(var(--acc-rgb),.10)" stroke="var(--acc)" stroke-width="1.4"/>
+              <rect x="220" y="146" width="60" height="30" fill="url(#hatchA)" stroke="none"/>
+              <rect x="400" y="146" width="60" height="30" fill="url(#hatchA)" stroke="none"/>
+              <text x="340" y="166" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">Chunk 2</text>
+              <!-- chunk 3 -->
+              <rect x="400" y="186" width="240" height="30" rx="6" fill="rgba(var(--acc-rgb),.10)" stroke="var(--acc)" stroke-width="1.4"/>
+              <rect x="400" y="186" width="60" height="30" fill="url(#hatchA)" stroke="none"/>
+              <text x="530" y="206" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">Chunk 3</text>
+              <!-- overlap etiketi -->
+              <text x="250" y="96" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="700">overlap</text>
+              <text x="60" y="230" fill="var(--muted)" font-size="10.5">taralı bölgeler iki chunk'ta da bulunur → sınırda kopan cümle kaybolmaz</text>
+            </g>
+          </svg>
+          <figcaption>Overlap'li chunking: ardışık parçalar örtüşür (taralı bölgeler), böylece parça sınırına denk gelen bilgi iki parçadan en az birinde bütün kalır.</figcaption>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Python — boyut ve overlap parametreli basit chunking</figcaption>
+          <pre><code data-lang="python">def parcala(metin, boyut=500, overlap=100):
+    """Metni 'boyut' karakterlik, 'overlap' kadar örtüşen parçalara böler."""
+    parcalar = []
+    baslangic = 0
+    while baslangic &lt; len(metin):
+        parca = metin[baslangic : baslangic + boyut]
+        parcalar.append(parca.strip())
+        # sonraki parça, örtüşme payı kadar geriden başlar
+        baslangic += boyut - overlap
+    return parcalar
+
+chunks = parcala(uzun_belge, boyut=500, overlap=100)
+print(len(chunks), "chunk üretildi")
+# Gerçek projede karakter yerine token sayılır ve
+# cümle/paragraf sınırından bölmek tercih edilir.</code></pre>
+        </figure>
+
+        <div class="tip"><b>Nereden başlamalı?</b> 300–800 token arası chunk boyutu ve %10–20 overlap çoğu proje için iyi bir başlangıçtır. Ama "en iyi" değerler belgene ve sorularına bağlıdır — birkaç ayarı gerçek sorularla deneyip retrieval kalitesini karşılaştırmadan karar verme.</div>
+
+        <h2>Embedding benzerliği: cosine similarity</h2>
+        <p>Retrieval'ın kalbinde tek bir soru var: "Bu iki metin anlamca ne kadar yakın?" Embedding'ler bu soruyu geometriye çevirir: her metin çok boyutlu uzayda bir vektördür ve <strong>anlamca yakın metinler uzayda birbirine yakın noktalara düşer</strong>. Yakınlığı ölçmenin standart yolu <strong>cosine similarity</strong> (kosinüs benzerliği): iki vektör arasındaki <em>açının</em> kosinüsü. Aynı yönü gösteren vektörlerde 1'e, alakasız yönlerde 0'a yaklaşır. Hesabı, <a href="m1-matematik.html">matematik konusundan</a> tanıdığın dot product'a dayanır: iki vektörün iç çarpımını uzunluklarına bölersin — yani uzunluk etkisini atıp saf "yön" karşılaştırması yaparsın.</p>
+        <p>Bu yaklaşımın adı <strong>semantik arama</strong>dır ve klasik <strong>kelime araması</strong>ndan (keyword search) temelden farklıdır. Keyword arama harf dizisi eşleştirir: "para iadesi" araması, "ücretin geri ödenmesi" yazan belgeyi bulamaz — tek ortak kelime yok. Semantik arama ise iki ifadenin vektörlerinin aynı bölgeye düştüğünü görür ve eşleştirir. Buna karşılık keyword arama da kendi alanında güçlüdür: "HATA-4032" gibi bir kod ya da ürün adı ararken birebir eşleşme tam isabet verir, semantik arama ise bulanıklaşabilir. Bu yüzden ikisini birleştirmek (birazdan geleceğiz) sık kullanılan bir taktiktir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 640 320" width="640" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="2 boyutlu embedding uzayında sorgu ve en yakın chunk'lar">
+            <defs>
+              <marker id="arrA3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--muted)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="320" y="24" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Embedding uzayı (yüzlerce boyutun 2 boyuta izdüşümü)</text>
+              <!-- eksenler -->
+              <path d="M60 275 L600 275" stroke="var(--muted)" stroke-width="1.4" marker-end="url(#arrA3)"/>
+              <path d="M60 275 L60 45" stroke="var(--muted)" stroke-width="1.4" marker-end="url(#arrA3)"/>
+              <text x="590" y="295" text-anchor="end" fill="var(--muted)" font-size="10.5">boyut 1</text>
+              <text x="40" y="55" fill="var(--muted)" font-size="10.5" transform="rotate(-90 40 55)" text-anchor="end">boyut 2</text>
+              <!-- en yakın bölge -->
+              <circle cx="300" cy="145" r="92" fill="rgba(var(--acc-rgb),.06)" stroke="var(--ok)" stroke-width="1.6" stroke-dasharray="6 5"/>
+              <!-- sorgu yıldızı -->
+              <path d="M300 122 L306 138 L323 139 L310 149 L315 165 L300 156 L285 165 L290 149 L277 139 L294 138 Z" fill="var(--acc)" stroke="var(--acc)"/>
+              <text x="300" y="112" text-anchor="middle" fill="var(--acc)" font-size="11" font-weight="700">sorgu: "iade süresi?"</text>
+              <!-- en yakın 3 chunk -->
+              <line x1="300" y1="145" x2="252" y2="118" stroke="var(--ok)" stroke-width="1.2" stroke-dasharray="3 3"/>
+              <line x1="300" y1="145" x2="352" y2="120" stroke="var(--ok)" stroke-width="1.2" stroke-dasharray="3 3"/>
+              <line x1="300" y1="145" x2="318" y2="198" stroke="var(--ok)" stroke-width="1.2" stroke-dasharray="3 3"/>
+              <circle cx="248" cy="115" r="7" fill="var(--ok)"/>
+              <circle cx="356" cy="118" r="7" fill="var(--ok)"/>
+              <circle cx="320" cy="202" r="7" fill="var(--ok)"/>
+              <text x="238" y="100" text-anchor="middle" fill="var(--muted)" font-size="10">"iade 14 gün…"</text>
+              <text x="382" y="103" text-anchor="middle" fill="var(--muted)" font-size="10">"ücret iadesi…"</text>
+              <text x="330" y="224" text-anchor="middle" fill="var(--muted)" font-size="10">"değişim koşulları…"</text>
+              <!-- uzak noktalar -->
+              <circle cx="120" cy="240" r="6" fill="var(--muted)"/>
+              <circle cx="150" cy="85" r="6" fill="var(--muted)"/>
+              <circle cx="490" cy="235" r="6" fill="var(--muted)"/>
+              <circle cx="530" cy="95" r="6" fill="var(--muted)"/>
+              <circle cx="455" cy="65" r="6" fill="var(--muted)"/>
+              <text x="490" y="258" text-anchor="middle" fill="var(--muted)" font-size="10">"kargo firmaları listesi"</text>
+              <text x="530" y="80" text-anchor="middle" fill="var(--muted)" font-size="10">"şirket tarihçesi"</text>
+              <text x="180" y="305" fill="var(--muted)" font-size="10.5">daire içindeki 3 nokta = cosine benzerliği en yüksek chunk'lar → prompt'a girer</text>
+            </g>
+          </svg>
+          <figcaption>Sorgu (yıldız) embedding uzayına yerleştirilir; ona açı olarak en yakın chunk'lar (yeşil) getirilir. Alakasız chunk'lar uzakta kalır.</figcaption>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Python — sentence-transformers ile embedding ve cosine similarity</figcaption>
+          <pre><code data-lang="python">from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+
+# Türkçe dahil çok dilli, küçük bir embedding modeli
+model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
+
+cumleler = [
+    "Para iadesi kaç gün içinde yapılır?",        # sorgu
+    "Ücret iadesi 14 iş günü içinde hesaba geçer", # anlamca yakın
+    "İade süreci iki hafta kadar sürebilir",       # anlamca yakın
+    "Bugün hava çok güzel, pikniğe gidelim",       # alakasız
+]
+vektorler = model.encode(cumleler)   # her cümle -&gt; 384 boyutlu vektör
+
+# Sorguyu (ilk cümle) diğerleriyle karşılaştır
+skorlar = cosine_similarity([vektorler[0]], vektorler[1:])[0]
+print(skorlar.round(2))
+# [0.74 0.68 0.09]  -&gt; yakın cümleler yüksek skor, alakasız ~0
+# Dikkat: ortak kelime az olsa da anlam benzerliği yakalandı</code></pre>
+        </figure>
+
+        <h2>Vektör veritabanları</h2>
+        <p>Vektörleri bir listede tutup hepsiyle tek tek karşılaştırmak bin belge için çalışır; on milyon chunk'ta her sorguda on milyon cosine hesabı yapamazsın. <strong>Vektör veritabanı</strong>, "bu vektöre en yakın k vektörü bul" sorgusunu büyük ölçekte hızlı cevaplamak için kurulmuş sistemdir. Sahada üç kategoriyle karşılaşırsın:</p>
+        <ul>
+          <li><strong>FAISS</strong> — Meta'nın açık kaynak <em>kütüphanesi</em>. Veritabanı değil, uygulamanın içine gömdüğün bir indeks motorudur; prototip ve tek makine işleri için çok yaygındır.</li>
+          <li><strong>pgvector</strong> — PostgreSQL <em>eklentisi</em>. Zaten <a href="m2-sql.html">Postgres</a> kullanıyorsan vektör kolonu ekleyip SQL ile benzerlik sorgusu atarsın; ayrı bir sistem işletmeden RAG'e başlamanın en pratik yollarından biridir.</li>
+          <li><strong>Yönetilen servisler</strong> — Pinecone, Weaviate, Qdrant Cloud gibi; ölçekleme, replikasyon ve işletmeyi servis üstlenir, sen API ile konuşursun.</li>
+        </ul>
+        <p>Hızın sırrı <strong>ANN — Approximate Nearest Neighbor</strong> (yaklaşık en yakın komşu) indeksleridir: kesin en yakınları garanti etmek yerine "neredeyse kesin" sonucu çok daha hızlı verir. En yaygın ANN indeksi <strong>HNSW</strong>, vektörleri katmanlı bir "küçük dünya" grafına yerleştirir ve aramayı üst katmandan aşağı ine ine komşu takibiyle yapar. Sonuç yaklaşıktır ama milyonlarca vektörde bile milisaniyeler içinde döner.</p>
+
+        <h2>Kaliteyi artırma: hybrid search ve reranking</h2>
+        <p>Saf semantik arama iyi bir başlangıçtır ama üretim sistemleri genelde birkaç katman daha ekler:</p>
+        <ul>
+          <li><strong>Hybrid search (karma arama):</strong> Aynı sorgu hem keyword (BM25) hem vektör kanalından geçer, iki sonuç listesi birleştirilir. Ürün kodları ve özel isimlerde keyword, eşanlamlı ifadelerde semantik kanal kazanır; birleşim ikisinin de güçlü yanını yakalar.</li>
+          <li><strong>Reranking (yeniden sıralama):</strong> İlk arama hızlı ama kabaca çalışır; geniş bir aday havuzu (örn. 50 chunk) getirir. Sonra daha güçlü ama yavaş bir model (cross-encoder), her adayı sorguyla <em>birlikte</em> okuyup yeniden puanlar ve en iyi 3–5 taneyi seçer. İki aşamalı elek: önce kaba, sonra ince.</li>
+          <li><strong>Metadata filtreleme:</strong> Chunk'lara tarih, departman, dil, erişim yetkisi gibi etiketler eklenir; arama "sadece 2026 sonrası VE hukuk departmanı belgeleri" gibi koşullarla daraltılır. Yetki filtrelemesi kurumsal sistemlerde güvenlik gereğidir, süs değil.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 640 372" width="640" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Hybrid search ve reranking hunisi">
+            <defs>
+              <marker id="arrA4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <rect x="120" y="20" width="400" height="42" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="320" y="46" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Tüm chunk'lar (yüz binlerce)</text>
+              <path d="M240 62 L190 102" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrA4)"/>
+              <path d="M400 62 L450 102" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrA4)"/>
+              <rect x="70" y="106" width="220" height="46" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="180" y="126" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Keyword kanalı (BM25)</text>
+              <text x="180" y="143" text-anchor="middle" fill="var(--muted)" font-size="10.5">tam eşleşme: kodlar, isimler</text>
+              <rect x="350" y="106" width="220" height="46" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="460" y="126" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Vektör kanalı (semantik)</text>
+              <text x="460" y="143" text-anchor="middle" fill="var(--muted)" font-size="10.5">anlam eşleşmesi: eşanlamlılar</text>
+              <path d="M180 152 L285 194" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrA4)"/>
+              <path d="M460 152 L355 194" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrA4)"/>
+              <rect x="210" y="198" width="220" height="44" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="320" y="218" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Birleşim: ~50 aday</text>
+              <text x="320" y="234" text-anchor="middle" fill="var(--muted)" font-size="10.5">iki listenin karışımı</text>
+              <path d="M320 242 L320 276" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrA4)"/>
+              <rect x="230" y="280" width="180" height="42" rx="10" fill="rgba(var(--acc-rgb),.14)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="320" y="300" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Reranker</text>
+              <text x="320" y="316" text-anchor="middle" fill="var(--muted)" font-size="10.5">ikinci, ince eleme</text>
+              <path d="M320 322 L320 348" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrA4)"/>
+              <text x="320" y="366" text-anchor="middle" fill="var(--ok)" font-size="12.5" font-weight="700">En iyi 3 chunk → prompt'a</text>
+            </g>
+          </svg>
+          <figcaption>Huni yaklaşımı: iki kanaldan geniş bir aday havuzu toplanır, reranker ince eleme yapar; LLM'e yalnızca en iyi birkaç parça gider.</figcaption>
+        </figure>
+
+        <p>Peki sistemin iyi çalıştığını nereden bileceksin? <strong>RAG değerlendirmesi</strong> iki soruya bakar: doğru chunk'lar getirildi mi (retrieval kalitesi) ve cevap gerçekten o kaynaklara sadık mı (<strong>grounding / faithfulness</strong>)? Cevabın kaynaklarda geçmeyen "bilgi" içermesi, RAG'e rağmen halüsinasyon demektir — küçük bir test soru seti kurup bu iki metriği düzenli ölçmek, üretim RAG'inin sigortasıdır.</p>
+
+        <div class="note"><b>Grounding'i prompt'ta iste.</b> Prompt'a "Yalnızca aşağıdaki kaynaklara dayanarak cevapla; kaynaklarda yoksa 'bu bilgiye sahip değilim' de" gibi açık bir talimat eklemek, modelin kaynak dışına çıkma eğilimini ciddi azaltır. Kaynak numarası atıp cevapta alıntı istemek de kullanıcıya doğrulama imkânı verir.</div>
+
+        <p>Şimdi tüm parçaları birleştirelim — chunk'ları embed eden, soruya en yakınları bulan, prompt kurup modele gönderen uçtan uca mini bir RAG:</p>
+
+        <figure class="codebox">
+          <figcaption>Python — uçtan uca mini RAG iskeleti (embedding → retrieval → LLM)</figcaption>
+          <pre><code data-lang="python">import anthropic
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+
+model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
+chunk_vec = model.encode(chunks)          # 1) tüm chunk'ları embed et (indeksleme)
+
+def cevapla(soru, k=3):
+    soru_vec = model.encode([soru])       # 2) soruyu AYNI modelle embed et
+    skor = cosine_similarity(soru_vec, chunk_vec)[0]
+    en_yakin = skor.argsort()[-k:][::-1]  # en benzer k chunk'ın indeksleri
+    baglam = "\n---\n".join(chunks[i] for i in en_yakin)
+
+    prompt = (
+        "Yalnızca aşağıdaki kaynaklara dayanarak cevapla. "
+        "Kaynaklarda yoksa 'bu bilgiye sahip değilim' de.\n\n"
+        f"KAYNAKLAR:\n{baglam}\n\nSORU: {soru}"
+    )
+
+    client = anthropic.Anthropic()        # 3) kaynaklı prompt'u LLM'e gönder
+    yanit = client.messages.create(
+        model="claude-opus-4-8",
+        max_tokens=500,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return yanit.content[0].text
+
+print(cevapla("İade süresi kaç gün?"))</code></pre>
+        </figure>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>RAG bugün LLM'lerin kurumsal dünyadaki en yaygın kullanım biçimi. Tipik senaryolar: şirket içi bilgi tabanı üzerinde <strong>kurumsal chatbot</strong>, ürün dokümanlarını cevaplayan <strong>dokümantasyon asistanı</strong>, sözleşme ve mevzuat tarayan hukuk/uyum asistanları, destek taleplerini geçmiş çözümlerle eşleştiren yardım masası araçları.</p>
+        <p>Veri mühendisi olarak senin görevin şunu görmek: <strong>RAG'in indeksleme tarafı düpedüz bir data pipeline'dır.</strong> Kaynaklardan belge çek (extract), temizle-böl-embed et (transform), vektör veritabanına yaz (load) — <a href="m3-etl-elt.html">ETL/ELT konusundaki</a> desenin birebir aynısı. Belgeler değiştikçe pipeline'ın artımlı çalışması, silinen belgelerin indeksten düşmesi, embedding modeli değişince her şeyin yeniden indekslenmesi, başarısız işlerin tekrar denenmesi… Bunların hepsi <a href="m3-orkestrasyon.html">orkestrasyon</a> problemleridir ve çoğu şirkette RAG projesinin en çok emek yiyen kısmı LLM değil, bu boru hattıdır.</p>
+
+        <div class="warn"><b>Çöp giren, çöp çıkar.</b> RAG'in kalitesi indekslediğin belgelerin kalitesini asla aşamaz. Süresi geçmiş politika dokümanları, aynı konunun çelişen üç versiyonu, bozuk PDF çıkarımları — bunlar indeksteyse model onları "kaynak" diye kullanır. Üretim RAG'inde belge güncelliği ve tekilleştirme, <a href="m3-veri-kalitesi.html">veri kalitesi</a> disiplininin ta kendisidir.</div>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>RAG, LLM'in hangi üç sorununu ve nasıl çözer?</summary>
+            <div class="answer"><b>Özel veri yokluğu, güncellik ve halüsinasyon.</b> Model şirket verini bilmez, bilgisi eğitim kesim tarihinde donmuştur ve bilmediğini uydurabilir. RAG, cevaptan önce ilgili belgeleri bulup prompt'a koyar: model artık senin güncel kaynaklarını "açık kitap" gibi kullanır ve cevabı onlara dayandırması istenir.</div>
+          </details>
+          <details class="quiz">
+            <summary>Chunk overlap neden kullanılır?</summary>
+            <div class="answer">Sabit boyutlu bölme, cümleleri ve fikirleri tam <b>parça sınırında</b> ikiye kesebilir; iki yarım parça da aramada zayıf eşleşir. Ardışık chunk'ların bir miktar örtüşmesi, sınıra denk gelen içeriğin en az bir parçada <b>bütün hâlde</b> bulunmasını garanti eder.</div>
+          </details>
+          <details class="quiz">
+            <summary>Cosine similarity tam olarak neyi ölçer?</summary>
+            <div class="answer">İki vektör arasındaki <b>açının kosinüsünü</b> — yani vektörlerin uzunluğunu değil, <b>yön</b> benzerliğini. Dot product'ın uzunluklara bölünmüş hâlidir. Embedding uzayında yön "anlamı" temsil ettiği için, aynı yöne bakan iki metin vektörü anlamca yakın kabul edilir (skor 1'e yaklaşır).</div>
+          </details>
+          <details class="quiz">
+            <summary>Hybrid search neden tek başına semantik aramadan daha iyi sonuç verebilir?</summary>
+            <div class="answer">İki kanal farklı hatalarda güçlüdür: <b>keyword (BM25)</b> ürün kodu, hata numarası, özel isim gibi birebir eşleşmelerde kazanır; <b>semantik arama</b> eşanlamlı ve farklı ifade edilmiş sorularda kazanır. Birleşim, tek kanalın kaçırdığı adayları yakalar; üstüne reranker en iyileri seçer.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">RAG</span><span class="term-en">Retrieval-Augmented Generation</span><span class="lvl lvl-orta">Orta</span></div><p>Cevaptan önce ilgili bilgiyi arayıp prompt'a ekleyerek LLM'i güncel ve özel veriyle besleme deseni; açık kitap sınavı yaklaşımı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Retrieval (Getirme)</span><span class="term-en">Retrieval</span><span class="lvl lvl-orta">Orta</span></div><p>Sorguya en ilgili belge parçalarını bulma adımı; RAG kalitesinin en belirleyici halkası.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Chunking (Parçalama)</span><span class="term-en">Chunking</span><span class="lvl lvl-orta">Orta</span></div><p>Uzun belgeleri aranabilir küçük parçalara bölme; boyut ve bölme stratejisi arama isabetini doğrudan etkiler.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Chunk Overlap</span><span class="term-en">Chunk Overlap</span><span class="lvl lvl-ileri">İleri</span></div><p>Ardışık chunk'ların paylaştığı örtüşme payı; parça sınırında bölünen bağlamın kaybolmasını önler.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Vektör Veritabanı</span><span class="term-en">Vector Database</span><span class="lvl lvl-orta">Orta</span></div><p>Embedding vektörlerini saklayıp "en yakın k komşu" sorgusunu büyük ölçekte hızlı cevaplayan sistem.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Cosine Similarity (Kosinüs Benzerliği)</span><span class="term-en">Cosine Similarity</span><span class="lvl lvl-orta">Orta</span></div><p>İki vektör arasındaki açının kosinüsü; uzunluktan bağımsız yön (anlam) benzerliği ölçüsü, 1'e yaklaştıkça daha benzer.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Semantik Arama</span><span class="term-en">Semantic Search</span><span class="lvl lvl-orta">Orta</span></div><p>Kelime eşleşmesi yerine embedding yakınlığıyla, yani anlam üzerinden arama; eşanlamlı ifadeleri yakalar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">FAISS</span><span class="term-en">FAISS</span><span class="lvl lvl-ileri">İleri</span></div><p>Meta'nın açık kaynak vektör arama kütüphanesi; ayrı bir sunucu değil, uygulamaya gömülen indeks motoru.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">pgvector</span><span class="term-en">pgvector</span><span class="lvl lvl-ileri">İleri</span></div><p>PostgreSQL'e vektör kolonu ve benzerlik sorgusu ekleyen eklenti; mevcut Postgres'le RAG'e başlamanın pratik yolu.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">ANN &amp; HNSW</span><span class="term-en">Approximate Nearest Neighbor</span><span class="lvl lvl-ileri">İleri</span></div><p>Kesin yerine "neredeyse kesin" en yakın komşuları çok hızlı bulan indeksleme ailesi; HNSW en yaygın graf tabanlı örneği.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Hybrid Search (Karma Arama)</span><span class="term-en">Hybrid Search</span><span class="lvl lvl-ileri">İleri</span></div><p>Keyword (BM25) ve vektör aramasını birlikte çalıştırıp sonuçları birleştirme; iki kanalın güçlü yanlarını toplar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Reranking (Yeniden Sıralama)</span><span class="term-en">Reranking</span><span class="lvl lvl-ileri">İleri</span></div><p>Geniş aday havuzunu daha güçlü bir modelle yeniden puanlayıp en iyileri seçen ikinci eleme aşaması.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Grounding (Kaynağa Dayandırma)</span><span class="term-en">Grounding</span><span class="lvl lvl-orta">Orta</span></div><p>Cevabın yalnızca verilen kaynaklara dayanması ilkesi; RAG değerlendirmesinin ana sorusu "cevap kaynaklara sadık mı?"</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m7-rag">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m7-prompt-engineering.html"><span>← Önceki</span><b>Prompt Engineering</b></a>
+          <a class="next" href="m7-fine-tuning.html"><span>Sonraki →</span><b>Fine-tuning ve Model Hizalama</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

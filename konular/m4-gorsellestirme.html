@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Veri Görselleştirme — Veri Atlası</title>
+<meta name="description" content="Doğru grafiği seçme rehberi: bar, line, histogram, scatter; matplotlib, seaborn ve plotly; dürüst grafik ilkeleri, yanıltıcı grafik tuzakları ve BI/dashboard dünyası.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m4" data-slug="m4-gorsellestirme">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m4">4. Analitik ve İstatistik</a><span class="sep">/</span>
+        <span>Veri Görselleştirme</span>
+      </nav>
+      <span class="mod-badge">Modül 4 · Analitik ve İstatistik</span>
+      <h1>Veri Görselleştirme</h1>
+      <p class="en-title">Data Visualization</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-baslangic">Başlangıç</span>
+        <span class="chip">⏱️ ~14 dk okuma</span>
+        <span class="chip">🔤 11 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Aynı sayılar, bambaşka resimler</h2>
+        <p>1973'te istatistikçi Francis Anscombe, alanın en öğretici şakasını yayımladı: dört küçük veri seti hazırladı — <strong>Anscombe dörtlüsü</strong>. Dördünün de ortalamaları, varyansları, korelasyonları (≈0.82) ve regresyon doğruları (y = 3 + 0.5x) neredeyse birebir aynıydı. <a href="m4-eda.html">describe()</a> çıktısına bakan biri "bunlar aynı veri" derdi. Ama grafikleri çizilince ortaya dört ayrı dünya çıktı: biri düzgün doğrusal ilişki, biri belirgin bir eğri, biri tek outlier'ın çarpıttığı bir doğru, biri tek noktanın uydurduğu sahte ilişki.</p>
+        <p>Anscombe'un dersi bu sayfanın ruhu: <strong>özet istatistik desenleri gizler, grafik ortaya çıkarır.</strong> Görselleştirme süs değildir; EDA'nın mikroskobu, <a href="m4-istatistiksel-cikarim.html">istatistiksel bulguların</a> tercümanı ve veri insanının en güçlü iletişim aracıdır. İki yönü var: <em>keşif için</em> çizmek (kendine, hızlı ve bol) ve <em>iletişim için</em> çizmek (başkasına, özenli ve tek mesajlı). İkisini de öğreneceğiz.</p>
+
+        <h2>Hangi grafik ne zaman?</h2>
+        <p>Grafik seçimi zevk meselesi değil, soru meselesidir. Önce "ne göstermek istiyorum?" diye sor; cevap grafiği kendisi seçer:</p>
+        <ul>
+          <li><strong>Kategorileri karşılaştırma</strong> ("hangi şehir daha çok satıyor?") → <strong>bar chart</strong>. Gözün uzunluk kıyaslama yeteneği çok keskindir.</li>
+          <li><strong>Zaman içinde değişim</strong> ("gelir aydan aya nasıl seyretti?") → <strong>line chart</strong>. Çizginin eğimi trendi anında hissettirir.</li>
+          <li><strong>Dağılım</strong> ("sepet tutarları nasıl yayılmış?") → <strong>histogram</strong>; grupları yan yana kıyaslarken <strong>box plot</strong> (anatomisini <a href="m4-eda.html">EDA konusunda</a> çizmiştik).</li>
+          <li><strong>İki değişkenin ilişkisi</strong> ("reklam harcaması ile satış birlikte mi hareket ediyor?") → <strong>scatter plot</strong>.</li>
+          <li><strong>Parça-bütün oranı</strong> → pasta grafiği, ama dikkatle: göz açıları kötü kıyaslar. Dilim sayısı 4'ü geçiyorsa ya da dilimler birbirine yakınsa bar chart'a dön.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 760 340" width="760" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Grafik seçim karar haritası: amaçtan grafik türüne">
+            <defs>
+              <marker id="viz-arr-a" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <rect x="280" y="15" width="200" height="42" rx="10" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="380" y="41" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Ne göstermek istiyorsun?</text>
+              <path d="M310 60 C 220 78, 160 86, 112 96"  fill="none" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#viz-arr-a)"/>
+              <path d="M355 60 C 330 76, 310 84, 296 94"  fill="none" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#viz-arr-a)"/>
+              <path d="M405 60 C 430 76, 450 84, 464 94"  fill="none" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#viz-arr-a)"/>
+              <path d="M450 60 C 540 78, 600 86, 648 96"  fill="none" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#viz-arr-a)"/>
+
+              <g fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4">
+                <rect x="30" y="100" width="150" height="44" rx="9"/>
+                <rect x="215" y="100" width="150" height="44" rx="9"/>
+                <rect x="400" y="100" width="150" height="44" rx="9"/>
+                <rect x="585" y="100" width="150" height="44" rx="9"/>
+              </g>
+              <g fill="var(--ink)" font-size="11.5" font-weight="700" text-anchor="middle">
+                <text x="105" y="121">Kategorileri</text><text x="105" y="136">karşılaştır</text>
+                <text x="290" y="121">Zaman içinde</text><text x="290" y="136">değişim</text>
+                <text x="475" y="121">Dağılımı</text><text x="475" y="136">gör</text>
+                <text x="660" y="121">İki değişkenin</text><text x="660" y="136">ilişkisi</text>
+              </g>
+
+              <g fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4">
+                <rect x="30" y="170" width="150" height="110" rx="10"/>
+                <rect x="215" y="170" width="150" height="110" rx="10"/>
+                <rect x="400" y="170" width="150" height="110" rx="10"/>
+                <rect x="585" y="170" width="150" height="110" rx="10"/>
+              </g>
+              <!-- mini bar -->
+              <line x1="45" y1="262" x2="165" y2="262" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <rect x="57"  y="222" width="22" height="40" fill="var(--acc)" fill-opacity=".85"/>
+              <rect x="89"  y="200" width="22" height="62" fill="var(--acc)" fill-opacity=".85"/>
+              <rect x="121" y="230" width="22" height="32" fill="var(--acc)" fill-opacity=".85"/>
+              <!-- mini line -->
+              <line x1="230" y1="262" x2="350" y2="262" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <polyline points="234,252 262,230 287,238 312,208 345,190" fill="none" stroke="var(--acc)" stroke-width="2.5"/>
+              <!-- mini histogram -->
+              <line x1="413" y1="262" x2="537" y2="262" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <g fill="var(--acc)" fill-opacity=".8">
+                <rect x="419" y="244" width="16" height="18"/><rect x="435" y="228" width="16" height="34"/>
+                <rect x="451" y="206" width="16" height="56"/><rect x="467" y="200" width="16" height="62"/>
+                <rect x="483" y="222" width="16" height="40"/><rect x="499" y="240" width="16" height="22"/>
+                <rect x="515" y="252" width="16" height="10"/>
+              </g>
+              <!-- mini scatter -->
+              <line x1="600" y1="262" x2="720" y2="262" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <g fill="var(--acc)">
+                <circle cx="612" cy="250" r="3.5"/><circle cx="626" cy="238" r="3.5"/><circle cx="638" cy="244" r="3.5"/>
+                <circle cx="650" cy="224" r="3.5"/><circle cx="661" cy="231" r="3.5"/><circle cx="672" cy="212" r="3.5"/>
+                <circle cx="684" cy="220" r="3.5"/><circle cx="696" cy="200" r="3.5"/><circle cx="708" cy="206" r="3.5"/>
+              </g>
+              <g font-size="11.5" font-weight="700" text-anchor="middle" fill="var(--acc)">
+                <text x="105" y="302">bar chart</text>
+                <text x="290" y="302">line chart</text>
+                <text x="475" y="302">histogram · box plot</text>
+                <text x="660" y="302">scatter plot</text>
+              </g>
+              <text x="380" y="328" text-anchor="middle" fill="var(--muted)" font-size="11">parça-bütün oranı → pasta (yalnız ≤ 4 dilimse) ya da yüzde bar chart</text>
+            </g>
+          </svg>
+          <figcaption>Karar haritası: soruyu netleştir, grafik kendini seçsin. Kararsız kaldığında bar ve line, vakaların çoğunu kurtarır.</figcaption>
+        </figure>
+
+        <h2>Python'un üç fırçası: matplotlib, seaborn, plotly</h2>
+        <p><strong>matplotlib</strong>, Python görselleştirmesinin temel motorudur; 2003'ten beri neredeyse tüm çizim kütüphaneleri onun üzerine kuruludur. Her ekseni, yazıyı ve pikseli tek tek kontrol edebilirsin — bedeli, basit işler için bile birkaç satır fazla yazmaktır. Yayın kalitesinde, tam kontrollü figür gerektiğinde tercih edilir.</p>
+        <p><strong>seaborn</strong>, matplotlib'in üzerine kurulmuş istatistiksel kısayol katmanıdır; DataFrame kolonlarını doğrudan anlar ve histogram, box plot, ısı haritası gibi grafikleri tek satıra indirir. Günlük EDA çizimlerinin ve "hızlıca dağılıma bakayım" anlarının aracıdır.</p>
+        <p><strong>plotly</strong> ise etkileşim getirir: hover ile değer okuma, zoom, seriyi aç-kapa — çıktısı tarayıcıda çalışan HTML'dir. Grafiği bir rapor ya da dashboard olarak <em>başkasının kurcalaması</em> gerekiyorsa plotly'ye geçersin. Kısa özet: <strong>keşif için seaborn, ince ayar için matplotlib, paylaşım için plotly.</strong></p>
+
+        <figure class="codebox">
+          <figcaption>Python — matplotlib + seaborn ile iki panelli figür (line + histogram)</figcaption>
+          <pre><code data-lang="python">import matplotlib.pyplot as plt
+import seaborn as sns
+
+sns.set_theme(style="whitegrid")              # okunaklı, sade bir taban stili
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4))
+
+# Sol panel: zaman içinde değişim → line chart
+ax1.plot(aylik["ay"], aylik["gelir"], linewidth=2)
+ax1.set_title("Gelir 6 aydır istikrarlı artıyor")   # başlık = bulgu, etiket değil
+ax1.set_ylabel("Aylık gelir (bin TL)")              # birimi mutlaka yaz
+ax1.spines[["top", "right"]].set_visible(False)     # veri taşımayan çizgileri sil
+
+# Sağ panel: dağılım → histogram
+sns.histplot(data=df, x="sepet_tutari", bins=30, ax=ax2)
+ax2.set_title("Sepet tutarı sağa çarpık")
+ax2.axvline(df["sepet_tutari"].median(), linestyle="--",
+            label=f"medyan: {df['sepet_tutari'].median():.0f} TL")
+ax2.legend(frameon=False)                     # çerçevesiz lejant = daha az mürekkep
+
+fig.tight_layout()
+fig.savefig("rapor_figur1.png", dpi=150)      # sunuma gidecekse yüksek çözünürlük</code></pre>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Python — plotly ile etkileşimli scatter (hover'da ayrıntı)</figcaption>
+          <pre><code data-lang="python">import plotly.express as px
+
+# Her nokta bir mağaza; imleci getirince ayrıntılar görünür
+fig = px.scatter(
+    magazalar, x="ziyaretci", y="gelir",
+    size="calisan_sayisi",             # 3. boyut: nokta büyüklüğü
+    color="bolge",                     # 4. boyut: renk (az kategoriyle sınırla!)
+    hover_name="magaza_adi",           # hover kutusunun başlığı
+    labels={"ziyaretci": "Aylık ziyaretçi", "gelir": "Aylık gelir (TL)"},
+)
+fig.update_layout(title="Ziyaretçi arttıkça gelir artıyor — iki şube hariç")
+fig.write_html("magaza_scatter.html")  # tek dosya: mail ile herkese gönderilebilir
+fig.show()</code></pre>
+        </figure>
+
+        <h2>İyi grafiğin ilkeleri</h2>
+        <p>Aracı seçtik; şimdi zanaat. Dört ilke, grafiklerinin kalitesini bir ligde yukarı taşır:</p>
+        <ul>
+          <li><strong>Bar chart'ta eksen 0'dan başlar.</strong> Bar, değeri <em>uzunlukla</em> kodlar; ekseni kırparsan uzunluklar yalan söyler. Line chart bu kurala mahkûm değildir — çizgi eğimi anlattığı için ekseni veri aralığına yaklaştırmak meşrudur.</li>
+          <li><strong>Az renk, tek vurgu.</strong> Renk bir vurgu bütçesidir: anlatmak istediğin seriyi renklendir, gerisini griye çek. Yedi rengin yarıştığı grafikte hiçbir şey vurgulanmış olmaz.</li>
+          <li><strong>Doğrudan etiketle.</strong> Okuru lejant ile çizgi arasında mekik dokutma; ismi çizginin ucuna, değeri barın tepesine yaz.</li>
+          <li><strong>Data-ink oranını yükselt.</strong> Edward Tufte'nin kavramı: mürekkebin ne kadarı veri anlatıyor? Ağır ızgaralar, çerçeveler, gölgeler ve 3D efektler "süs mürekkebi"dir — sil; grafik hafifledikçe mesaj ağırlaşır.</li>
+        </ul>
+        <p>Bir de <strong>erişilebilirlik</strong> var, çünkü grafik herkes içindir: kırmızı-yeşil renk körlüğü erkeklerin yaklaşık %8'inde görülür — kırmızı/yeşil ikilisine hayati anlam yükleme; renk körlüğüne dayanıklı paletler (ör. viridis) kullan. Renk tek taşıyıcı olmasın: şekil, etiket ya da desenle destekle; metin-arka plan kontrastını yüksek tut ve eksen yazılarını okunur boyutta bırak.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 740 340" width="740" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Karmaşık grafik ile sade grafiğin karşılaştırması">
+            <defs>
+              <marker id="viz-arr-b" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--muted)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="190" y="42" text-anchor="middle" fill="var(--warn)" font-size="13" font-weight="700">Önce: her şey bağırıyor</text>
+              <rect x="45" y="60" width="290" height="200" fill="none" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <g stroke="var(--dg-line)" opacity=".65">
+                <line x1="45" y1="88"  x2="335" y2="88"/><line x1="45" y1="116" x2="335" y2="116"/>
+                <line x1="45" y1="144" x2="335" y2="144"/><line x1="45" y1="172" x2="335" y2="172"/>
+                <line x1="45" y1="200" x2="335" y2="200"/><line x1="45" y1="228" x2="335" y2="228"/>
+                <line x1="85" y1="60" x2="85" y2="260"/><line x1="125" y1="60" x2="125" y2="260"/>
+                <line x1="165" y1="60" x2="165" y2="260"/><line x1="205" y1="60" x2="205" y2="260"/>
+                <line x1="245" y1="60" x2="245" y2="260"/><line x1="285" y1="60" x2="285" y2="260"/>
+              </g>
+              <polyline points="55,205 95,175 135,188 175,152 215,162 255,122 295,132" fill="none" stroke="var(--acc)"  stroke-width="2"/>
+              <polyline points="55,232 95,214 135,222 175,202 215,208 255,192 295,197" fill="none" stroke="var(--warn)" stroke-width="2"/>
+              <polyline points="55,152 95,162 135,142 175,172 215,142 255,157 295,142" fill="none" stroke="var(--bad)"  stroke-width="2"/>
+              <polyline points="55,112 95,132 135,117 175,137 215,122 255,137 295,127" fill="none" stroke="var(--ok)"   stroke-width="2"/>
+              <rect x="258" y="66" width="72" height="66" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+              <g font-size="9.5" fill="var(--muted)">
+                <rect x="264" y="72" width="9" height="9" fill="var(--acc)"/><text x="278" y="80">Seri A</text>
+                <rect x="264" y="87" width="9" height="9" fill="var(--warn)"/><text x="278" y="95">Seri B</text>
+                <rect x="264" y="102" width="9" height="9" fill="var(--bad)"/><text x="278" y="110">Seri C</text>
+                <rect x="264" y="117" width="9" height="9" fill="var(--ok)"/><text x="278" y="125">Seri D</text>
+              </g>
+              <text x="190" y="298" text-anchor="middle" fill="var(--muted)" font-size="11">4 renk + sık ızgara + lejant mekiği = göz geziyor, mesaj yok</text>
+
+              <text x="550" y="42" text-anchor="middle" fill="var(--ok)" font-size="13" font-weight="700">Sonra: mesaj öne çıkıyor</text>
+              <line x1="405" y1="260" x2="685" y2="260" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <polyline points="415,150 455,162 495,155 535,172 575,168 615,177 649,180" fill="none" stroke="var(--muted)" stroke-width="1.5" opacity=".55"/>
+              <polyline points="415,120 455,133 495,126 535,140 575,132 615,142 649,138" fill="none" stroke="var(--muted)" stroke-width="1.5" opacity=".55"/>
+              <polyline points="415,205 455,190 495,196 535,168 575,132 615,108 649,96" fill="none" stroke="var(--acc)" stroke-width="3"/>
+              <g font-size="10.5" fill="var(--muted)">
+                <text x="655" y="141">Ürün A</text>
+                <text x="655" y="184">Ürün C</text>
+              </g>
+              <text x="655" y="99" fill="var(--acc)" font-size="11.5" font-weight="700">Ürün B</text>
+              <text x="470" y="98" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">B, Nisan'da liderliği aldı</text>
+              <path d="M500 106 C 525 122, 545 140, 558 152" fill="none" stroke="var(--muted)" stroke-width="1.3" marker-end="url(#viz-arr-b)"/>
+              <text x="550" y="298" text-anchor="middle" fill="var(--muted)" font-size="11">tek vurgu rengi + doğrudan etiket + bulgu cümlesi = mesaj anında</text>
+            </g>
+          </svg>
+          <figcaption>Aynı veri, iki üslup: süs mürekkebini silip tek seriyi vurgulayınca grafik "bakılan şey" olmaktan çıkıp "anlatan şey" olur.</figcaption>
+        </figure>
+
+        <div class="tip"><b>Başlığa bulguyu yaz.</b> "Aylık Gelir Grafiği" bir dosya adıdır, başlık değil. Okurun hatırlamasını istediğin cümleyi başlık yap: "Gelir 6 aydır artıyor, Ege bölgesi öncülük ediyor". Tek bu alışkanlık, raporlarının etkisini ikiye katlar.</div>
+
+        <h2>Yalan söyleyen grafikler</h2>
+        <p>Grafik okuryazarlığının ikinci yarısı savunmadır: iyi niyetli özensizlik de kasıtlı manipülasyon da aynı üç numarayla gelir.</p>
+        <p><strong>1) Kesik eksen:</strong> bar chart'ın ekseni 90'dan başlatılırsa %92 ile %96 arasındaki 4 puanlık fark, "üç kat fark" gibi görünür. Aşağıdaki iki panel aynı veridir:</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 330" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Aynı verinin yanıltıcı (kesik eksen) ve dürüst (sıfırdan başlayan) bar grafiği">
+            <g font-family="inherit">
+              <text x="195" y="40" text-anchor="middle" fill="var(--bad)" font-size="13" font-weight="700">Yanıltıcı: eksen 90'dan başlıyor</text>
+              <line x1="80" y1="80" x2="80" y2="250" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <line x1="80" y1="250" x2="320" y2="250" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <g fill="var(--muted)" font-size="10.5" text-anchor="end">
+                <text x="72" y="254">90</text><text x="72" y="169">95</text><text x="72" y="84">100</text>
+              </g>
+              <rect x="120" y="216" width="66" height="34"  fill="var(--muted)" fill-opacity=".45"/>
+              <rect x="230" y="148" width="66" height="102" fill="var(--acc)" fill-opacity=".85"/>
+              <text x="153" y="208" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">92</text>
+              <text x="263" y="140" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">96</text>
+              <g fill="var(--muted)" font-size="11" text-anchor="middle">
+                <text x="153" y="268">Kampanya A</text><text x="263" y="268">Kampanya B</text>
+              </g>
+              <text x="195" y="298" text-anchor="middle" fill="var(--bad)" font-size="11" font-style="italic">"B, A'yı ezip geçmiş!"</text>
+
+              <text x="510" y="40" text-anchor="middle" fill="var(--ok)" font-size="13" font-weight="700">Dürüst: eksen 0'dan başlıyor</text>
+              <line x1="400" y1="80" x2="400" y2="250" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <line x1="400" y1="250" x2="640" y2="250" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <g fill="var(--muted)" font-size="10.5" text-anchor="end">
+                <text x="392" y="254">0</text><text x="392" y="169">50</text><text x="392" y="84">100</text>
+              </g>
+              <rect x="440" y="94" width="66" height="156" fill="var(--muted)" fill-opacity=".45"/>
+              <rect x="550" y="87" width="66" height="163" fill="var(--acc)" fill-opacity=".85"/>
+              <text x="473" y="86" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">92</text>
+              <text x="583" y="79" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">96</text>
+              <g fill="var(--muted)" font-size="11" text-anchor="middle">
+                <text x="473" y="268">Kampanya A</text><text x="583" y="268">Kampanya B</text>
+              </g>
+              <text x="510" y="298" text-anchor="middle" fill="var(--ok)" font-size="11" font-style="italic">"fark var ama 4 puan"</text>
+            </g>
+          </svg>
+          <figcaption>Bar uzunlukla konuşur: eksen kırpılınca uzunluk oranı bozulur ve aynı 4 puanlık fark iki ayrı hikâye anlatır.</figcaption>
+        </figure>
+
+        <p><strong>2) 3D pasta:</strong> perspektif, öne yatırılan dilimi olduğundan büyük gösterir; %20'lik dilim, arkadaki %25'ten büyük algılanabilir. 3D efektin veriye katkısı sıfır, maliyeti algı hatasıdır. <strong>3) Çift y ekseni:</strong> iki serinin eksen ölçekleri bağımsızca oynanabildiği için istenen "birlikte hareket" illüzyonu üretilebilir — dondurma satışıyla boğulma vakalarını üst üste bindirip "korelasyon" göstermek gibi. Çift eksen görürsen ilk soru: "ölçekler neden böyle seçilmiş?"</p>
+        <div class="warn"><b>Savunma refleksi.</b> Bir grafik seni bir sonuca <em>iterken</em> yakalarsan üç kontrol yap: eksen nerede başlıyor, eksen ölçüsü/aralığı ne, veri kaynağı ve n kaç? Yanıltıcı grafiklerin çoğu bu üç soruya dayanamaz.</div>
+
+        <h2>BI dünyası: dashboard'lar</h2>
+        <p>İş dünyasında görselleştirmenin kurumsallaşmış hâline <strong>BI (Business Intelligence — iş zekâsı)</strong> denir. Merkez kavram <strong>dashboard</strong>: bir <a href="m3-warehouse-lake.html">veri ambarına</a> bağlanıp metrikleri canlı gösteren, filtrelenebilir ekran. İyi dashboard bir rapor arşivi değildir; belirli soruları sürekli cevaplayan bir alettir — "bugün satış hedefin neresindeyiz?", "hangi bölge geriliyor?" Cevaplamadığı soru için de seni <a href="m4-eda.html">EDA'ya</a> geri gönderir.</p>
+        <p>Araç ekosistemi dört isimle özetlenir: <strong>Tableau</strong>, sürükle-bırak görsel analitiğin öncüsü ve görsel esnekliğin çıtası. <strong>Power BI</strong>, Microsoft ekosistemiyle bütünleşik, Excel kullanıcılarına en tanıdık ve yaygın kurumsal seçenek. <strong>Looker</strong>, metrik tanımlarını LookML koduyla merkezileştiren, Google Cloud tarafının aracı. <strong>Metabase</strong> ise açık kaynak ve hızla kurulan, küçük ekiplerin gözdesi. Hepsinin altında aynı iskelet vardır: warehouse'a SQL sorgusu at, sonucu bu sayfadaki grafik türlerinden biriyle çiz — yani bu konuda öğrendiklerin araçtan bağımsız geçerlidir.</p>
+        <div class="note"><b>Dashboard enflasyonuna dikkat.</b> Kimsenin bakmadığı dashboard, bakım yükü olan süslü bir tablodur. Yenisini açmadan önce sor: bu ekran hangi kararı besleyecek ve haftada kaç kez bakılacak? Cevap yoksa ihtiyaç dashboard değil, tek seferlik bir analizdir.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Görselleştirme, veri kariyerinin her durağında sahnede:</p>
+        <ul>
+          <li><strong>EDA sırasında →</strong> histogram ve box plot, <a href="m4-eda.html">describe() çıktısının</a> gözle doğrulamasıdır; Anscombe'un dersi her yeni veri setinde tekrar eder.</li>
+          <li><strong>Deney raporlarında →</strong> <a href="m4-istatistiksel-cikarim.html">A/B testi</a> sonucu, güven aralığı çubuklarıyla görselleştirilir; aralıklar örtüşüyorsa tek bar farkı yanıltıcıdır.</li>
+          <li><strong>ML çalışmalarında →</strong> öğrenme eğrileri, hata dağılımları ve <a href="m5-model-degerlendirme.html">model değerlendirme</a> grafikleri (ROC gibi) günlük ekmeğindir.</li>
+          <li><strong>Üretimde →</strong> model ve pipeline sağlığı <a href="m8-monitoring.html">monitoring</a> dashboard'larından izlenir; iyi tasarlanmış panel, kötü geceyi erken haber verir.</li>
+          <li><strong>Mülakatlarda →</strong> "Bu veriyi nasıl görselleştirirdin?" klasik sorudur; beklenen cevap araç adı değil, bu sayfadaki karar haritasıdır.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Bar chart'ta eksen neden 0'dan başlamak zorunda, line chart'ta neden değil?</summary>
+            <div class="answer">Bar, değeri <b>uzunlukla</b> kodlar: eksen kırpılırsa uzunlukların oranı bozulur ve küçük fark dev gibi görünür. Line chart ise <b>eğim ve şekil</b> anlatır; ekseni veri aralığına yaklaştırmak trendi okunur kılar ve uzunluk iddiası taşımadığı için meşrudur.</div>
+          </details>
+          <details class="quiz">
+            <summary>Anscombe dörtlüsü neyi kanıtlar ve iş akışına nasıl yansımalı?</summary>
+            <div class="answer">Ortalama, varyans ve korelasyonu <b>neredeyse aynı olan dört veri setinin</b> grafikte bambaşka desenler taşıdığını gösterir: özet istatistik tek başına yanıltabilir. Pratik sonuç: describe() ile yetinme; sayılara güvenmeden önce dağılımı ve ilişkileri <b>mutlaka çiz</b>.</div>
+          </details>
+          <details class="quiz">
+            <summary>Bir sayısal kolonun dağılımını görmek istiyorsun; hangi grafikler ve hangisi ne zaman?</summary>
+            <div class="answer"><b>Histogram</b> tek değişkenin dağılım şeklini (çarpıklık, tepe sayısı) en zengin gösterir. <b>Box plot</b> daha az ayrıntı verir ama medyan/çeyrek/outlier'ı kompakt özetlediği için <b>çok grubu yan yana</b> kıyaslarken kazanır: "şehir bazında sepet tutarı" sorusunun grafiği box plot'tur.</div>
+          </details>
+          <details class="quiz">
+            <summary>Data-ink oranı nedir? Bir grafikte onu artıran üç somut hamle söyle.</summary>
+            <div class="answer">Tufte'nin ölçütü: <b>mürekkebin veri anlatan payı</b>. Artırmak için: ağır ızgara/çerçeve/3D gölge gibi süs ögelerini sil, lejantı kaldırıp serileri doğrudan etiketle, vurguyu tek renge indirip kalan serileri soluklaştır. Silmek, eklemekten daha çok iyileştirir.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Görselleştirme</span><span class="term-en">Data Visualization</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Veriyi grafiklerle temsil etme pratiği; hem keşif aracı hem de bulguları başkalarına taşıyan iletişim dili.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Histogram</span><span class="term-en">Histogram</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Sayısal değişkeni aralıklara bölüp her aralığın sıklığını barlarla gösterir; dağılımın şeklini okumanın temel aracı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Scatter Plot (Saçılım)</span><span class="term-en">Scatter Plot</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>İki sayısal değişkeni nokta bulutu olarak çizer; ilişki, kümelenme ve outlier'ları görünür kılar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Box Plot (Kutu Grafiği)</span><span class="term-en">Box Plot</span><span class="lvl lvl-orta">Orta</span></div><p>Medyan, çeyrekler ve IQR temelli aykırı değerleri tek şekilde özetler; grupları yan yana kıyaslamada güçlüdür.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">matplotlib</span><span class="term-en">matplotlib</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Python görselleştirmesinin temel motoru; her ögeyi ince ayarlama gücü verir, çoğu kütüphane üzerine kuruludur.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">seaborn</span><span class="term-en">seaborn</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>matplotlib üstünde istatistiksel grafik kısayolları; DataFrame ile doğal çalışır, EDA çizimlerini tek satıra indirir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">plotly</span><span class="term-en">plotly</span><span class="lvl lvl-orta">Orta</span></div><p>Etkileşimli (hover, zoom) grafikler üreten kütüphane; çıktısı HTML olduğundan paylaşım ve dashboard işlerinde öne çıkar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Dashboard</span><span class="term-en">Dashboard</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Metrikleri canlı ve filtrelenebilir gösteren ekran; rapor arşivi değil, belirli soruları sürekli cevaplayan alet.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">BI (İş Zekâsı)</span><span class="term-en">Business Intelligence</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Kurum verisini raporlanabilir metriklere ve dashboard'lara dönüştüren disiplin; Tableau, Power BI, Looker bu alanın araçlarıdır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Data-Ink Oranı</span><span class="term-en">Data-Ink Ratio</span><span class="lvl lvl-ileri">İleri</span></div><p>Tufte'nin ölçütü: grafikteki mürekkebin veri anlatan payı. Süs ögelerini silmek oranı ve okunurluğu artırır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Erişilebilirlik</span><span class="term-en">Accessibility</span><span class="lvl lvl-orta">Orta</span></div><p>Grafiğin renk körlüğü ve düşük görüş dahil herkesçe okunabilmesi: güvenli paletler, yeterli kontrast, renkten bağımsız kodlama.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m4-gorsellestirme">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m4-istatistiksel-cikarim.html"><span>← Önceki</span><b>İstatistiksel Çıkarım ve A/B Testleri</b></a>
+          <a class="next" href="m4-zaman-serisi.html"><span>Sonraki →</span><b>Zaman Serisi Analizi ve Tahminleme</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

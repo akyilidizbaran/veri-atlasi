@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Ajanları ve Multimodal Modeller — Veri Atlası</title>
+<meta name="description" content="AI ajanları: tool use / function calling, ReAct döngüsü, MCP protokolü, çoklu ajan sistemleri; multimodal modeller, vision ve diffusion modellerine giriş; guardrails ve human-in-the-loop.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m7" data-slug="m7-ajanlar-multimodal">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m7">7. Üretken AI ve LLM'ler</a><span class="sep">/</span>
+        <span>AI Ajanları ve Multimodal Modeller</span>
+      </nav>
+      <span class="mod-badge">Modül 7 · Üretken AI ve LLM'ler</span>
+      <h1>AI Ajanları ve Multimodal Modeller</h1>
+      <p class="en-title">AI Agents &amp; Multimodal Models</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-ileri">İleri</span>
+        <span class="chip">⏱️ ~17 dk okuma</span>
+        <span class="chip">🔤 12 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Chatbot'tan ajana</h2>
+        <p>Şimdiye kadar gördüğümüz LLM kullanımı hep aynı kalıptı: soru gir, cevap al. Ama "Geçen ayın satış raporunu çıkar, anormallikleri bul ve ekibe özet e-posta hazırla" dediğinde tek bir cevap yetmez — veritabanına sorgu atmak, sonucu incelemek, gerekirse başka sorgu atmak, sonra yazmak gerekir. İşte <strong>AI ajanı</strong> (AI agent) bu noktada devreye girer: bir cevap üreten model değil, <strong>hedef alan, araç kullanan, sonucu gözleyip gerekirse yeniden deneyen bir sistemdir.</strong></p>
+        <p>Formül basittir: <strong>ajan = LLM + araçlar + döngü.</strong> LLM karar veren beyindir; araçlar (veritabanı, arama, kod çalıştırma, API'ler) dünyaya dokunan elleridir; döngü ise "düşün → eyle → gözle → tekrar düşün" ritmini kurar. Chatbot tek turda biter; ajan, hedefe ulaşana ya da pes etmesi gerektiğine karar verene kadar tur atmaya devam eder.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 640 380" width="640" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ajan döngüsü: merkezde LLM, çevresinde araçlar, düşün-eyle-gözle çemberi">
+            <defs>
+              <marker id="arrC1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <!-- araç kutuları -->
+              <rect x="30" y="45" width="135" height="44" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="97" y="72" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">Web araması</text>
+              <rect x="475" y="45" width="135" height="44" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="542" y="72" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">Veritabanı</text>
+              <rect x="30" y="295" width="135" height="44" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="97" y="322" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">Kod çalıştırma</text>
+              <rect x="475" y="295" width="135" height="44" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="542" y="322" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">Harici API'ler</text>
+              <!-- bağlantılar -->
+              <line x1="160" y1="90" x2="248" y2="140" stroke="var(--dg-line)" stroke-width="1.2" stroke-dasharray="4 4"/>
+              <line x1="480" y1="90" x2="392" y2="140" stroke="var(--dg-line)" stroke-width="1.2" stroke-dasharray="4 4"/>
+              <line x1="160" y1="295" x2="248" y2="245" stroke="var(--dg-line)" stroke-width="1.2" stroke-dasharray="4 4"/>
+              <line x1="480" y1="295" x2="392" y2="245" stroke="var(--dg-line)" stroke-width="1.2" stroke-dasharray="4 4"/>
+              <!-- döngü çemberi -->
+              <path d="M320 97 A95 95 0 0 1 415 192" stroke="var(--acc)" stroke-width="2" fill="none" marker-end="url(#arrC1)"/>
+              <path d="M415 192 A95 95 0 0 1 320 287" stroke="var(--acc)" stroke-width="2" fill="none" marker-end="url(#arrC1)"/>
+              <path d="M320 287 A95 95 0 0 1 225 192" stroke="var(--acc)" stroke-width="2" fill="none" marker-end="url(#arrC1)"/>
+              <path d="M225 192 A95 95 0 0 1 320 97" stroke="var(--acc)" stroke-width="2" fill="none" marker-end="url(#arrC1)"/>
+              <!-- merkez -->
+              <circle cx="320" cy="192" r="58" fill="rgba(var(--acc-rgb),.14)" stroke="var(--acc)" stroke-width="1.8"/>
+              <text x="320" y="188" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="700">LLM</text>
+              <text x="320" y="206" text-anchor="middle" fill="var(--muted)" font-size="10.5">karar veren beyin</text>
+              <!-- döngü etiketleri -->
+              <text x="320" y="82" text-anchor="middle" fill="var(--acc)" font-size="12" font-weight="700">DÜŞÜN</text>
+              <text x="452" y="196" text-anchor="start" fill="var(--acc)" font-size="12" font-weight="700">EYLE</text>
+              <text x="320" y="312" text-anchor="middle" fill="var(--acc)" font-size="12" font-weight="700">GÖZLE</text>
+              <text x="188" y="196" text-anchor="end" fill="var(--acc)" font-size="12" font-weight="700">TEKRAR</text>
+              <text x="320" y="366" text-anchor="middle" fill="var(--faint)" font-size="11" font-weight="600">Hedefe ulaşana kadar döngü sürer; araçlar LLM'in dünyaya dokunan elleridir</text>
+            </g>
+          </svg>
+          <figcaption>Ajan mimarisi: LLM merkezde karar verir, araçlarla eyler, sonucu gözler ve döngü hedefe ulaşana kadar döner.</figcaption>
+        </figure>
+
+        <h2>Tool use / function calling: LLM'in dünyaya eli</h2>
+        <p>Peki metin üreten bir model nasıl "veritabanına sorgu atar"? Atmaz — <strong>atılmasını ister.</strong> <strong>Tool use</strong> (araç kullanımı, function calling da denir) şöyle çalışır: API çağrısında modele bir <em>araç kataloğu</em> tanıtırsın; her aracın adı, ne işe yaradığını anlatan açıklaması ve parametre şeması (input_schema) vardır. Model, soruyu cevaplamak için araç gerektiğine karar verirse düz metin yerine yapılandırılmış bir <em>çağrı isteği</em> üretir: "hava_durumu aracını sehir=Ankara ile çağır". Aracı gerçekten çalıştıran <strong>senin kodundur</strong>; sonucu modele geri verirsin, model de onu kullanarak nihai cevabı yazar.</p>
+        <p>Bu ayrım güvenliğin de temelidir: model hiçbir sisteme doğrudan erişmez, yalnızca <em>istek</em> üretir. Neyin çalışacağına, hangi parametrelerin geçerli olduğuna ve sonucun ne kadarının geri döneceğine her zaman senin kodun karar verir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 680 360" width="680" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Function calling sekans şeması">
+            <defs>
+              <marker id="arrC2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <!-- yaşam çizgileri -->
+              <rect x="35" y="24" width="110" height="32" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="90" y="45" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Kullanıcı</text>
+              <rect x="215" y="24" width="110" height="32" rx="8" fill="rgba(var(--acc-rgb),.14)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="270" y="45" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">LLM</text>
+              <rect x="395" y="24" width="110" height="32" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="450" y="45" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Senin kodun</text>
+              <rect x="555" y="24" width="100" height="32" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="605" y="45" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">Araç (API)</text>
+              <line x1="90" y1="56" x2="90" y2="340" stroke="var(--dg-line)" stroke-width="1" stroke-dasharray="4 4"/>
+              <line x1="270" y1="56" x2="270" y2="340" stroke="var(--dg-line)" stroke-width="1" stroke-dasharray="4 4"/>
+              <line x1="450" y1="56" x2="450" y2="340" stroke="var(--dg-line)" stroke-width="1" stroke-dasharray="4 4"/>
+              <line x1="605" y1="56" x2="605" y2="340" stroke="var(--dg-line)" stroke-width="1" stroke-dasharray="4 4"/>
+              <!-- mesajlar -->
+              <path d="M90 90 L264 90" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arrC2)"/>
+              <text x="177" y="80" text-anchor="middle" fill="var(--muted)" font-size="10.5">"Ankara'da hava nasıl?"</text>
+              <path d="M270 132 L444 132" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arrC2)"/>
+              <text x="357" y="122" text-anchor="middle" fill="var(--muted)" font-size="10.5">tool_use: hava_durumu {"sehir": "Ankara"}</text>
+              <path d="M450 174 L599 174" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arrC2)"/>
+              <text x="527" y="164" text-anchor="middle" fill="var(--muted)" font-size="10.5">gerçek API çağrısı</text>
+              <path d="M605 216 L456 216" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arrC2)"/>
+              <text x="527" y="206" text-anchor="middle" fill="var(--muted)" font-size="10.5">"22°C, açık"</text>
+              <path d="M450 258 L276 258" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arrC2)"/>
+              <text x="363" y="248" text-anchor="middle" fill="var(--muted)" font-size="10.5">tool_result olarak geri ver</text>
+              <path d="M270 300 L96 300" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#arrC2)"/>
+              <text x="183" y="290" text-anchor="middle" fill="var(--muted)" font-size="10.5">"Ankara'da hava 22°C ve açık."</text>
+              <text x="340" y="352" text-anchor="middle" fill="var(--faint)" font-size="10.5" font-weight="600">Model yalnızca İSTEK üretir; aracı çalıştıran ve sonucu süzen her zaman senin kodundur</text>
+            </g>
+          </svg>
+          <figcaption>Function calling sekansı: model çağrı isteğini yapılandırılmış biçimde üretir, kodun çalıştırır, sonuç modele döner, model nihai cevabı yazar.</figcaption>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Python — Anthropic API ile tool use: araç tanımı ve çağrının işlenmesi</figcaption>
+          <pre><code data-lang="python">import anthropic
+
+client = anthropic.Anthropic()
+
+araclar = [{
+    "name": "hava_durumu",
+    "description": "Bir şehir için güncel hava durumunu döndürür.",
+    "input_schema": {
+        "type": "object",
+        "properties": {"sehir": {"type": "string"}},
+        "required": ["sehir"],
+    },
+}]
+
+yanit = client.messages.create(
+    model="claude-opus-4-8",
+    max_tokens=1024,
+    tools=araclar,
+    messages=[{"role": "user", "content": "Ankara'da hava nasıl?"}],
+)
+
+# Model araç çağrısı mı istedi?
+if yanit.stop_reason == "tool_use":
+    istek = next(b for b in yanit.content if b.type == "tool_use")
+    print(istek.name, istek.input)     # hava_durumu {'sehir': 'Ankara'}
+    sonuc = hava_api(istek.input["sehir"])   # aracı SEN çalıştırırsın
+    # sonuc, tool_result bloğu olarak modele geri gönderilir (bir sonraki örnek)</code></pre>
+        </figure>
+
+        <h2>ReAct döngüsü ve planlama</h2>
+        <p>Tek araç çağrısı işin kolay kısmı; ajanı ajan yapan, çağrıları <em>zincirlemesidir</em>. En bilinen desen <strong>ReAct</strong> (Reasoning + Acting): model her turda önce kısa bir <em>düşünme</em> adımı üretir ("önce tabloyu bulmalıyım"), sonra bir <em>eylem</em> seçer (araç çağrısı), eylemin <em>gözlemini</em> alır ve bir sonraki düşünceye geçer. Düşün → eyle → gözle → tekrar. Bu açık akıl yürütme, modelin ara sonuçlara göre rota değiştirmesini sağlar: sorgu boş döndüyse başka tablo dener, API hata verdiyse parametreyi düzeltir.</p>
+        <p>Karmaşık hedeflerde buna <strong>planlama</strong> eklenir: ajan işe başlamadan hedefi alt görevlere böler ("1: şemayı keşfet, 2: sorguyu yaz, 3: anormallikleri işaretle, 4: özeti yaz") ve listeyi adım adım tüketir. Plan, döngünün pusulasıdır — ajan bir adımda kaybolsa bile neyi bitirdiğini ve sırada ne olduğunu bilir. Kod tarafında tüm bu döngü şaşırtıcı derecede kısadır:</p>
+
+        <figure class="codebox">
+          <figcaption>Python — çok adımlı ajan döngüsü iskeleti</figcaption>
+          <pre><code data-lang="python">mesajlar = [{"role": "user", "content": gorev}]
+
+while True:
+    yanit = client.messages.create(
+        model="claude-opus-4-8",
+        max_tokens=1024,
+        tools=araclar,
+        messages=mesajlar,
+    )
+    # modelin turunu (düşünce + olası araç istekleri) geçmişe ekle
+    mesajlar.append({"role": "assistant", "content": yanit.content})
+
+    if yanit.stop_reason != "tool_use":
+        break                      # araç istenmedi -&gt; nihai cevap geldi
+
+    sonuclar = []
+    for blok in yanit.content:
+        if blok.type == "tool_use":
+            cikti = araci_calistir(blok.name, blok.input)   # gözlem
+            sonuclar.append({"type": "tool_result",
+                             "tool_use_id": blok.id, "content": cikti})
+    mesajlar.append({"role": "user", "content": sonuclar})  # gözlemi geri ver
+
+print(yanit.content[0].text)       # döngü bitti: nihai cevap</code></pre>
+        </figure>
+
+        <div class="tip"><b>Araç tasarımı prompt tasarımıdır.</b> Model hangi aracı ne zaman çağıracağına yalnızca isim ve description'a bakarak karar verir. "Bu aracı şu durumda çağır" diye açıkça yazan bir description, kötü seçimlerin çoğunu daha baştan önler. Belirsiz isimli, açıklamasız araçlar ajanın en sık tökezleme sebebidir.</div>
+
+        <h2>MCP: ajan dünyasının USB'si</h2>
+        <p>Araçlar çoğaldıkça yeni bir dert doğar: her ajan çerçevesi her veri kaynağına kendi özel entegrasyonunu yazarsa, N ajan × M araç kadar birbirine benzemez bağlayıcı kod ortaya çıkar. <strong>MCP — Model Context Protocol</strong>, bu kombinasyon patlamasına verilmiş standart cevaptır: araçları ve veri kaynaklarını, herhangi bir ajan istemcisinin konuşabildiği ortak bir protokolle sunan "standart fiş". Bir MCP sunucusu, sunduğu araçları (isim + şema) standart biçimde ilan eder; MCP destekleyen her istemci — hangi LLM'i kullanırsa kullansın — bu araçları keşfedip çağırabilir. USB benzetmesi tam yerinde: cihaz da bilgisayar da aynı soketi bildiği için her cihaz her makinede çalışır.</p>
+        <p>Ekosistem etkisi asıl güç: veritabanları, dosya sistemleri, Git, Slack, bulut servisleri için yazılmış hazır MCP sunucuları hızla çoğalıyor. Şirket içinde bir kaynağı bir kez MCP sunucusu olarak açarsın; sonra kurduğun her ajan — kod asistanı, analiz botu, destek chatbot'u — aynı sunucuya takılır. Entegrasyon maliyeti N×M'den N+M'e düşer.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 300" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MCP: soldaki ajanlar ortadaki standart protokol üzerinden sağdaki kaynaklara bağlanır">
+            <g font-family="inherit">
+              <text x="105" y="36" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Ajanlar / istemciler</text>
+              <rect x="30" y="52" width="150" height="44" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="105" y="79" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">Kod asistanı</text>
+              <rect x="30" y="126" width="150" height="44" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="105" y="153" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">Analiz ajanı</text>
+              <rect x="30" y="200" width="150" height="44" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="105" y="227" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">Destek chatbot'u</text>
+              <!-- MCP şeridi -->
+              <rect x="305" y="42" width="90" height="216" rx="14" fill="rgba(var(--acc-rgb),.14)" stroke="var(--acc)" stroke-width="1.8"/>
+              <text x="350" y="140" text-anchor="middle" fill="var(--acc)" font-size="16" font-weight="800">MCP</text>
+              <text x="350" y="160" text-anchor="middle" fill="var(--muted)" font-size="10">standart</text>
+              <text x="350" y="174" text-anchor="middle" fill="var(--muted)" font-size="10">protokol</text>
+              <!-- bağlantılar sol -->
+              <line x1="180" y1="74" x2="305" y2="100" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <line x1="180" y1="148" x2="305" y2="150" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <line x1="180" y1="222" x2="305" y2="200" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <!-- bağlantılar sağ -->
+              <line x1="395" y1="100" x2="520" y2="74" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <line x1="395" y1="150" x2="520" y2="148" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <line x1="395" y1="200" x2="520" y2="222" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="595" y="36" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Kaynaklar / sunucular</text>
+              <rect x="520" y="52" width="150" height="44" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="595" y="79" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">Veritabanı</text>
+              <rect x="520" y="126" width="150" height="44" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="595" y="153" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">Dosya sistemi</text>
+              <rect x="520" y="200" width="150" height="44" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="595" y="227" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">Servisler (Git, Slack…)</text>
+              <text x="350" y="286" text-anchor="middle" fill="var(--muted)" font-size="10.5">herkes aynı fişe takılır: N×M özel entegrasyon yerine N+M bağlantı</text>
+            </g>
+          </svg>
+          <figcaption>MCP standart soketi: her ajan her kaynağa özel kod yazmak yerine, iki taraf da ortak protokolü konuşur.</figcaption>
+        </figure>
+
+        <h2>Çoklu ajan sistemleri</h2>
+        <p>Tek ajan her işi yapmaya çalışınca prompt'u şişer ve odağı dağılır. <strong>Multi-agent</strong> (çoklu ajan) yaklaşım, işi uzmanlaşmış ajanlara böler: bir <em>araştırmacı</em> kaynakları toplar, bir <em>yazar</em> taslağı üretir, bir <em>eleştirmen</em> taslağı denetleyip düzeltme ister; tepede bir koordinatör görev dağıtır ve sonuçları birleştirir. Her ajanın kendi dar sistemi prompt'u, kendi araç seti ve kendi kısa bağlamı olur — tıpkı bir ekipteki rol dağılımı gibi.</p>
+        <p>Bu sana tanıdık gelmeli: görevleri düğümlere bölmek, bağımlılıkları yönetmek, birinin çıktısını diğerine akıtmak… <a href="m3-orkestrasyon.html">Orkestrasyon konusundaki</a> DAG zihniyetinin ta kendisi — yalnızca düğümler artık deterministik görevler değil, LLM'li ajanlar. Nitekim çoklu ajan sistemlerinin zor kısmı da aynıdır: akışı izlemek, hataları yakalamak ve maliyeti kontrol altında tutmak.</p>
+
+        <h2>Multimodal: metin, görsel ve ses tek modelde</h2>
+        <p><strong>Multimodal model</strong>, tek modelin birden fazla veri türünü — metin, görsel, ses — aynı temsil uzayında işlemesi demektir. Pratik yüzü <strong>vision</strong> (görü) yetenekleridir: modele bir fatura fotoğrafı verip kalemleri JSON olarak çıkarttırmak, bir grafik ekran görüntüsünü yorumlatmak, form ve tablo görsellerini yapılandırılmış veriye çevirmek. Veri mühendisliği gözüyle bu, eskiden özel OCR boru hatları gerektiren "görüntüden veri çıkarma" işinin tek API çağrısına inmesi demektir — fatura okuma, belge sınıflandırma, ekran görüntüsünden tablo çıkarma gibi işler artık standart pipeline adımı.</p>
+        <p>Üretim tarafının yıldızı ise <strong>diffusion modelleridir</strong> — görüntü üreten sistemlerin (Stable Diffusion vb.) temeli. Sezgisi zarif: modele, net görüntülere adım adım gürültü ekleyip bozmayı "geri almak" öğretilir. Üretim zamanında saf rastgele gürültüden başlanır ve model, "bu gürültünün altında hangi görüntü olabilir?" tahminiyle görüntüyü adım adım arındırır — her adımda biraz daha az gürültülü bir kare — ta ki net bir görüntü kalana dek. Metin prompt'u bu arındırmayı yönlendirir: "gün batımında deniz feneri" dersen, gürültü o tarife doğru çözülür.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 230" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diffusion: gürültüden net görüntüye adım adım arındırma">
+            <defs>
+              <marker id="arrC3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <!-- kare 1: saf gürültü -->
+              <rect x="20" y="45" width="140" height="120" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <g fill="var(--muted)">
+                <circle cx="38" cy="65" r="2.4"/><circle cx="62" cy="58" r="2.4"/><circle cx="90" cy="70" r="2.4"/><circle cx="118" cy="60" r="2.4"/><circle cx="140" cy="75" r="2.4"/>
+                <circle cx="45" cy="92" r="2.4"/><circle cx="75" cy="88" r="2.4"/><circle cx="105" cy="95" r="2.4"/><circle cx="132" cy="90" r="2.4"/>
+                <circle cx="35" cy="115" r="2.4"/><circle cx="65" cy="120" r="2.4"/><circle cx="95" cy="112" r="2.4"/><circle cx="125" cy="118" r="2.4"/><circle cx="145" cy="110" r="2.4"/>
+                <circle cx="50" cy="140" r="2.4"/><circle cx="80" cy="148" r="2.4"/><circle cx="110" cy="138" r="2.4"/><circle cx="135" cy="150" r="2.4"/>
+                <circle cx="30" cy="155" r="2.4"/><circle cx="98" cy="155" r="2.4"/>
+              </g>
+              <text x="90" y="185" text-anchor="middle" fill="var(--muted)" font-size="10.5">adım 0: saf gürültü</text>
+              <path d="M164 105 L186 105" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrC3)"/>
+              <!-- kare 2 -->
+              <rect x="190" y="45" width="140" height="120" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <path d="M200 150 L245 105 L275 130 L305 92 L322 110 L322 155 L200 155 Z" fill="rgba(var(--acc-rgb),.10)" stroke="none"/>
+              <g fill="var(--muted)">
+                <circle cx="215" cy="65" r="2.2"/><circle cx="250" cy="72" r="2.2"/><circle cx="290" cy="60" r="2.2"/><circle cx="315" cy="78" r="2.2"/>
+                <circle cx="225" cy="100" r="2.2"/><circle cx="265" cy="95" r="2.2"/><circle cx="300" cy="120" r="2.2"/>
+                <circle cx="210" cy="130" r="2.2"/><circle cx="285" cy="140" r="2.2"/><circle cx="255" cy="132" r="2.2"/>
+              </g>
+              <text x="260" y="185" text-anchor="middle" fill="var(--muted)" font-size="10.5">belirsiz hatlar</text>
+              <path d="M334 105 L356 105" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrC3)"/>
+              <!-- kare 3 -->
+              <rect x="360" y="45" width="140" height="120" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <path d="M370 152 L415 100 L445 126 L475 85 L492 108 L492 156 L370 156 Z" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width="1"/>
+              <circle cx="390" cy="70" r="9" fill="rgba(var(--acc-rgb),.3)" stroke="var(--acc)" stroke-width="1"/>
+              <g fill="var(--muted)">
+                <circle cx="450" cy="62" r="2"/><circle cx="475" cy="70" r="2"/><circle cx="430" cy="80" r="2"/>
+              </g>
+              <text x="430" y="185" text-anchor="middle" fill="var(--muted)" font-size="10.5">şekil netleşiyor</text>
+              <path d="M504 105 L526 105" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrC3)"/>
+              <!-- kare 4: net -->
+              <rect x="530" y="45" width="140" height="120" rx="10" fill="var(--dg-box)" stroke="var(--ok)" stroke-width="1.6"/>
+              <path d="M540 152 L585 98 L615 125 L645 82 L662 106 L662 156 L540 156 Z" fill="rgba(var(--acc-rgb),.32)" stroke="var(--acc)" stroke-width="1.4"/>
+              <circle cx="562" cy="70" r="10" fill="var(--warn)"/>
+              <text x="600" y="185" text-anchor="middle" fill="var(--muted)" font-size="10.5">adım N: net görüntü</text>
+              <text x="350" y="215" text-anchor="middle" fill="var(--faint)" font-size="11" font-weight="600">Her adımda model "gürültünün altındaki görüntüyü" tahmin edip biraz daha arındırır; prompt yönü belirler</text>
+            </g>
+          </svg>
+          <figcaption>Diffusion süreci: saf gürültüden başlanır, model her adımda gürültüyü biraz daha çözerek prompt'a uyan net görüntüye ulaşır.</figcaption>
+        </figure>
+
+        <div class="note"><b>Diffusion'dan önce: GAN'lar.</b> Görüntü üretiminde ilk büyük atılım 2014'te <b>GAN (Generative Adversarial Network)</b> ile geldi. Fikir bir yarışmaya dayanır: <em>generator</em> sahte görüntü üretir, <em>discriminator</em> gerçekle sahteyi ayırt etmeye çalışır; rekabet ikisini birden geliştirir. GAN'lar çarpıcı sonuçlar verdi ama eğitimleri kararsızdır — <em>mode collapse</em> denen durumda üretici çeşitliliği bırakıp hep aynı görüntüyü üretmeye başlar. Diffusion modelleri daha kararlı eğitim ve daha iyi çeşitlilik sunduğu için 2022 sonrası sahneyi devraldı; GAN'lar bugün daha çok hafif ve gerçek zamanlı üretim işlerinde yaşamaya devam ediyor.</div>
+
+        <h2>Güvenlik ve sınırlar</h2>
+        <p>Ajanlara güç verdikçe hata da güç kazanır. Üç ilke üretim ajanlarının emniyet kemeridir:</p>
+        <ul>
+          <li><strong>Guardrails (korkuluklar):</strong> Ajanın yapabileceklerini koddan sınırla — salt okunur veritabanı kullanıcısı, izinli komut listesi, harcama/istek kotaları, çıktı doğrulama. "Model nasılsa mantıklı davranır" bir güvenlik stratejisi değildir.</li>
+          <li><strong>Human-in-the-loop (döngüde insan):</strong> Geri alınamaz eylemler — silme, para transferi, e-posta gönderimi, üretime deploy — insan onayı kapısının arkasında durmalı. Ajan öneriyi hazırlar, insan onaylar.</li>
+          <li><strong>Bileşik hata büyümesi:</strong> Adım başına %95 doğruluk kulağa iyi gelir; ama 10 bağımlı adımda hepsinin doğru olma olasılığı 0.95¹⁰ ≈ %60'a düşer. Üstelik erken bir hata, sonraki adımların üzerine inşa ettiği zemini de bozar. Bu yüzden döngüleri kısa tut, ara sonuçları doğrula ve kritik noktalara kontrol adımları koy.</li>
+        </ul>
+
+        <div class="warn"><b>Prompt injection'ı unutma.</b> Ajan, araçlarla dış dünyadan içerik okur — web sayfası, e-posta, doküman. Bu içeriğin içine gizlenmiş "önceki talimatları yok say, şunu yap" tarzı metinler modeli yönlendirmeye çalışabilir. Dış kaynaklardan gelen her metni güvenilmez veri olarak işle; kritik eylemleri yalnızca içerikten değil, senin kodunun kurallarından geçir.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Veri dünyasında ajanlar şimdiden iş başında: doğal dil sorusunu SQL'e çevirip çalıştıran ve sonucu yorumlayan <strong>analiz ajanları</strong>; başarısız pipeline'ın loglarını okuyup muhtemel kök nedeni raporlayan <strong>operasyon yardımcıları</strong>; şema değişikliklerini algılayıp dönüşüm kodunu güncellemeyi öneren bakım botları; fatura ve form görsellerini yapılandırılmış veriye çeviren <strong>vision tabanlı ingest adımları</strong>. Veri mühendisi olarak iki şapkan olacak: ajanların tükettiği araçları (temiz API'ler, MCP sunucuları, güvenli veritabanı erişimi) inşa etmek ve ajan içeren iş akışlarını tıpkı bir pipeline gibi izlenebilir, test edilebilir, geri alınabilir kurmak. Bu döngünün üretim tarafını — deployment, izleme, maliyet — Modül 8'de ele alacağız.</p>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Bir ajanı sıradan chatbot'tan ayıran üç bileşen nedir?</summary>
+            <div class="answer"><b>Hedef, araçlar ve döngü.</b> Chatbot tek turda soruya cevap üretir. Ajan ise bir hedefi alır, araçlarla (DB, arama, kod, API) dünyaya dokunur ve düşün→eyle→gözle döngüsünü hedefe ulaşana kadar sürdürür — ara sonuçlara göre rota değiştirebilir.</div>
+          </details>
+          <details class="quiz">
+            <summary>Function calling'de aracı gerçekte kim çalıştırır?</summary>
+            <div class="answer"><b>Senin kodun.</b> Model yalnızca yapılandırılmış bir çağrı isteği üretir (araç adı + parametreler). Kodun bu isteği alır, doğrular, aracı çalıştırır ve sonucu tool_result olarak modele geri verir. Model hiçbir sisteme doğrudan erişmez — güvenlik sınırı tam da bu ayrımdır.</div>
+          </details>
+          <details class="quiz">
+            <summary>MCP hangi sorunu çözer?</summary>
+            <div class="answer"><b>Entegrasyon kombinasyon patlamasını.</b> N ajan ve M araç/kaynak varsa, her ikili için özel bağlayıcı yazmak N×M entegrasyon demektir. MCP, araç ve kaynakları standart bir protokolle sunar: kaynak bir kez MCP sunucusu olur, her MCP istemcisi ona bağlanabilir — maliyet N+M'e iner. "Ajan dünyasının USB'si" benzetmesinin sebebi bu.</div>
+          </details>
+          <details class="quiz">
+            <summary>Ajan hatalarının "bileşik büyümesi" ne demektir, nasıl dizginlenir?</summary>
+            <div class="answer">Çok adımlı görevde her adımın hatası bir sonrakine taşınır: adım başına %95 doğrulukla 10 bağımlı adımın tamamının doğru olma olasılığı ~%60'a düşer. Dizginlemek için: döngüleri <b>kısa</b> tut, ara sonuçları <b>doğrula</b>, kritik eylemlere <b>human-in-the-loop</b> onayı ve guardrails koy.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">AI Ajanı</span><span class="term-en">AI Agent</span><span class="lvl lvl-ileri">İleri</span></div><p>Hedef alan, araç kullanan ve sonucu gözleyip yeniden deneyen sistem: LLM + araçlar + döngü.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Tool Use (Araç Kullanımı)</span><span class="term-en">Tool Use</span><span class="lvl lvl-ileri">İleri</span></div><p>LLM'in tanıtılan araç kataloğundan çağrı isteği üretmesi; aracı çalıştıran her zaman senin kodundur.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Function Calling</span><span class="term-en">Function Calling</span><span class="lvl lvl-ileri">İleri</span></div><p>Tool use'un API'lerdeki adı: model, fonksiyon adı ve parametreleri yapılandırılmış (JSON) biçimde üretir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">ReAct</span><span class="term-en">ReAct</span><span class="lvl lvl-ileri">İleri</span></div><p>Reasoning + Acting: düşün → eyle → gözle turlarını zincirleyen ajan deseni; ara sonuca göre rota değiştirir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Planlama</span><span class="term-en">Planning</span><span class="lvl lvl-ileri">İleri</span></div><p>Ajanın hedefi alt görevlere bölüp sırayla tüketmesi; uzun görevlerde döngünün pusulası.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">MCP</span><span class="term-en">Model Context Protocol</span><span class="lvl lvl-ileri">İleri</span></div><p>Araç ve veri kaynaklarını ajanlara standart biçimde sunan açık protokol; entegrasyonu N×M'den N+M'e indirir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Multi-Agent (Çoklu Ajan)</span><span class="term-en">Multi-Agent System</span><span class="lvl lvl-ileri">İleri</span></div><p>Uzmanlaşmış ajanların iş bölümü yaptığı sistem (araştırmacı + yazar + eleştirmen); orkestrasyon zihniyetinin ajanlı hâli.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Human-in-the-Loop</span><span class="term-en">Human-in-the-Loop</span><span class="lvl lvl-orta">Orta</span></div><p>Kritik ve geri alınamaz eylemlerin insan onayı kapısından geçmesi; ajan önerir, insan onaylar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Multimodal Model</span><span class="term-en">Multimodal Model</span><span class="lvl lvl-orta">Orta</span></div><p>Metin, görsel ve sesi tek modelde işleyebilme; girdiler ortak bir temsil uzayında buluşur.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Vision (Görü)</span><span class="term-en">Vision</span><span class="lvl lvl-orta">Orta</span></div><p>Modelin görselleri anlaması: fatura okuma, grafik yorumlama, ekran görüntüsünden veri çıkarma.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Diffusion Modeli</span><span class="term-en">Diffusion Model</span><span class="lvl lvl-ileri">İleri</span></div><p>Saf gürültüden başlayıp görüntüyü adım adım arındırarak üreten model ailesi; görüntü üretiminin temeli.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Agentic Workflow (Ajan İş Akışı)</span><span class="term-en">Agentic Workflow</span><span class="lvl lvl-ileri">İleri</span></div><p>Ajan adımlarını guardrails, doğrulama ve insan onayıyla örülü, izlenebilir bir iş akışına dönüştürme yaklaşımı.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m7-ajanlar-multimodal">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m7-fine-tuning.html"><span>← Önceki</span><b>Fine-tuning ve Model Hizalama</b></a>
+          <a class="next" href="m7-llm-degerlendirme.html"><span>Sonraki →</span><b>LLM Değerlendirme ve LLMOps</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Veri Atlası — AI &amp; Data Engineering Rehberi</title>
+<meta name="description" content="Bit'ten LLM'e: yapay zekâ ve veri mühendisliğinin tam haritası. 9 modül, 48 konu, 600+ terim — görsel anlatımlarla, temelden production'a.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="index.html#konular" class="active">Konular</a>
+      <a href="sozluk.html">Sözlük</a>
+      <a href="konular/m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap">
+      <span class="eyebrow">AI &amp; Data Engineering Rehberi</span>
+      <h1>Bit'ten <em>LLM'e</em>,<br>bütün harita tek yerde.</h1>
+      <p class="lede">Veri Atlası; yapay zekâ ve veri mühendisliğini en temel kavramdan production seviyesine kadar, görsel diyagramlar ve gerçek kod örnekleriyle öğreten kapsamlı bir Türkçe kaynak.</p>
+      <div class="cta">
+        <a class="btn btn-primary" href="konular/m1-bilgisayar-temelleri.html">Öğrenmeye başla →</a>
+        <a class="btn btn-ghost" href="sozluk.html">Terim sözlüğüne bak</a>
+      </div>
+      <div class="stats">
+        <div class="stat"><b>9</b><span>Modül</span></div>
+        <div class="stat"><b>48</b><span>Konu</span></div>
+        <div class="stat"><b>600+</b><span>Terim</span></div>
+        <div class="stat"><b id="total-progress">0/48</b><span>Tamamladığın</span></div>
+      </div>
+
+      <!-- Öğrenme yolu -->
+      <div class="pathband" aria-hidden="true">
+        <svg viewBox="0 0 940 200" width="940" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="pathgrad" x1="0" y1="0" x2="940" y2="0" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+            </linearGradient>
+          </defs>
+          <path class="flow" d="M60 130 C110 130 115 70 165 70 C215 70 220 130 270 130 C320 130 325 70 375 70 C425 70 430 130 480 130 C530 130 535 70 585 70 C635 70 640 130 690 130 C740 130 745 70 795 70 C845 70 850 130 900 130"
+                fill="none" stroke="url(#pathgrad)" stroke-width="2.5" opacity="0.75"/>
+          <!-- düğümler -->
+          <a href="#m1"><circle cx="60" cy="130" r="16" fill="var(--dg-box)" stroke="#22d3ee" stroke-width="2.5"/><text x="60" y="135" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">1</text><text x="60" y="168" text-anchor="middle" fill="var(--muted)" font-size="12" font-weight="600">Temeller</text></a>
+          <a href="#m2"><circle cx="165" cy="70" r="16" fill="var(--dg-box)" stroke="#34d399" stroke-width="2.5"/><text x="165" y="75" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">2</text><text x="165" y="40" text-anchor="middle" fill="var(--muted)" font-size="12" font-weight="600">Veri Dünyası</text></a>
+          <a href="#m3"><circle cx="270" cy="130" r="16" fill="var(--dg-box)" stroke="#60a5fa" stroke-width="2.5"/><text x="270" y="135" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">3</text><text x="270" y="168" text-anchor="middle" fill="var(--muted)" font-size="12" font-weight="600">Veri Müh.</text></a>
+          <a href="#m4"><circle cx="375" cy="70" r="16" fill="var(--dg-box)" stroke="#fbbf24" stroke-width="2.5"/><text x="375" y="75" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">4</text><text x="375" y="40" text-anchor="middle" fill="var(--muted)" font-size="12" font-weight="600">Analitik</text></a>
+          <a href="#m5"><circle cx="480" cy="130" r="16" fill="var(--dg-box)" stroke="#a78bfa" stroke-width="2.5"/><text x="480" y="135" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">5</text><text x="480" y="168" text-anchor="middle" fill="var(--muted)" font-size="12" font-weight="600">ML</text></a>
+          <a href="#m6"><circle cx="585" cy="70" r="16" fill="var(--dg-box)" stroke="#fb7185" stroke-width="2.5"/><text x="585" y="75" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">6</text><text x="585" y="40" text-anchor="middle" fill="var(--muted)" font-size="12" font-weight="600">Deep Learning</text></a>
+          <a href="#m7"><circle cx="690" cy="130" r="16" fill="var(--dg-box)" stroke="#e879f9" stroke-width="2.5"/><text x="690" y="135" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">7</text><text x="690" y="168" text-anchor="middle" fill="var(--muted)" font-size="12" font-weight="600">GenAI &amp; LLM</text></a>
+          <a href="#m8"><circle cx="795" cy="70" r="16" fill="var(--dg-box)" stroke="#fb923c" stroke-width="2.5"/><text x="795" y="75" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">8</text><text x="795" y="40" text-anchor="middle" fill="var(--muted)" font-size="12" font-weight="600">MLOps</text></a>
+          <a href="#m9"><circle cx="900" cy="130" r="16" fill="var(--dg-box)" stroke="#a3e635" stroke-width="2.5"/><text x="900" y="135" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">9</text><text x="900" y="168" text-anchor="middle" fill="var(--muted)" font-size="12" font-weight="600">Kariyer</text></a>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- NASIL KULLANILIR -->
+  <section class="section">
+    <div class="wrap">
+      <div class="howto">
+        <div class="card">
+          <div class="ico">🗺️</div>
+          <h3>Sırayla ilerle</h3>
+          <p>Modüller birbirinin üzerine inşa edilir: 1'den başlayıp 9'a doğru gidersen hiçbir kavram havada kalmaz. Her konu ~15 dakikalık odaklı bir ders.</p>
+        </div>
+        <div class="card">
+          <div class="ico">🔍</div>
+          <h3>Terimleri sözlükten yakala</h3>
+          <p>Bir yerde duyduğun terimi (ör. "shuffle", "RAG", "p-value") <a href="sozluk.html">sözlükte</a> arat; kısa tanımı oku, sonra bağlantıdan konunun tamamına dal.</p>
+        </div>
+        <div class="card">
+          <div class="ico">✅</div>
+          <h3>İlerlemeni işaretle</h3>
+          <p>Her konunun sonundaki "Tamamladım" düğmesi ilerlemeni bu tarayıcıda saklar; modül kartlarında ne kadar yol aldığını görürsün.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODÜLLER -->
+  <section class="section" id="konular">
+    <div class="wrap">
+      <h2 class="section-title">Müfredat</h2>
+      <p class="section-sub">9 modül, 48 konu. Renkli nokta zorluk seviyesini gösterir: <span class="t-dot d-baslangic" style="display:inline-block"></span> Başlangıç, <span class="t-dot d-orta" style="display:inline-block"></span> Orta, <span class="t-dot d-ileri" style="display:inline-block"></span> İleri.</p>
+      <div class="searchbar">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="site-search" type="search" placeholder="Konu veya terim ara… (ör. spark, overfitting, RAG)" aria-label="Konularda ara">
+      </div>
+      <div id="module-grid"></div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="index.html#konular">Konular</a>
+      <a href="sozluk.html">Sözlük</a>
+      <a href="konular/m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="assets/data/curriculum.js"></script>
+<script src="assets/js/main.js"></script>
+</body>
+</html>

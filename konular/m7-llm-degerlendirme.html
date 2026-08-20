@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM Değerlendirme ve LLMOps — Veri Atlası</title>
+<meta name="description" content="Golden set kurma, deterministik metrikler, LLM-as-judge ve tuzakları, RAG ve ajan değerlendirmesi, prompt regresyon testleri, tracing, maliyet ve latency yönetimi.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m7" data-slug="m7-llm-degerlendirme">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular" class="active">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m7">7. Üretken AI ve LLM'ler</a><span class="sep">/</span>
+        <span>LLM Değerlendirme ve LLMOps</span>
+      </nav>
+      <span class="mod-badge">Modül 7 · Üretken AI ve LLM'ler</span>
+      <h1>LLM Değerlendirme ve LLMOps</h1>
+      <p class="en-title">LLM Evaluation &amp; LLMOps</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-ileri">İleri</span>
+        <span class="chip">⏱️ ~18 dk okuma</span>
+        <span class="chip">🔤 15 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Demoyu herkes yapar, zor olan ölçmektir</h2>
+        <p>LLM projelerinin tuhaf bir eğrisi vardır: ilk çalışan prototip <em>bir öğleden sonrada</em> ortaya çıkar ve herkesi heyecanlandırır. Sonra üretime alma cesareti bir türlü bulunamaz. Sebebi tek bir eksiktir: <strong>"iyi çalışıyor" cümlesini kanıtlayacak bir ölçü yoktur.</strong></p>
+        <p>Klasik ML'de bu sorun yoktur — <a href="m5-model-degerlendirme.html">test setin ve F1 skorun</a> vardır. LLM'lerde ise çıktı serbest metindir: aynı soruya on farklı doğru cevap verilebilir, tek karakterlik bir prompt değişikliği davranışı baştan aşağı değiştirebilir ve model aynı girdiye farklı zamanlarda farklı cevap verebilir.</p>
+        <p>Bunun pratikteki karşılığı şu korkudur: <em>"Prompt'a bir cümle ekledim, acaba başka neyi bozdum?"</em> Cevabını bilmediğin sürece hiçbir iyileştirmeyi güvenle yayınlayamazsın. Bu sayfa, o cevabı üreten sistemi kurmakla ilgili — ve 2026'da bir AI mühendisinin mesaisinin en büyük dilimi tam olarak budur.</p>
+
+        <div class="warn"><b>"Vibe check" bir değerlendirme yöntemi değildir.</b> Birkaç soru sorup çıktıya bakmak, geliştirme sırasında yararlı bir refleks; ama karar mekanizması olarak felakettir. İnsan hafızası seçicidir (iyi örnekleri hatırlarsın), örneklem küçüktür ve tekrarlanabilir değildir. Değişikliğin etkisini ancak <b>sabit bir vaka kümesinde ölçülen skor</b> gösterir.</div>
+
+        <h2>Her şey golden set ile başlar</h2>
+        <p><strong>Eval seti (golden set)</strong>, sisteminin sürekli sınandığı sabit test vakaları koleksiyonudur. LLM ürününün en değerli varlığıdır — prompt'lar değişir, modeller eskir, mimari yeniden yazılır; iyi kurulmuş bir eval seti hepsine dayanır.</p>
+        <p>Nasıl kurulur:</p>
+        <ul>
+          <li><strong>Gerçek sorulardan başla.</strong> Uydurma test soruları kolay ve yanıltıcıdır. Destek kayıtlarına, arama loglarına, kullanıcı geri bildirimlerine bak. 50 gerçek vaka, 500 uydurmadan iyidir.</li>
+          <li><strong>Zor vakaları özellikle topla.</strong> Belirsiz sorular, sistemin cevaplamaması gereken sorular ("rakip ürününüz daha mı iyi?"), tuzaklı istekler, çok adımlı sorular, kaynakta cevabı <em>olmayan</em> sorular.</li>
+          <li><strong>Beklenen davranışı yaz.</strong> Kelimesi kelimesine cevap değil; <em>kabul kriteri</em>. "14 rakamını içermeli", "kaynak göstermeli", "bilmiyorum demeli".</li>
+          <li><strong>Hataları sete geri besle.</strong> Üretimde bir hata gördüğünde önce onu eval setine ekle, sonra düzelt. Böylece o hata bir daha asla sessizce geri gelemez — yazılımdaki <a href="m8-cicd-tracking.html">regresyon testi</a> disiplininin aynısı.</li>
+        </ul>
+        <p>Boyut için pratik ölçü: 20 vaka fikir verir, 100–200 vaka karar verdirir, 1000+ vaka nadiren gerekir (ve pahalıdır).</p>
+
+        <h2>Dört değerlendirme katmanı</h2>
+        <p>Her şeyi LLM'e yargılatma; her şeyi de insana yaptırma. Doğru yaklaşım katmanlıdır: en ucuz ve en kesin yöntemle başla, yalnızca gerekeni yukarı taşı.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 300" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LLM değerlendirme katmanları piramidi">
+            <g>
+              <polygon points="360,24 300,84 420,84" fill="rgba(var(--acc-rgb),.34)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="360" y="66" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="800">İnsan</text>
+
+              <polygon points="298,88 422,88 462,152 258,152" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="360" y="118" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="800">LLM-as-judge</text>
+              <text x="360" y="136" text-anchor="middle" fill="var(--muted)" font-size="10">rubrikli model değerlendirmesi</text>
+
+              <polygon points="256,156 464,156 504,220 216,220" fill="rgba(var(--acc-rgb),.13)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="360" y="186" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="800">Referanslı metrikler</text>
+              <text x="360" y="204" text-anchor="middle" fill="var(--muted)" font-size="10">ROUGE, gömme benzerliği, anahtar kelime</text>
+
+              <polygon points="214,224 506,224 546,286 174,286" fill="rgba(var(--acc-rgb),.07)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="360" y="252" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="800">Deterministik kontroller</text>
+              <text x="360" y="270" text-anchor="middle" fill="var(--muted)" font-size="10">JSON şeması, regex, tam eşleşme, uzunluk, gecikme</text>
+
+              <text x="120" y="58" text-anchor="middle" fill="var(--bad)" font-size="10.5" font-weight="700">pahalı · yavaş</text>
+              <text x="120" y="74" text-anchor="middle" fill="var(--muted)" font-size="10">10–30 vaka</text>
+              <text x="120" y="90" text-anchor="middle" fill="var(--muted)" font-size="10">altın standart</text>
+
+              <text x="120" y="262" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="700">bedava · anında</text>
+              <text x="120" y="278" text-anchor="middle" fill="var(--muted)" font-size="10">her istekte çalışabilir</text>
+
+              <text x="620" y="120" text-anchor="middle" fill="var(--muted)" font-size="10">Yukarı çıktıkça:</text>
+              <text x="620" y="138" text-anchor="middle" fill="var(--muted)" font-size="10">daha esnek yargı,</text>
+              <text x="620" y="156" text-anchor="middle" fill="var(--muted)" font-size="10">daha yüksek maliyet,</text>
+              <text x="620" y="174" text-anchor="middle" fill="var(--muted)" font-size="10">daha az tekrarlanabilirlik</text>
+            </g>
+          </svg>
+          <figcaption>Kural: bir şeyi <code>if</code> ile kontrol edebiliyorsan, onu LLM'e sorma.</figcaption>
+        </figure>
+
+        <p>Katmanları tanıyalım:</p>
+        <ul>
+          <li><strong>Deterministik kontroller.</strong> Çıktı geçerli JSON mu? Zorunlu alanlar var mı? Tutar doğru mu? Yasak kelime geçiyor mu? Cevap 500 karakteri aşıyor mu? Bunlar bedavadır, anında çalışır ve %100 tekrarlanabilir. Değerlendirmenin bel kemiği burasıdır — <a href="m7-prompt-engineering.html">yapılandırılmış çıktı</a> istemenin en büyük faydası da budur.</li>
+          <li><strong>Referanslı metrikler.</strong> Elinde "doğru cevap" varsa ROUGE gibi örtüşme ölçüleri ya da <a href="m7-rag.html">gömme benzerliği</a> kullanılabilir. Sınırı şudur: kelime örtüşmesi anlam örtüşmesi değildir; farklı ifade edilmiş doğru bir cevap düşük puan alabilir.</li>
+          <li><strong>LLM-as-judge.</strong> Bir modeli, başka bir modelin çıktısını rubriğe göre puanlaması için kullanmak. Serbest metni ölçeklenebilir şekilde değerlendirmenin tek pratik yolu.</li>
+          <li><strong>İnsan değerlendirmesi.</strong> Altın standart. Pahalı olduğu için az sayıda vakada kullanılır — ama <em>vazgeçilmez</em> bir işlevi vardır: yargıç modelin insanla ne kadar uyuştuğunu kalibre etmek.</li>
+        </ul>
+
+        <figure class="codebox">
+          <figcaption>Python — golden set üzerinde deterministik değerlendirme</figcaption>
+          <pre><code data-lang="python">import json
+from anthropic import Anthropic
+
+client = Anthropic()   # ANTHROPIC_API_KEY ortam değişkeninden okunur
+
+# eval_seti.jsonl — her satır bir vaka, gerçek kullanıcı sorularından derlenmiş:
+# {"soru": "İade süresi kaç gün?", "beklenen_gun": 14, "kaynak_sart": true}
+vakalar = [json.loads(s) for s in open("eval_seti.jsonl", encoding="utf-8")]
+
+SISTEM = 'Yalnızca şu şemada JSON döndür: {"gun": tam_sayi, "kaynak": "metin"}'
+
+def calistir(soru):
+    y = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=512,
+        temperature=0,               # değerlendirmede gürültüyü azalt
+        system=SISTEM,
+        messages=[{"role": "user", "content": soru}],
+    )
+    return y.content[0].text
+
+gecen, hatalar = 0, []
+for v in vakalar:
+    ham = calistir(v["soru"])
+    try:
+        cevap = json.loads(ham)                       # 1) Şema geçerli mi?
+    except json.JSONDecodeError:
+        hatalar.append((v["soru"], "JSON bozuk")); continue
+
+    if cevap.get("gun") != v["beklenen_gun"]:         # 2) Değer doğru mu?
+        hatalar.append((v["soru"], f"gun={cevap.get('gun')}")); continue
+
+    if v["kaynak_sart"] and not cevap.get("kaynak"):  # 3) Kaynak gösterdi mi?
+        hatalar.append((v["soru"], "kaynak yok")); continue
+
+    gecen += 1
+
+print(f"Skor: {gecen}/{len(vakalar)}")   # Skor: 112/120
+for h in hatalar[:5]:
+    print(" ✗", h)</code></pre>
+        </figure>
+
+        <h2>LLM-as-judge: dikkatli kullanılacak bir alet</h2>
+        <p>Bir modelden diğerinin çıktısını puanlamasını istemek güçlüdür ama saf değildir. İyi çalışması için üç kural:</p>
+        <ul>
+          <li><strong>Net bir rubrik yaz.</strong> "Cevap iyi mi?" diye sorma. Her puan seviyesinin ne demek olduğunu tanımla: 5 = tam ve kaynağa sadık, 3 = kısmen, 1 = yanlış ya da çelişkili. Belirsiz rubrik, gürültülü puan üretir.</li>
+          <li><strong>Puan yerine karşılaştırma tercih et.</strong> Modeller mutlak puan vermekte tutarsızdır ama "A mı B mi daha iyi?" sorusunda çok daha isabetlidir. <strong>Pairwise karşılaştırma</strong>, iki prompt sürümünü kıyaslamanın en güvenilir yoludur.</li>
+          <li><strong>Yargıcı insanla kalibre et.</strong> 30-50 vakayı hem insana hem yargıç modele puanlat, uyum oranına bak. Uyum düşükse rubriğin bozuktur — düzelt, tekrar ölç.</li>
+        </ul>
+        <p>Bilmen gereken sistematik yanlılıklar: <strong>position bias</strong> (karşılaştırmada ilk ya da son sunulan cevabı kayırma — sırayı rastgele değiştirerek ölç), <strong>uzunluk yanlılığı</strong> (uzun cevabı daha kaliteli sanma), <strong>self-preference</strong> (modelin kendi ürettiği metni kayırması — yargıç ile üretici farklı modeller olmalı) ve <strong>üslup yanlılığı</strong> (kendinden emin ama yanlış cevaba yüksek puan).</p>
+
+        <figure class="codebox">
+          <figcaption>Python — rubrikli LLM-as-judge</figcaption>
+          <pre><code data-lang="python">RUBRIK = """Bir müşteri hizmetleri cevabını değerlendir.
+
+5 = Soruyu tam yanıtlıyor, VERİLEN KAYNAĞA sadık, uydurma bilgi yok
+4 = Doğru ama eksik ya da gereksiz uzun
+3 = Kısmen doğru VEYA kaynakta olmayan küçük ekleme var
+2 = Soruyu büyük ölçüde yanıtlamıyor
+1 = Yanlış VEYA kaynakla açıkça çelişiyor
+
+Kaynakta cevap YOKSA ve model "bilmiyorum" diyorsa bu 5 puandır.
+
+Yalnızca şu JSON'u döndür:
+{"puan": 1-5, "gerekce": "tek cümle", "uydurma_var": true veya false}"""
+
+def yargila(soru, kaynak, cevap):
+    y = client.messages.create(
+        model="claude-opus-4-8",     # yargıç, üretici modelden FARKLI ve güçlü olsun
+        max_tokens=300,
+        temperature=0,               # yargılamada tutarlılık şart
+        system=RUBRIK,
+        messages=[{"role": "user", "content":
+            f"SORU:\n{soru}\n\nKAYNAK:\n{kaynak}\n\nCEVAP:\n{cevap}"}],
+    )
+    return json.loads(y.content[0].text)
+
+sonuc = yargila(v["soru"], baglam, cevap)
+print(sonuc["puan"], "-", sonuc["gerekce"])
+# 3 - Cevap doğru ama kaynakta geçmeyen bir kampanya örneği eklemiş.
+
+# Kalibrasyon adımını atlama: aynı 40 vakayı bir insan da puanlasın,
+# yargıçla uyumu ölç. Uyum düşükse sorun rubriktedir, modelde değil.</code></pre>
+        </figure>
+
+        <h2>RAG değerlendirmesi: hangi katman bozuk?</h2>
+        <p><a href="m7-rag.html">RAG sistemlerinde</a> kötü bir cevabın iki bambaşka sebebi olabilir ve ikisinin çözümü de bambaşkadır. Bu yüzden RAG'de <strong>tek bir skor işe yaramaz</strong>; iki katmanı ayrı ayrı ölçmelisin.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 310" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="RAG hatalarını teşhis etme karar ağacı">
+            <defs>
+              <marker id="evArrD" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+              <marker id="evArrB" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--bad)"/></marker>
+            </defs>
+            <g>
+              <rect x="270" y="12" width="180" height="34" rx="9" fill="var(--dg-box)" stroke="var(--bad)" stroke-width="1.5"/>
+              <text x="360" y="34" text-anchor="middle" fill="var(--bad)" font-size="12" font-weight="800">Kötü cevap geldi</text>
+
+              <rect x="252" y="70" width="216" height="42" rx="9" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="360" y="88" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">Doğru chunk'lar getirildi mi?</text>
+              <text x="360" y="104" text-anchor="middle" fill="var(--muted)" font-size="10">ölç: recall@k, hit rate</text>
+              <path d="M360 46 L360 66" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#evArrD)"/>
+
+              <rect x="16" y="140" width="212" height="80" rx="10" fill="var(--dg-box)" stroke="var(--bad)" stroke-width="1.4"/>
+              <text x="122" y="162" text-anchor="middle" fill="var(--bad)" font-size="12" font-weight="800">RETRIEVAL sorunu</text>
+              <text x="122" y="182" text-anchor="middle" fill="var(--muted)" font-size="10">Model doğru bilgiyi hiç görmedi.</text>
+              <text x="122" y="200" text-anchor="middle" fill="var(--ink)" font-size="10">Çözüm: chunking, hybrid</text>
+              <text x="122" y="213" text-anchor="middle" fill="var(--ink)" font-size="10">search, reranker, k değeri</text>
+              <path d="M252 96 L232 152" stroke="var(--bad)" stroke-width="1.5" marker-end="url(#evArrB)"/>
+              <text x="228" y="128" text-anchor="middle" fill="var(--bad)" font-size="10" font-weight="700">hayır</text>
+
+              <rect x="252" y="150" width="216" height="42" rx="9" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="360" y="168" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">Cevap kaynağa sadık mı?</text>
+              <text x="360" y="184" text-anchor="middle" fill="var(--muted)" font-size="10">ölç: faithfulness</text>
+              <path d="M360 112 L360 146" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#evArrD)"/>
+              <text x="386" y="134" fill="var(--ok)" font-size="10" font-weight="700">evet</text>
+
+              <rect x="492" y="140" width="212" height="80" rx="10" fill="var(--dg-box)" stroke="var(--bad)" stroke-width="1.4"/>
+              <text x="598" y="162" text-anchor="middle" fill="var(--bad)" font-size="12" font-weight="800">GENERATION sorunu</text>
+              <text x="598" y="182" text-anchor="middle" fill="var(--muted)" font-size="10">Bilgi vardı ama model uydurdu.</text>
+              <text x="598" y="200" text-anchor="middle" fill="var(--ink)" font-size="10">Çözüm: prompt sıkılaştır,</text>
+              <text x="598" y="213" text-anchor="middle" fill="var(--ink)" font-size="10">kaynak zorunlu kıl, model değiştir</text>
+              <path d="M468 172 L488 172" stroke="var(--bad)" stroke-width="1.5" marker-end="url(#evArrB)"/>
+              <text x="478" y="164" text-anchor="middle" fill="var(--bad)" font-size="10" font-weight="700">hayır</text>
+
+              <rect x="252" y="230" width="216" height="42" rx="9" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="360" y="248" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">Soruyu gerçekten yanıtlıyor mu?</text>
+              <text x="360" y="264" text-anchor="middle" fill="var(--muted)" font-size="10">ölç: answer relevance</text>
+              <path d="M360 192 L360 226" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#evArrD)"/>
+              <text x="386" y="214" fill="var(--ok)" font-size="10" font-weight="700">evet</text>
+
+              <text x="360" y="296" text-anchor="middle" fill="var(--muted)" font-size="10.5">Hayır ise: kaynağa sadık ama konu dışı — prompt'ta görev tanımı net değildir.</text>
+            </g>
+          </svg>
+          <figcaption>RAG'de tek skor yanıltır: retrieval mi generation mı bozuk, ayrı ölçmeden bilemezsin.</figcaption>
+        </figure>
+
+        <ul>
+          <li><strong>Retrieval katmanı:</strong> ilgili chunk ilk k sonuç içinde mi geldi? <code>recall@k</code> ve <code>hit rate</code> ile ölçülür — bunlar tamamen deterministik, ucuz metriklerdir.</li>
+          <li><strong>Generation katmanı:</strong> <strong>faithfulness (kaynağa sadakat)</strong> cevaptaki her iddianın getirilen kaynakta desteklenip desteklenmediğini ölçer; <strong>answer relevance</strong> ise cevabın soruyu gerçekten karşılayıp karşılamadığını.</li>
+        </ul>
+        <p>Ajan sistemlerinde de benzer bir ayrım vardır (<a href="m7-ajanlar-multimodal.html">ajanlar</a>): <em>sonuç bazlı</em> değerlendirme görevin tamamlanıp tamamlanmadığına bakar; <em>adım bazlı</em> değerlendirme ise ajanın izlediği yola — <strong>trajectory</strong> — bakar: doğru aracı mı seçti, gereksiz adım attı mı, kaç turda bitirdi? Doğru cevaba şans eseri ulaşan bir ajan, ölçülmezse sessizce maliyet yakar.</p>
+
+        <h2>Prompt değişikliklerini CI'a bağlamak</h2>
+        <p>Buraya kadarki her şey tek bir alışkanlıkta toplanır: <strong>prompt'u kod gibi yönetmek.</strong> Prompt'lar Git'te sürümlenir, değişiklik pull request ile gelir ve <a href="m8-cicd-tracking.html">CI</a> eval setini çalıştırıp skoru eşikle karşılaştırır. Skor düştüyse birleştirme (merge) engellenir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 236" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Prompt değişikliğinin eval ile CI kapısından geçmesi">
+            <defs>
+              <marker id="evArrF" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              <marker id="evArrOk" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--ok)"/></marker>
+              <marker id="evArrNo" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--bad)"/></marker>
+            </defs>
+            <g>
+              <rect x="14" y="76" width="130" height="52" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="79" y="98" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">Prompt v2</text>
+              <text x="79" y="114" text-anchor="middle" fill="var(--muted)" font-size="10">pull request</text>
+
+              <rect x="180" y="76" width="140" height="52" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="250" y="98" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">Eval seti çalışır</text>
+              <text x="250" y="114" text-anchor="middle" fill="var(--muted)" font-size="10">120 vaka · otomatik</text>
+
+              <rect x="356" y="60" width="164" height="84" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="438" y="80" text-anchor="middle" fill="var(--faint)" font-size="10.5" font-weight="700">v1 → v2 karşılaştırma</text>
+              <text x="438" y="100" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="700">doğruluk: 0.91 → 0.94 ✓</text>
+              <text x="438" y="118" text-anchor="middle" fill="var(--bad)" font-size="10.5" font-weight="700">uydurma: 0.03 → 0.09 ✗</text>
+              <text x="438" y="136" text-anchor="middle" fill="var(--muted)" font-size="10">gecikme: 1.2s → 1.3s</text>
+
+              <path d="M148 102 L176 102" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#evArrF)"/>
+              <path d="M324 102 L352 102" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#evArrF)"/>
+
+              <rect x="556" y="34" width="150" height="44" rx="10" fill="var(--dg-box)" stroke="var(--ok)" stroke-width="1.5"/>
+              <text x="631" y="52" text-anchor="middle" fill="var(--ok)" font-size="11.5" font-weight="800">Tüm eşikler geçti</text>
+              <text x="631" y="68" text-anchor="middle" fill="var(--muted)" font-size="10">→ yayına al</text>
+
+              <rect x="556" y="126" width="150" height="44" rx="10" fill="var(--dg-box)" stroke="var(--bad)" stroke-width="1.5"/>
+              <text x="631" y="144" text-anchor="middle" fill="var(--bad)" font-size="11.5" font-weight="800">Bir eşik kırıldı</text>
+              <text x="631" y="160" text-anchor="middle" fill="var(--muted)" font-size="10">→ merge engellendi</text>
+
+              <path d="M524 88 L552 60" stroke="var(--ok)" stroke-width="1.5" marker-end="url(#evArrOk)"/>
+              <path d="M524 116 L552 144" stroke="var(--bad)" stroke-width="1.5" marker-end="url(#evArrNo)"/>
+
+              <text x="360" y="196" text-anchor="middle" fill="var(--warn)" font-size="11" font-weight="700">Doğruluk arttı ama uydurma üç katına çıktı — bu bir iyileştirme değil, takastır.</text>
+              <text x="360" y="218" text-anchor="middle" fill="var(--muted)" font-size="10.5">Ölçmeseydin bunu asla göremez, "prompt'u geliştirdim" diye yayınlardın.</text>
+            </g>
+          </svg>
+          <figcaption>Eval seti CI'a bağlandığında, prompt iyileştirmesi tahminden mühendisliğe dönüşür.</figcaption>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Python — CI'da çalışan regresyon eşiği (tests/test_eval.py)</figcaption>
+          <pre><code data-lang="python">import statistics
+
+# Eşikler mevcut üretim sürümünün skorlarından belirlenir
+ESIK = {"dogruluk": 0.90, "ort_puan": 4.0, "uydurma_orani": 0.05, "p95_gecikme": 3.0}
+
+def test_prompt_gerilemedi():
+    sonuclar = [degerlendir(v) for v in vakalar]        # 120 vakalık golden set
+
+    dogruluk = sum(s["dogru"] for s in sonuclar) / len(sonuclar)
+    ort_puan = statistics.mean(s["puan"] for s in sonuclar)
+    uydurma = sum(s["uydurma_var"] for s in sonuclar) / len(sonuclar)
+    p95 = sorted(s["saniye"] for s in sonuclar)[int(0.95 * len(sonuclar))]
+
+    assert dogruluk &gt;= ESIK["dogruluk"], f"Doğruluk düştü: {dogruluk:.2f}"
+    assert ort_puan &gt;= ESIK["ort_puan"], f"Kalite düştü: {ort_puan:.2f}"
+    assert uydurma &lt;= ESIK["uydurma_orani"], f"Uydurma arttı: {uydurma:.2%}"
+    assert p95 &lt;= ESIK["p95_gecikme"], f"Yavaşladı: {p95:.1f}s"
+
+# Prompt'u "iyileştiren" bir PR bu testi kırıyorsa, o bir iyileştirme değildir.</code></pre>
+        </figure>
+
+        <h2>Üretimde LLMOps: izleme, maliyet, gecikme</h2>
+        <p>Değerlendirme yayına almakla bitmez; <a href="m8-monitoring.html">izleme</a> ile devam eder. LLM ürünlerinde üç şeyi birlikte izlemelisin:</p>
+        <ul>
+          <li><strong>Tracing (iz sürme).</strong> Tek bir kullanıcı isteğinin arkasında bir zincir vardır: prompt, getirilen chunk'lar, araç çağrıları, model yanıtları, token sayıları. Bir şikâyet geldiğinde bu izi baştan sona görebilmek, LLM hata ayıklamanın <em>tek</em> yoludur. Log'lamıyorsan, kör uçuyorsun demektir.</li>
+          <li><strong>Kalite sinyalleri.</strong> Kullanıcı geri bildirimleri (👍/👎), "yeniden dene" oranı, konuşmanın insana devredilme oranı, boş/reddedilmiş cevap oranı. Bunlar üretimdeki gerçek kalite göstergeleridir ve düzenli olarak eval setini beslerler.</li>
+          <li><strong>Maliyet ve gecikme.</strong> LLM'ler istek başına <em>para</em> harcar; bu, klasik yazılımda alışık olmadığın bir kısıttır. Token muhasebesi tutulmalı, kullanıcı/özellik bazında maliyet izlenmelidir.</li>
+        </ul>
+        <p>Maliyet ve gecikmeyi düşürmenin üç standart kaldıracı vardır:</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 266" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Maliyet ve gecikme düşürme yöntemleri">
+            <defs>
+              <marker id="evArrC" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g>
+              <rect x="14" y="40" width="220" height="196" rx="11" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="124" y="30" text-anchor="middle" fill="var(--acc)" font-size="11.5" font-weight="800">1 · Model routing</text>
+              <rect x="36" y="58" width="176" height="30" rx="7" fill="var(--surface-2)" stroke="var(--dg-line)" stroke-width="1"/>
+              <text x="124" y="78" text-anchor="middle" fill="var(--ink)" font-size="10.5">Gelen istek</text>
+              <path d="M124 88 L124 104" stroke="var(--acc)" stroke-width="1.4" marker-end="url(#evArrC)"/>
+              <rect x="30" y="108" width="86" height="44" rx="7" fill="rgba(var(--acc-rgb),.14)" stroke="var(--acc)" stroke-width="1.3"/>
+              <text x="73" y="126" text-anchor="middle" fill="var(--ink)" font-size="10" font-weight="700">Basit</text>
+              <text x="73" y="142" text-anchor="middle" fill="var(--muted)" font-size="9.5">küçük model</text>
+              <rect x="130" y="108" width="86" height="44" rx="7" fill="rgba(var(--acc-rgb),.14)" stroke="var(--acc)" stroke-width="1.3"/>
+              <text x="173" y="126" text-anchor="middle" fill="var(--ink)" font-size="10" font-weight="700">Karmaşık</text>
+              <text x="173" y="142" text-anchor="middle" fill="var(--muted)" font-size="9.5">büyük model</text>
+              <text x="124" y="180" text-anchor="middle" fill="var(--muted)" font-size="10">İsteklerin çoğu basittir.</text>
+              <text x="124" y="196" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="700">Tipik kazanç: %50–80 maliyet</text>
+              <text x="124" y="216" text-anchor="middle" fill="var(--warn)" font-size="9.5">Şart: yönlendirmeyi de ölç!</text>
+
+              <rect x="250" y="40" width="220" height="196" rx="11" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="360" y="30" text-anchor="middle" fill="var(--acc)" font-size="11.5" font-weight="800">2 · Prompt caching</text>
+              <rect x="272" y="58" width="176" height="38" rx="7" fill="rgba(var(--acc-rgb),.20)" stroke="var(--acc)" stroke-width="1.3"/>
+              <text x="360" y="74" text-anchor="middle" fill="var(--ink)" font-size="10" font-weight="700">Sabit kısım</text>
+              <text x="360" y="88" text-anchor="middle" fill="var(--muted)" font-size="9.5">sistem promptu, kurallar, örnekler</text>
+              <rect x="272" y="102" width="176" height="30" rx="7" fill="var(--surface-2)" stroke="var(--dg-line)" stroke-width="1"/>
+              <text x="360" y="122" text-anchor="middle" fill="var(--ink)" font-size="10">Değişen kısım: kullanıcı sorusu</text>
+              <text x="360" y="156" text-anchor="middle" fill="var(--muted)" font-size="10">Sabit kısım her istekte yeniden</text>
+              <text x="360" y="170" text-anchor="middle" fill="var(--muted)" font-size="10">işlenmez; önbellekten okunur.</text>
+              <text x="360" y="196" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="700">Uzun sabit prompt'ta büyük kazanç</text>
+              <text x="360" y="216" text-anchor="middle" fill="var(--muted)" font-size="9.5">Sabit kısmı başa koy, sonu değiştir.</text>
+
+              <rect x="486" y="40" width="220" height="196" rx="11" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="596" y="30" text-anchor="middle" fill="var(--acc)" font-size="11.5" font-weight="800">3 · Streaming</text>
+              <rect x="508" y="58" width="176" height="30" rx="7" fill="var(--surface-2)" stroke="var(--dg-line)" stroke-width="1"/>
+              <text x="596" y="78" text-anchor="middle" fill="var(--muted)" font-size="10">Beklenen: 4.0 sn sessizlik</text>
+              <rect x="508" y="98" width="176" height="30" rx="7" fill="rgba(var(--acc-rgb),.20)" stroke="var(--acc)" stroke-width="1.3"/>
+              <text x="596" y="118" text-anchor="middle" fill="var(--ink)" font-size="10" font-weight="700">İlk token: 0.4 sn</text>
+              <text x="596" y="152" text-anchor="middle" fill="var(--muted)" font-size="10">Toplam süre aynı kalır ama</text>
+              <text x="596" y="166" text-anchor="middle" fill="var(--muted)" font-size="10">algılanan hız 10 kat artar.</text>
+              <text x="596" y="196" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="700">Ölç: time-to-first-token</text>
+              <text x="596" y="216" text-anchor="middle" fill="var(--muted)" font-size="9.5">Sohbet arayüzlerinde zorunludur.</text>
+            </g>
+          </svg>
+          <figcaption>Maliyeti düşürmenin bedeli kalite olmasın diye: her optimizasyondan sonra eval setini tekrar koştur.</figcaption>
+        </figure>
+
+        <div class="tip"><b>Model routing için pratik desen.</b> Sınıflandırma, kısa özet, veri çıkarma gibi işleri hızlı ve ucuz bir modele (ör. <code>claude-haiku-4-5-20251001</code>), çok adımlı muhakeme ve kod üretimini güçlü bir modele (ör. <code>claude-sonnet-4-6</code>) yönlendir. Yeni bir modele geçerken de aynı disiplin geçerli: <b>önce eval setini koştur</b>, skorları karşılaştır, sonra yayınla. Sürüm yükseltmesi "otomatik iyileşme" demek değildir.</div>
+
+        <h2>Güvenlik değerlendirmesi: kırmaya çalış</h2>
+        <p>Kalite ölçmenin yanında, sistemin <em>kötü niyetli</em> girdilere direncini de ölçmelisin. Bunun için ayrı bir "saldırı seti" tutulur ve düzenli koşulur:</p>
+        <ul>
+          <li><strong>Prompt injection denemeleri</strong> — "önceki talimatları unut", kullanıcı metnine ya da <a href="m7-rag.html">RAG belgelerine</a> gömülü gizli komutlar (<a href="m7-prompt-engineering.html">prompt injection</a>).</li>
+          <li><strong>Kapsam dışına çıkarma</strong> — sistemi görevinin dışında (hukuki/tıbbi tavsiye, rakip yorumu) konuşturma girişimleri.</li>
+          <li><strong>Veri sızdırma</strong> — sistem prompt'unu ya da başka kullanıcıların verisini ifşa ettirme denemeleri.</li>
+          <li><strong>Zararlı içerik</strong> — sistemin üretmemesi gereken çıktıları tetikleme.</li>
+        </ul>
+        <p>Bu bilinçli kırma çabasına <strong>red teaming</strong> denir. Bulunan her başarılı saldırı, kalıcı bir test vakasına dönüştürülür — böylece güvenlik de kaliteyle aynı regresyon disiplinine girer. Konunun etik boyutu için <a href="m8-sorumlu-ai.html">sorumlu AI</a> konusuna bak.</p>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <ul>
+          <li><strong>İlk 2 haftanın işi:</strong> yeni bir LLM projesine katıldığında ilk sorun "hangi model?" değil, "eval setimiz var mı?" olmalı. Yoksa kurmak senin ilk katkın olur.</li>
+          <li><strong>Portfolyoda güçlü sinyal:</strong> RAG chatbot yapan çok; <em>50 vakalık eval seti, faithfulness ölçümü ve prompt sürümleri arasında karşılaştırma tablosu</em> sunan çok az. Bu fark, mülakatta anlatacağın en iyi hikâyedir (<a href="m9-portfolyo.html">portfolyo</a>).</li>
+          <li><strong>Veri mühendisliğiyle kesişim:</strong> eval setleri ve üretim izleri de birer veri kümesidir — sürümlenmeli, saklanmalı, <a href="m3-warehouse-lake.html">warehouse'a</a> akmalı ve pipeline'larla düzenli koşulmalıdır.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Cevabın geçerli JSON olup olmadığını neden LLM-as-judge ile ölçmezsin?</summary>
+            <div class="answer">Çünkü bu <b>deterministik olarak</b> kontrol edilebilir: <code>json.loads()</code> ya çalışır ya çalışmaz. Deterministik kontrol bedavadır, anındadır ve %100 tekrarlanabilir; LLM yargıcı ise para harcar, yavaştır ve yanılabilir. Kural: <code>if</code> ile kontrol edilebilen hiçbir şeyi modele sorma.</div>
+          </details>
+          <details class="quiz">
+            <summary>Yargıç model ile değerlendirilen model neden aynı olmamalı?</summary>
+            <div class="answer"><b>Self-preference bias</b> yüzünden: modeller kendi üslubundaki çıktıları sistematik olarak daha yüksek puanlama eğilimindedir. Bu, gerçek kaliteyi değil benzerliği ölçen sahte bir yüksek skor üretir. Ayrıca yargıç, üreticiden daha güçlü bir model olmalı ve puanları düzenli olarak <b>insan değerlendirmesiyle kalibre edilmelidir</b>.</div>
+          </details>
+          <details class="quiz">
+            <summary>RAG sisteminde kötü cevap alıyorsun. İlk hangi ölçümü yaparsın, neden?</summary>
+            <div class="answer">Önce <b>retrieval kalitesini</b> ölçerim (recall@k / hit rate): doğru chunk ilk k sonuç içinde geldi mi? Gelmediyse sorun retrieval'dadır — model doğru bilgiyi hiç görmemiştir; prompt'u ne kadar iyileştirsen de düzelmez. Chunk geldiği hâlde cevap yanlışsa sorun generation'dadır ve <b>faithfulness</b> ölçümüyle uydurma olup olmadığına bakılır.</div>
+          </details>
+          <details class="quiz">
+            <summary>Yeni prompt sürümünde doğruluk 0.91'den 0.94'e çıktı ama uydurma oranı %3'ten %9'a yükseldi. Yayınlar mısın?</summary>
+            <div class="answer"><b>Hayır.</b> Bu bir iyileştirme değil, takastır: model daha çok "cesur" cevap veriyor, bu da hem doğruları hem uydurmaları artırıyor. Müşteri hizmetleri gibi bir bağlamda uydurmanın maliyeti, birkaç puanlık doğruluk kazancından çok daha yüksektir. Bu yüzden eşikler <b>tek metrik üzerinden değil</b>, birlikte tanımlanır ve herhangi biri kırıldığında yayın durur.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Eval Seti (Golden Set)</span><span class="term-en">Golden Set</span><span class="lvl lvl-ileri">İleri</span></div><p>Sistemin sürekli sınandığı sabit test vakaları koleksiyonu; LLM ürününün en kalıcı varlığıdır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">LLM-as-judge</span><span class="term-en">LLM-as-a-Judge</span><span class="lvl lvl-ileri">İleri</span></div><p>Bir modeli, başka bir modelin serbest metin çıktısını rubriğe göre puanlaması için kullanma yöntemi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Rubrik</span><span class="term-en">Rubric</span><span class="lvl lvl-orta">Orta</span></div><p>Her puan seviyesinin ne anlama geldiğini tanımlayan açık ölçüt listesi; belirsiz rubrik gürültülü puan üretir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Pairwise Karşılaştırma</span><span class="term-en">Pairwise Comparison</span><span class="lvl lvl-ileri">İleri</span></div><p>Mutlak puan yerine "A mı B mi daha iyi?" sorusu; iki sürümü kıyaslamanın en güvenilir yolu.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Position Bias</span><span class="term-en">Position Bias</span><span class="lvl lvl-ileri">İleri</span></div><p>Yargıç modelin ilk ya da son sunulan cevabı sistematik olarak kayırması; sırayı rastgeleleştirerek ölçülür.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Faithfulness (Kaynağa Sadakat)</span><span class="term-en">Faithfulness</span><span class="lvl lvl-ileri">İleri</span></div><p>Cevaptaki her iddianın getirilen kaynakta desteklenmesi; RAG'de uydurmanın ana ölçüsü.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Answer Relevance</span><span class="term-en">Answer Relevance</span><span class="lvl lvl-orta">Orta</span></div><p>Cevabın sorulan soruyu gerçekten karşılayıp karşılamadığı; kaynağa sadık ama konu dışı cevapları yakalar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Recall@k (Retrieval)</span><span class="term-en">Retrieval Recall@k</span><span class="lvl lvl-orta">Orta</span></div><p>İlgili chunk'ın ilk k sonuç içinde getirilme oranı; RAG'de retrieval katmanının deterministik metriği.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Trajectory (Ajan İzi)</span><span class="term-en">Trajectory</span><span class="lvl lvl-ileri">İleri</span></div><p>Bir ajanın hedefe giderken attığı adımların dizisi; sonuç doğru olsa bile yolun verimliliği ayrıca ölçülür.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Regresyon Testi</span><span class="term-en">Regression Testing</span><span class="lvl lvl-orta">Orta</span></div><p>Bir değişikliğin daha önce çalışan davranışları bozmadığını doğrulama; LLM'de eval setinin CI'da koşturulmasıdır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Prompt Versiyonlama</span><span class="term-en">Prompt Versioning</span><span class="lvl lvl-orta">Orta</span></div><p>Prompt'ları kod gibi sürümleme: Git'te tutma, pull request ile değiştirme, skorla birlikte kaydetme.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Prompt Caching</span><span class="term-en">Prompt Caching</span><span class="lvl lvl-orta">Orta</span></div><p>Prompt'un her istekte tekrarlanan sabit kısmının önbellekten okunması; uzun sistem prompt'larında maliyeti ve gecikmeyi düşürür.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Model Routing</span><span class="term-en">Model Routing</span><span class="lvl lvl-ileri">İleri</span></div><p>İsteğin zorluğuna göre küçük ya da büyük modele yönlendirme; maliyeti düşüren en etkili kaldıraçlardan biri.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Tracing (İz Sürme)</span><span class="term-en">Tracing</span><span class="lvl lvl-ileri">İleri</span></div><p>Tek bir isteğin arkasındaki tüm zincirin (prompt, chunk'lar, araç çağrıları, token sayıları) kaydedilmesi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Red Teaming</span><span class="term-en">Red Teaming</span><span class="lvl lvl-ileri">İleri</span></div><p>Sistemi bilinçli olarak kırmaya çalışma pratiği; bulunan her açık kalıcı bir test vakasına dönüştürülür.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m7-llm-degerlendirme">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m7-ajanlar-multimodal.html"><span>← Önceki</span><b>AI Ajanları ve Multimodal Modeller</b></a>
+          <a class="next" href="m8-deployment.html"><span>Sonraki →</span><b>Model Deployment ve Serving</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

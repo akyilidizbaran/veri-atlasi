@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sorumlu AI: Etik, Bias ve Açıklanabilirlik — Veri Atlası</title>
+<meta name="description" content="Bias modele nereden sızar, fairness nasıl ölçülür? SHAP ve LIME ile açıklanabilirlik, differential privacy, model card ve EU AI Act: sorumlu AI pratiğinin haritası.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m8" data-slug="m8-sorumlu-ai">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m8">8. MLOps ve Üretim</a><span class="sep">/</span>
+        <span>Sorumlu AI: Etik, Bias ve Açıklanabilirlik</span>
+      </nav>
+      <span class="mod-badge">Modül 8 · MLOps ve Üretim</span>
+      <h1>Sorumlu AI: Etik, Bias ve Açıklanabilirlik</h1>
+      <p class="en-title">Responsible AI</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~16 dk okuma</span>
+        <span class="chip">🔤 12 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Hatası istatistik olmayan modeller</h2>
+        <p>Bir film öneri modeli yanılırsa kullanıcı sıkıcı bir film izler. Ama model <strong>kredi, işe alım ya da sağlık</strong> kararı veriyorsa, aynı "yüzde 5 hata" artık bir istatistik değil — reddedilen bir ev kredisi, elenmiş bir kariyer, atlanan bir teşhistir. Bu yüzden sorumlu AI, hukukçulara bırakılacak "yumuşak" bir konu değil; senin yazdığın pipeline'ın, seçtiğin feature'ın ve raporladığın metriğin doğrudan sonucudur. Yani <strong>teknik bir konudur</strong>.</p>
+        <p>Ünlü vakalar dersin neden zorunlu olduğunu anlatıyor: Amazon'un deneysel işe alım aracı, geçmişin erkek ağırlıklı işe alım verisiyle eğitildiği için kadın CV'lerini sistematik olarak düşük puanladı ve proje iptal edildi. ABD'de adli risk skorlama sistemi COMPAS'ın hataları gruplar arasında eşit dağılmamakla eleştirildi. Hollanda'da çocuk yardımı dolandırıcılığını tespit etmeye çalışan bir sistem binlerce aileyi haksız yere borçlandırdı ve 2021'de hükümetin istifasına giden skandala dönüştü. Ortak nokta: hiçbir modele "önyargılı ol" diye kod yazılmadı — <strong>önyargı veriden sızdı</strong>.</p>
+
+        <h2>Bias modele nereden girer?</h2>
+        <p>"Algoritma tarafsızdır" cümlesi tehlikeli bir yarı doğrudur: algoritmanın kendisi tarafsız olabilir ama öğrendiği veri dünyanın kaydıdır ve dünya tarafsız değildir. Bias'ın başlıca giriş kapıları:</p>
+        <ul>
+          <li><strong>Tarihsel veri önyargısı</strong> — geçmiş kararlar zaten önyargılıysa (örn. belirli gruplara sistematik olarak az kredi verilmişse), model bu deseni "öğrenilecek gerçek" sanır ve geleceğe kopyalar.</li>
+          <li><strong>Örnekleme yanlılığı</strong> — veri toplama süreci bazı grupları az temsil eder: yüz tanıma setlerinde koyu tenli yüzlerin azlığı, anketin sadece akıllı telefon kullanıcılarına ulaşması.</li>
+          <li><strong>Etiketçi yanlılığı</strong> — etiketleri insanlar üretir; "agresif yorum", "işe uygun aday" gibi öznel etiketlerde etiketçinin kendi önyargısı veriye işlenir.</li>
+          <li><strong>Proxy değişkenler</strong> — hassas özelliği (etnik köken, cinsiyet) veriden çıkarsan bile, onunla yüksek korelasyonlu bir <em>vekil</em> kalabilir: posta kodu birçok ülkede etnik kökenin, alışveriş geçmişi hamileliğin vekilidir. Model, yasaklanan bilgiyi vekil üzerinden dolaylı yoldan kullanır.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 280" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bias'ın dünya-veri-model-karar zincirine sızma noktaları">
+            <defs>
+              <marker id="arr1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--bad)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="360" y="24" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Önyargı zincirin her halkasından sızar — ve karar geri dönüp dünyayı şekillendirir</text>
+              <!-- ana zincir -->
+              <rect x="35" y="120" width="130" height="56" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="100" y="144" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Dünya</text>
+              <text x="100" y="162" text-anchor="middle" fill="var(--muted)" font-size="10.5">eşitsiz geçmiş</text>
+              <rect x="215" y="120" width="130" height="56" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="280" y="144" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Veri</text>
+              <text x="280" y="162" text-anchor="middle" fill="var(--muted)" font-size="10.5">dünyanın kaydı</text>
+              <rect x="395" y="120" width="130" height="56" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="460" y="144" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Model</text>
+              <text x="460" y="162" text-anchor="middle" fill="var(--muted)" font-size="10.5">deseni öğrenir</text>
+              <rect x="575" y="120" width="130" height="56" rx="10" fill="rgba(var(--acc-rgb),.20)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="640" y="144" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Karar</text>
+              <text x="640" y="162" text-anchor="middle" fill="var(--muted)" font-size="10.5">kredi / işe alım</text>
+              <path d="M167 148 L213 148" stroke="var(--acc)" stroke-width="2" marker-end="url(#arr1)"/>
+              <path d="M347 148 L393 148" stroke="var(--acc)" stroke-width="2" marker-end="url(#arr1)"/>
+              <path d="M527 148 L573 148" stroke="var(--acc)" stroke-width="2" marker-end="url(#arr1)"/>
+              <!-- bias okları -->
+              <path d="M145 70 L190 118" stroke="var(--bad)" stroke-width="1.8" marker-end="url(#arr2)"/>
+              <text x="130" y="60" text-anchor="middle" fill="var(--bad)" font-size="10.5" font-weight="600">tarihsel önyargı</text>
+              <path d="M285 70 L285 116" stroke="var(--bad)" stroke-width="1.8" marker-end="url(#arr2)"/>
+              <text x="285" y="60" text-anchor="middle" fill="var(--bad)" font-size="10.5" font-weight="600">örnekleme yanlılığı</text>
+              <path d="M420 70 L400 116" stroke="var(--bad)" stroke-width="1.8" marker-end="url(#arr2)"/>
+              <text x="425" y="60" text-anchor="middle" fill="var(--bad)" font-size="10.5" font-weight="600">etiketçi yanlılığı</text>
+              <path d="M555 70 L520 116" stroke="var(--bad)" stroke-width="1.8" marker-end="url(#arr2)"/>
+              <text x="565" y="60" text-anchor="middle" fill="var(--bad)" font-size="10.5" font-weight="600">proxy değişkenler</text>
+              <!-- geri besleme -->
+              <path d="M640 178 C 640 240, 100 240, 100 178" stroke="var(--warn)" stroke-width="1.8" stroke-dasharray="6 4" fill="none" marker-end="url(#arr2)"/>
+              <text x="370" y="252" text-anchor="middle" fill="var(--warn)" font-size="10.5" font-weight="600">geri besleme: bugünün kararı yarının "tarihsel verisi" olur</text>
+            </g>
+          </svg>
+          <figcaption>Bias tek kapıdan girmez; zincirin dört noktasından sızar ve karar döngüsü onu kendi kendine pekiştirir.</figcaption>
+        </figure>
+
+        <div class="warn"><b>"Hassas kolonu sildim, sorun çözüldü" deme.</b> Cinsiyet ya da etnik köken kolonunu veriden çıkarmak (fairness through unawareness) modeli adil yapmaz; proxy değişkenler bilgiyi arka kapıdan taşımaya devam eder. Adilliği kolon listesine bakarak değil, aşağıdaki gibi grup bazlı metriklerle <em>çıktıyı ölçerek</em> değerlendir.</div>
+
+        <h2>Fairness ölçmek: sezgiden metriğe</h2>
+        <p>"Modelimiz adil olsun" temennisi, ölçülemediği sürece slogan olarak kalır. <strong>Fairness (adillik)</strong> araştırması bu temenniyi grup bazlı metriklere çevirir. En bilinen ikisi:</p>
+        <ul>
+          <li><strong>Demographic parity</strong> — sezgisi: "olumlu karar oranı gruplar arasında yakın olsun." Kredi onay oranı grup A'da %72, grup B'de %48 ise model demographic parity'den uzaktır — kim <em>hak ediyordu</em> sorusuna hiç bakmadan, sadece çıktı oranlarını karşılaştırır.</li>
+          <li><strong>Equal opportunity</strong> — sezgisi: "gerçekten hak edenler arasında onay şansı gruplar arasında eşit olsun." Teknik karşılığı, true positive rate'in (TPR) gruplar arasında yakın olmasıdır: krediyi geri ödeyecek olanların onay alma olasılığı her grupta benzer olmalıdır.</li>
+        </ul>
+        <p>Rahatsız edici ama önemli gerçek: bu tanımlar <strong>birbiriyle çelişebilir</strong>. Gruplar arasında taban oranları (örn. gerçek geri ödeme oranı) farklıysa, demographic parity'yi ve equal opportunity'yi aynı anda mükemmel sağlamak matematiksel olarak genellikle imkânsızdır. Yani "adil model" tek bir ayar değil, bir <em>tasarım kararıdır</em>: hangi adalet tanımının bu ürün için doğru olduğuna — tercihen sadece mühendisler değil, alan uzmanları ve etkilenen taraflarla birlikte — karar vermek gerekir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 680 300" width="680" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="İki grup için onay oranı ve TPR karşılaştırması">
+            <g font-family="inherit">
+              <text x="340" y="24" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Kredi modeli: grup bazlı fairness panosu</text>
+              <!-- eksen -->
+              <path d="M70 250 L640 250" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <!-- sol blok: onay oranı (demographic parity) -->
+              <text x="200" y="52" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Onay oranı</text>
+              <text x="200" y="68" text-anchor="middle" fill="var(--muted)" font-size="10.5">(demographic parity bakışı)</text>
+              <rect x="120" y="106" width="70" height="144" rx="6" fill="rgba(var(--acc-rgb),.30)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="155" y="98" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">%72</text>
+              <text x="155" y="268" text-anchor="middle" fill="var(--muted)" font-size="11">Grup A</text>
+              <rect x="215" y="154" width="70" height="96" rx="6" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="250" y="146" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">%48</text>
+              <text x="250" y="268" text-anchor="middle" fill="var(--muted)" font-size="11">Grup B</text>
+              <path d="M300 106 L300 154" stroke="var(--bad)" stroke-width="1.8"/>
+              <path d="M294 106 L306 106 M294 154 L306 154" stroke="var(--bad)" stroke-width="1.8"/>
+              <text x="313" y="134" fill="var(--bad)" font-size="11" font-weight="700">24 puan</text>
+              <text x="313" y="149" fill="var(--bad)" font-size="10.5">fark</text>
+              <!-- sağ blok: TPR (equal opportunity) -->
+              <text x="490" y="52" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Hak edenlerde onay (TPR)</text>
+              <text x="490" y="68" text-anchor="middle" fill="var(--muted)" font-size="10.5">(equal opportunity bakışı)</text>
+              <rect x="410" y="88" width="70" height="162" rx="6" fill="rgba(var(--acc-rgb),.30)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="445" y="80" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">%81</text>
+              <text x="445" y="268" text-anchor="middle" fill="var(--muted)" font-size="11">Grup A</text>
+              <rect x="505" y="126" width="70" height="124" rx="6" fill="rgba(var(--acc-rgb),.12)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="540" y="118" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">%62</text>
+              <text x="540" y="268" text-anchor="middle" fill="var(--muted)" font-size="11">Grup B</text>
+              <path d="M590 88 L590 126" stroke="var(--bad)" stroke-width="1.8"/>
+              <path d="M584 88 L596 88 M584 126 L596 126" stroke="var(--bad)" stroke-width="1.8"/>
+              <text x="603" y="104" fill="var(--bad)" font-size="11" font-weight="700">19 puan</text>
+              <text x="603" y="119" fill="var(--bad)" font-size="10.5">fark</text>
+              <text x="340" y="290" text-anchor="middle" fill="var(--muted)" font-size="10.5">Krediyi geri ödeyecek bir B üyesinin onay şansı, aynı durumdaki A üyesinden 19 puan düşük — modelin hataları eşit dağılmıyor</text>
+            </g>
+          </svg>
+          <figcaption>Toplam doğruluk yüksek görünse bile grup kırılımı eşitsizliği açığa çıkarır; fairness analizi bu kırılımı zorunlu kılar.</figcaption>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Python — grup bazlı fairness metriklerini pandas ile elle hesaplama</figcaption>
+          <pre><code data-lang="python">import pandas as pd
+
+# df: her satır bir kredi başvurusu
+# grup   : korunan özellik (A/B)
+# tahmin : modelin kararı (1 = onay)
+# gercek : gerçek sonuç (1 = krediyi geri ödedi)
+sonuc = {}
+for grup, g in df.groupby("grup"):
+    onay_orani = g["tahmin"].mean()                 # tüm başvurularda onay
+    tpr = g.loc[g["gercek"] == 1, "tahmin"].mean()  # hak edenlerde onay
+    sonuc[grup] = (onay_orani, tpr)
+    print(f"Grup {grup}: onay oranı={onay_orani:.2f}  TPR={tpr:.2f}")
+
+# Demographic parity farkı: onay oranları arasındaki fark
+dp_fark = abs(sonuc["A"][0] - sonuc["B"][0])
+
+# Equal opportunity farkı: hak edenler arasındaki onay (TPR) farkı
+eo_fark = abs(sonuc["A"][1] - sonuc["B"][1])
+
+print(f"DP farkı: {dp_fark:.2f}  EO farkı: {eo_fark:.2f}")
+# Yaygın pratik: fark 0.1'i aşıyorsa veriyi ve modeli yakından incele
+# (eşik sektöre ve yasal bağlama göre değişir — evrensel sabit değildir)</code></pre>
+        </figure>
+
+        <h2>Açıklanabilirlik: "model neden böyle dedi?"</h2>
+        <p><strong>Explainability (açıklanabilirlik, XAI)</strong> üç ihtiyaçtan doğar: <em>güven</em> (doktor, nedenini bilmediği teşhis önerisine güvenmez), <em>hata ayıklama</em> (model saçma bir feature'a yaslanıyorsa bunu ancak açıklamayla görürsün — meşhur örnek: kurt/husky sınıflayıcısının aslında arka plandaki karı öğrenmesi) ve <em>yasal hak</em> (GDPR ve benzeri düzenlemeler, otomatik karardan etkilenen kişiye anlamlı bilgi verilmesini gerektirir). İki seviye ayırt edilir: <strong>global açıklama</strong> "model genel olarak hangi feature'lara önem veriyor?" sorusuna, <strong>local açıklama</strong> "BU başvuru neden reddedildi?" sorusuna cevap verir.</p>
+        <p><strong>SHAP</strong>, en yaygın açıklama yöntemidir ve sezgisi oyun teorisinden gelir: tahmini bir "takım skoru" gibi düşün ve her feature'ın skora katkısını, o feature'ın "takıma katıldığı" tüm senaryolardaki ortalama etkisiyle ölç. Sonuç, her feature için işaretli bir katkı değeridir: taban değerden (ortalama tahmin) başlayıp katkıları topladığında tam olarak modelin tahminine ulaşırsın. Bu toplamsallık, SHAP'i hem tekil karar açıklamada (local) hem de katkıların ortalamasıyla genel önem sıralamasında (global) kullanışlı kılar.</p>
+        <p><strong>LIME</strong> farklı bir yol izler: karmaşık modelin tamamını anlamaya çalışmak yerine, açıklamak istediğin örneğin <em>yakın çevresinde</em> modeli basit bir modelle (örn. doğrusal regresyon) taklit eder. "Bu nokta civarında model kabaca şu kurala göre davranıyor" der. Hızlı ve model türünden bağımsızdır; bedeli, açıklamanın yalnızca o yerel bölgede geçerli olması ve örnekleme rastgeleliği yüzünden çalıştırmalar arasında biraz değişebilmesidir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 680 280" width="680" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SHAP tarzı katkı çubukları: taban değerden tahmine">
+            <defs>
+              <marker id="arr3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="340" y="24" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Bir kredi başvurusunun SHAP açıklaması: katkılar taban değerden tahmine taşır</text>
+              <!-- taban değer çizgisi -->
+              <path d="M330 45 L330 235" stroke="var(--dg-line)" stroke-width="1.5" stroke-dasharray="5 4"/>
+              <text x="330" y="256" text-anchor="middle" fill="var(--muted)" font-size="10.5">taban değer: 0.50 (ortalama tahmin)</text>
+              <!-- gelir: pozitif (0.50 → 0.68) -->
+              <rect x="330" y="60" width="144" height="30" rx="6" fill="rgba(var(--acc-rgb),.15)" stroke="var(--ok)" stroke-width="1.6"/>
+              <text x="402" y="80" text-anchor="middle" fill="var(--ok)" font-size="11.5" font-weight="700">gelir  +0.18</text>
+              <text x="240" y="80" text-anchor="middle" fill="var(--ink)" font-size="11.5">aylık gelir yüksek</text>
+              <!-- borç: negatif (0.68 → 0.63) -->
+              <rect x="434" y="105" width="40" height="30" rx="6" fill="rgba(var(--acc-rgb),.06)" stroke="var(--bad)" stroke-width="1.6"/>
+              <text x="484" y="125" text-anchor="start" fill="var(--bad)" font-size="11.5" font-weight="700">borç  −0.05</text>
+              <text x="240" y="125" text-anchor="middle" fill="var(--ink)" font-size="11.5">mevcut borç fazla</text>
+              <!-- yaş: negatif (0.63 → 0.60) -->
+              <rect x="410" y="150" width="24" height="30" rx="6" fill="rgba(var(--acc-rgb),.06)" stroke="var(--bad)" stroke-width="1.6"/>
+              <text x="444" y="170" text-anchor="start" fill="var(--bad)" font-size="11.5" font-weight="700">yaş  −0.03</text>
+              <text x="240" y="170" text-anchor="middle" fill="var(--ink)" font-size="11.5">kredi geçmişi kısa</text>
+              <!-- nihai tahmin -->
+              <path d="M410 45 L410 200" stroke="var(--acc)" stroke-width="1.8" stroke-dasharray="5 4"/>
+              <path d="M330 200 L402 200" stroke="var(--dg-line)" stroke-width="2" marker-end="url(#arr3)"/>
+              <text x="418" y="204" fill="var(--acc)" font-size="12" font-weight="700">tahmin: 0.50 + 0.18 − 0.05 − 0.03 = 0.60</text>
+              <text x="418" y="222" fill="var(--muted)" font-size="10.5">katkıların toplamı taban değeri onay skoruna taşır</text>
+            </g>
+          </svg>
+          <figcaption>Her çubuk bir feature'ın katkısı: yeşil skoru yükseltir, kırmızı düşürür; katkıların toplamı taban değeri nihai tahmine taşır.</figcaption>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Python — SHAP ile bir kararın feature katkılarını hesaplayıp yazdırma</figcaption>
+          <pre><code data-lang="python">import shap
+
+# Eğitilmiş ağaç tabanlı bir model (XGBoost, LightGBM, RandomForest...)
+explainer = shap.TreeExplainer(model)
+shap_degerleri = explainer.shap_values(X_test)
+
+# Tek bir başvurunun (local) açıklaması: katkıları büyükten küçüğe sırala
+i = 0  # incelenen başvurunun satır indeksi
+katkilar = sorted(
+    zip(X_test.columns, shap_degerleri[i]),
+    key=lambda cift: -abs(cift[1]),
+)
+print(f"Taban değer (ortalama tahmin): {explainer.expected_value:.3f}")
+for ad, katki in katkilar[:5]:
+    yon = "yükseltiyor" if katki &gt; 0 else "düşürüyor"
+    print(f"{ad:15s} {katki:+.3f} → skoru {yon}")
+
+# Örnek çıktı:
+# gelir           +0.180 → skoru yükseltiyor
+# mevcut_borc     -0.050 → skoru düşürüyor
+# yas             -0.030 → skoru düşürüyor</code></pre>
+        </figure>
+
+        <h2>Mahremiyet: anonimleştirme neden yetmez?</h2>
+        <p>"İsimleri sildik, veri anonim" cümlesi mahremiyetin en eski yanılgısıdır. Araştırmalar birkaç dolaylı alanın (doğum tarihi + posta kodu + cinsiyet gibi) birleşiminin insanların büyük bölümünü tekil olarak ayırt etmeye yettiğini defalarca gösterdi; "anonim" veri setleri başka kaynaklarla birleştirilerek yeniden kimliklendirilebilir. Daha sağlam bir fikir <strong>differential privacy (diferansiyel mahremiyet)</strong>tir: sorgulara ya da eğitime kontrollü miktarda <em>gürültü</em> eklenir; öyle ki sonuçlar toplu desenleri korur ama <em>tek bir kişinin</em> veride olup olmaması sonucu ayırt edilebilir biçimde değiştirmez. Apple ve ABD nüfus sayımı gibi büyük ölçekli sistemlerde kullanılır; bedeli, gürültü arttıkça doğruluğun bir miktar azalmasıdır.</p>
+        <p>Pratikte seni bağlayan çerçeve ise hukuktur: <strong>KVKK</strong> (Türkiye) ve <strong>GDPR</strong> (AB), kişisel veriyi amaçla sınırlı toplamayı, gerektiğinde silebilmeyi ("unutulma hakkı") ve otomatik kararlara itiraz yolunu şart koşar. Bu, pipeline tasarımına somut olarak yansır: kişisel kolonları en başta ayıklamak/maskelemek, veri saklama sürelerini tanımlamak, "bu kullanıcının tüm verisini sil" talebini uygulayabilecek bir mimari kurmak. Bu kontrollerin doğal evi, <a href="m3-veri-kalitesi.html">veri kalitesi konusunda</a> gördüğün pipeline test ve doğrulama katmanlarıdır.</p>
+
+        <h2>Kurumsal pratik: model card, insan denetimi, EU AI Act</h2>
+        <p>Sorumlu AI'ı niyetten sürece çeviren üç kurumsal araç var. <strong>Model card (model künyesi)</strong>, modelin "beslenme etiketi" gibidir: hangi veriyle eğitildi, hangi amaç için tasarlandı, hangi gruplarda nasıl performans gösteriyor, nerede <em>kullanılmamalı</em>. Google'ın önerdiği bu format, modeli devralan ekibin ve denetçinin ilk baktığı belgedir. <strong>Human oversight (insan denetimi)</strong> ise yüksek etkili kararlarda modelin son sözü söylememesi ilkesidir: model önerir, insan onaylar; ayrıca itiraz eden kullanıcının dosyasını bir insanın yeniden incelemesi garanti edilir.</p>
+        <p>Düzenleme tarafında <strong>EU AI Act</strong>, AI sistemlerini risk kademelerine ayırır: <em>kabul edilemez risk</em> (örn. devlet eliyle sosyal skorlama — yasak), <em>yüksek risk</em> (kredi skorlama, işe alım, tıbbi cihazlar — sıkı yükümlülükler: veri kalitesi, dokümantasyon, insan denetimi, kayıt tutma), <em>sınırlı risk</em> (chatbot'lar — "AI ile konuşuyorsun" şeffaflığı) ve <em>asgari risk</em> (spam filtresi — serbest). Kredi ya da işe alım modeli kuran bir ekipse "yüksek risk" kategorisinin yükümlülükleri doğrudan senin görev listendir — bu sayfadaki fairness ölçümü, açıklanabilirlik ve dokümantasyon pratikleri o listenin ta kendisidir.</p>
+        <div class="tip"><b>Model card'ı bugün yazmaya başla.</b> Küçük bir portfolyo projesinde bile modeline yarım sayfalık bir künye ekle: veri kaynağı, eğitim tarihi, metrikler (grup kırılımıyla), bilinen sınırlar. Bu alışkanlık seni mülakatta da sahada da bir adım öne taşır — çünkü çok az aday yapıyor.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Sorumlu AI, "etik komitesi"nin değil, günlük mühendislik işinin parçasıdır:</p>
+        <ul>
+          <li><strong>Feature seçerken →</strong> "bu kolon bir proxy mi?" sorusu artık refleksin olmalı; posta kodu, cihaz modeli, alışveriş saati gibi masum görünen kolonlar hassas özelliklerin vekili olabilir.</li>
+          <li><strong>Model raporlarken →</strong> tek bir genel AUC yerine grup kırılımlı metrik tablosu sun; eşitsizlik ancak kırılımda görünür.</li>
+          <li><strong>Üretimde →</strong> fairness metrikleri de <a href="m8-monitoring.html">izleme panosuna</a> girer: drift sadece doğruluğu değil, gruplar arası dengeyi de bozabilir.</li>
+          <li><strong>Reddedilen başvuru itiraz ettiğinde →</strong> SHAP çıktısı "neden red?" sorusunun cevabını üretir; müşteri hizmetlerinin ve hukuk ekibinin sana geleceği an budur.</li>
+          <li><strong>Veri toplarken →</strong> KVKK/GDPR gereği "bu kolonu toplamaya gerçekten ihtiyacım var mı?" sorusu, pipeline'ın ilk tasarım kararıdır — sonradan silmek her zaman daha pahalıdır.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Hassas özelliği (örn. cinsiyet) veriden çıkarmak bias'ı neden çözmez?</summary>
+            <div class="answer"><b>Proxy değişkenler</b> yüzünden: hassas özellikle yüksek korelasyonlu kolonlar (posta kodu → etnik köken, alışveriş geçmişi → hamilelik) veride kalır ve model yasaklanan bilgiyi bu vekiller üzerinden dolaylı olarak kullanır. Çözüm kolon silmek değil; grup bazlı metriklerle <b>sonucu ölçmek</b> ve gerekirse veri/model düzeyinde müdahale etmektir.</div>
+          </details>
+          <details class="quiz">
+            <summary>Demographic parity ile equal opportunity arasındaki fark nedir?</summary>
+            <div class="answer"><b>Demographic parity</b> yalnızca çıktıya bakar: olumlu karar (onay) oranı gruplar arasında yakın olsun. <b>Equal opportunity</b> gerçek sonucu da hesaba katar: gerçekten hak edenler (pozitif sınıf) arasında onay şansı — yani TPR — gruplar arasında eşit olsun. Taban oranları farklıysa ikisini aynı anda mükemmel sağlamak genellikle imkânsızdır; hangi tanımın kullanılacağı bir tasarım kararıdır.</div>
+          </details>
+          <details class="quiz">
+            <summary>SHAP ve LIME aynı soruna nasıl farklı yaklaşır?</summary>
+            <div class="answer"><b>SHAP</b> oyun teorisi temellidir: her feature'ın tahmine katkısını hesaplar; katkılar taban değere eklenince tam olarak tahmini verir (toplamsal garanti) ve hem local hem global kullanılır. <b>LIME</b> ise açıklanacak örneğin yakın çevresinde karmaşık modeli basit bir modelle taklit eder: hızlıdır, model türünden bağımsızdır ama açıklaması yalnızca o yerel bölgede geçerlidir ve çalıştırmalar arasında değişebilir.</div>
+          </details>
+          <details class="quiz">
+            <summary>Model card nedir ve EU AI Act'in "yüksek risk" kategorisiyle nasıl ilişkilidir?</summary>
+            <div class="answer">Model card, modelin <b>künyesidir</b>: eğitim verisi, amaç, grup kırılımlı performans, bilinen sınırlar ve kullanılmaması gereken durumlar. EU AI Act, kredi skorlama ve işe alım gibi <b>yüksek risk</b> sistemler için dokümantasyon, veri kalitesi, kayıt tutma ve insan denetimi yükümlülükleri getirir — model card, bu dokümantasyon yükümlülüğünün pratik karşılığıdır.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Sorumlu AI</span><span class="term-en">Responsible AI</span><span class="lvl lvl-orta">Orta</span></div><p>AI sistemlerinin adil, açıklanabilir, mahremiyete saygılı ve denetlenebilir kurulması pratiği; etik niyetin mühendislik sürecine çevrilmesi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Bias (Önyargı)</span><span class="term-en">Bias</span><span class="lvl lvl-orta">Orta</span></div><p>Modelin belirli gruplara sistematik olarak farklı davranması; genellikle koddan değil tarihsel veriden, örneklemeden ve etiketlerden sızar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Proxy Değişken</span><span class="term-en">Proxy Variable</span><span class="lvl lvl-ileri">İleri</span></div><p>Hassas bir özellikle yüksek korelasyonlu vekil kolon (posta kodu → etnik köken); hassas kolonu silmenin bias'ı çözmemesinin nedeni.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Fairness (Adillik)</span><span class="term-en">Fairness</span><span class="lvl lvl-ileri">İleri</span></div><p>Model kararlarının gruplar arasında dengesini ölçen metrik ailesi; farklı tanımları birbiriyle çelişebilir, seçim bir tasarım kararıdır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Demographic Parity</span><span class="term-en">Demographic Parity</span><span class="lvl lvl-ileri">İleri</span></div><p>Olumlu karar oranının gruplar arasında yakın olması kriteri; gerçek sonuca bakmadan yalnızca çıktı oranlarını karşılaştırır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Explainability (Açıklanabilirlik)</span><span class="term-en">Explainability (XAI)</span><span class="lvl lvl-orta">Orta</span></div><p>Modelin kararlarını insanın anlayabileceği biçimde gerekçelendirme; güven, hata ayıklama ve yasal haklar için gereklidir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">SHAP</span><span class="term-en">SHAP</span><span class="lvl lvl-ileri">İleri</span></div><p>Oyun teorisi temelli açıklama yöntemi; her feature'ın tahmine işaretli katkısını hesaplar, katkılar taban değere eklenince tahmini verir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">LIME</span><span class="term-en">LIME</span><span class="lvl lvl-ileri">İleri</span></div><p>Karmaşık modeli, açıklanacak örneğin yakın çevresinde basit bir modelle taklit eden yerel açıklama yöntemi; hızlı ama yerel geçerli.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Differential Privacy (Diferansiyel Mahremiyet)</span><span class="term-en">Differential Privacy</span><span class="lvl lvl-ileri">İleri</span></div><p>Sonuçlara kontrollü gürültü ekleyerek tek bir kişinin veride olup olmamasının ayırt edilememesini garanti eden mahremiyet çerçevesi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Model Card (Model Künyesi)</span><span class="term-en">Model Card</span><span class="lvl lvl-orta">Orta</span></div><p>Modelin eğitim verisini, amacını, grup kırılımlı performansını ve sınırlarını belgeleyen standart künye; devralan ekibin ilk baktığı yer.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">EU AI Act</span><span class="term-en">EU AI Act</span><span class="lvl lvl-orta">Orta</span></div><p>AI sistemlerini risk kademelerine (kabul edilemez/yüksek/sınırlı/asgari) ayıran AB düzenlemesi; yüksek risk sistemlere sıkı yükümlülükler getirir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Human Oversight (İnsan Denetimi)</span><span class="term-en">Human Oversight</span><span class="lvl lvl-orta">Orta</span></div><p>Yüksek etkili kararlarda son sözün insanda kalması ilkesi: model önerir, insan onaylar; itiraz hâlinde insan yeniden inceler.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m8-sorumlu-ai">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m8-feature-store.html"><span>← Önceki</span><b>Feature Store ve Veri Versiyonlama</b></a>
+          <a class="next" href="m9-portfolyo.html"><span>Sonraki →</span><b>Portfolyo Projeleri</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Veri Modelleme — Veri Atlası</title>
+<meta name="description" content="ER diyagramları, kardinalite, OLTP–OLAP ayrımı, star schema, fact ve dimension tabloları, SCD Tip 2 ve modern desenler: analitik için veri modelleme rehberi.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m2" data-slug="m2-veri-modelleme">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m2">2. Veri Dünyası</a><span class="sep">/</span>
+        <span>Veri Modelleme</span>
+      </nav>
+      <span class="mod-badge">Modül 2 · Veri Dünyası</span>
+      <h1>Veri Modelleme</h1>
+      <p class="en-title">Data Modeling</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~17 dk okuma</span>
+        <span class="chip">🔤 12 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Neden önce model, sonra kod?</h2>
+        <p><strong>Veri modelleme (data modeling)</strong>, verinin hangi varlıklardan oluştuğunu, bu varlıkların birbirine nasıl bağlandığını ve hangi kurallara uyduğunu — tablo, kolon ve anahtar olarak somutlaşmadan <em>önce</em> — tasarlama işidir. Bina yapmadan önce mimari plan çizmeye benzer: bir duvarı çizimde taşımak silgi işi, bitmiş binada taşımak balyoz işidir.</p>
+        <p>Yanlış modelin faturası neye benzer? İki klasik örnek: sipariş satırlarına müşterinin adını kopyalarsan, müşteri adını değiştirdiğinde binlerce satır tutarsız kalır (<a href="m2-sql.html">SQL konusundaki</a> normalizasyonun tam da engellediği şey). Adres değişikliklerinin tarihçesini tutmazsan, "geçen yıl İzmir'den ne kadar ciro geldi?" sorusuna yıllarca <em>yanlış</em> cevap verirsin — ve kimse fark etmez. Kod hatası bugün patlar ve düzeltilir; model hatası sessizce birikir, migration + geçmiş veriyi düzeltme + bozulan raporlar olarak yıllarca fatura keser.</p>
+        <p>Modelleme üç seviyede ilerler: <strong>kavramsal</strong> (iş diliyle varlıklar ve ilişkiler), <strong>mantıksal</strong> (motordan bağımsız tablolar, anahtarlar, tipler) ve <strong>fiziksel</strong> (index, partition gibi motora özgü kararlar). Bu sayfada kavramsal araçlarla başlayıp analitik dünyanın modelleme desenlerine ineceğiz.</p>
+
+        <h2>ER diyagramları: varlık, nitelik, ilişki</h2>
+        <p>Modellemenin ortak dili <strong>ER diyagramı</strong>dır (Entity-Relationship — varlık-ilişki). Üç yapı taşı var:</p>
+        <ul>
+          <li><strong>Entity (varlık):</strong> hakkında veri tuttuğun "şey" — Müşteri, Sipariş, Ürün. Genelde bir tabloya dönüşür.</li>
+          <li><strong>Attribute (nitelik):</strong> varlığı tanımlayan alanlar — müşterinin adı, şehri; siparişin tarihi, tutarı. Kolonlara dönüşür.</li>
+          <li><strong>Relationship (ilişki):</strong> varlıklar arasındaki bağ — müşteri sipariş <em>verir</em>, sipariş ürün <em>içerir</em>.</li>
+        </ul>
+        <p>İlişkinin "kaça kaç" sorusuna <strong>kardinalite (cardinality)</strong> denir ve üç hali vardır: <strong>1-1</strong> (bir kişinin bir pasaportu olur — nadirdir), <strong>1-N</strong> (bir müşteri çok sipariş verir; en yaygın biçim) ve <strong>N-N</strong> (bir sipariş çok ürün içerir, bir ürün çok siparişte geçer).</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 300" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Müşteri, Sipariş ve Ürün varlıklarını kardinalite işaretleriyle bağlayan mini ER diyagramı">
+            <g>
+              <rect x="30" y="60" width="170" height="120" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="115" y="84" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Müşteri</text>
+              <line x1="30" y1="94" x2="200" y2="94" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="44" y="113" fill="var(--muted)" font-size="10.5">musteri_id · PK</text>
+              <text x="44" y="130" fill="var(--muted)" font-size="10.5">ad</text>
+              <text x="44" y="147" fill="var(--muted)" font-size="10.5">sehir</text>
+              <text x="44" y="164" fill="var(--muted)" font-size="10.5">kayit_tarihi</text>
+
+              <rect x="275" y="60" width="170" height="120" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="360" y="84" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Sipariş</text>
+              <line x1="275" y1="94" x2="445" y2="94" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="289" y="113" fill="var(--muted)" font-size="10.5">siparis_id · PK</text>
+              <text x="289" y="130" fill="var(--muted)" font-size="10.5">musteri_id · FK</text>
+              <text x="289" y="147" fill="var(--muted)" font-size="10.5">tarih</text>
+              <text x="289" y="164" fill="var(--muted)" font-size="10.5">tutar</text>
+
+              <rect x="520" y="60" width="170" height="120" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="605" y="84" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Ürün</text>
+              <line x1="520" y1="94" x2="690" y2="94" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="534" y="113" fill="var(--muted)" font-size="10.5">urun_id · PK</text>
+              <text x="534" y="130" fill="var(--muted)" font-size="10.5">ad</text>
+              <text x="534" y="147" fill="var(--muted)" font-size="10.5">kategori</text>
+              <text x="534" y="164" fill="var(--muted)" font-size="10.5">fiyat</text>
+
+              <!-- Müşteri 1—N Sipariş -->
+              <line x1="200" y1="120" x2="275" y2="120" stroke="var(--dg-line)" stroke-width="1.6"/>
+              <line x1="212" y1="112" x2="212" y2="128" stroke="var(--dg-line)" stroke-width="1.6"/>
+              <line x1="263" y1="120" x2="275" y2="112" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <line x1="263" y1="120" x2="275" y2="120" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <line x1="263" y1="120" x2="275" y2="128" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="237" y="108" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="600">verir</text>
+              <text x="210" y="140" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="700">1</text>
+              <text x="266" y="140" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="700">N</text>
+
+              <!-- Sipariş N—N Ürün -->
+              <line x1="445" y1="120" x2="520" y2="120" stroke="var(--dg-line)" stroke-width="1.6"/>
+              <line x1="457" y1="120" x2="445" y2="112" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <line x1="457" y1="120" x2="445" y2="120" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <line x1="457" y1="120" x2="445" y2="128" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <line x1="508" y1="120" x2="520" y2="112" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <line x1="508" y1="120" x2="520" y2="120" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <line x1="508" y1="120" x2="520" y2="128" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="482" y="108" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="600">içerir</text>
+              <text x="453" y="140" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="700">N</text>
+              <text x="512" y="140" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="700">N</text>
+
+              <!-- junction -->
+              <rect x="390" y="215" width="200" height="56" rx="10" fill="var(--dg-box)" stroke="var(--muted)" stroke-width="1.3" stroke-dasharray="5 4"/>
+              <text x="490" y="237" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">siparis_kalemi</text>
+              <text x="490" y="256" text-anchor="middle" fill="var(--muted)" font-size="9.5">siparis_id (FK) · urun_id (FK) · adet</text>
+              <path d="M380 180 L445 215" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="4 4" fill="none"/>
+              <path d="M585 180 L545 215" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="4 4" fill="none"/>
+
+              <text x="200" y="250" text-anchor="middle" fill="var(--muted)" font-size="10">N–N ilişki doğrudan kurulamaz;</text>
+              <text x="200" y="266" text-anchor="middle" fill="var(--muted)" font-size="10">kesikli ara tablo ikisini 1–N'e çevirir</text>
+              <text x="360" y="292" text-anchor="middle" fill="var(--muted)" font-size="9.5">PK: birincil anahtar · FK: yabancı anahtar · çatal işareti: "çok" tarafı</text>
+            </g>
+          </svg>
+          <figcaption>E-ticaretin çekirdek ER modeli: Müşteri 1–N Sipariş, Sipariş N–N Ürün. N–N ilişkiyi <code>siparis_kalemi</code> ara tablosu çözer.</figcaption>
+        </figure>
+
+        <div class="note"><b>FK hangi tarafa?</b> 1-N ilişkide yabancı anahtar (foreign key) her zaman N tarafına konur: <code>siparis.musteri_id</code> vardır ama <code>musteri.siparis_id</code> olmaz — bir kolona binlerce sipariş sığdıramazsın. N-N'de ise iki FK birden ara tabloya taşınır.</div>
+
+        <p>ER diyagramı sana "veri neye benziyor?" sorusunun cevabını verir. Ama aynı veri, kimin kullandığına göre <em>iki farklı biçimde</em> modellenir — ve bu ayrım, veri dünyasının en temel fay hattıdır.</p>
+
+        <h2>İki dünya: OLTP ve OLAP</h2>
+        <p><strong>OLTP (Online Transaction Processing)</strong> uygulamanın kalbidir: sipariş kaydet, stok düş, adres güncelle. Sorgular küçüktür ("42 numaralı siparişi getir"), saniyede binlercesi koşar ve veri sürekli değişir. Bu dünyada model <strong>normalize</strong> edilir — her bilgi tek yerde durur, çünkü tekrar eden veri güncelleme anomalisi demektir.</p>
+        <p><strong>OLAP (Online Analytical Processing)</strong> ise soru cevaplama dünyasıdır: "geçen çeyrek hangi kategori büyüdü?", "şehir bazında ciro trendi ne?" Sorgular milyonlarca satırı tarar, toplar, gruplar; veri genelde toplu yüklenir ve nadiren güncellenir. Bu dünyada model bilinçli olarak <strong>denormalize</strong> edilir — JOIN sayısını azaltıp okuma hızını artırmak için veri tekrarı göze alınır.</p>
+        <p>İki sistemin ayrı tutulmasının pratik sebebi de var: ağır analitik sorguların uygulamayı yavaşlatmaması ve analiz için tarihçenin birikebilmesi. Veri, OLTP'den OLAP'a <a href="m3-etl-elt.html">pipeline'larla</a> taşınır.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 330" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="OLTP ve OLAP sistemlerinin amaç, sorgu tipi, model ve örnek sistemler açısından karşılaştırması">
+            <defs>
+              <marker id="arrolap" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g>
+              <rect x="30" y="45" width="305" height="240" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="182" y="72" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="700">OLTP — işlem sistemi</text>
+              <text x="182" y="90" text-anchor="middle" fill="var(--muted)" font-size="10.5">uygulamanın veritabanı</text>
+              <line x1="30" y1="100" x2="335" y2="100" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="46" y="122" fill="var(--acc)" font-size="10" font-weight="700">AMAÇ</text>
+              <text x="46" y="139" fill="var(--ink)" font-size="10.5">işlemi güvenle kaydet: sipariş, ödeme</text>
+              <text x="46" y="167" fill="var(--acc)" font-size="10" font-weight="700">TİPİK SORGU</text>
+              <text x="46" y="184" fill="var(--ink)" font-size="10.5">küçük, nokta atışı; saniyede binlerce</text>
+              <text x="46" y="212" fill="var(--acc)" font-size="10" font-weight="700">VERİ MODELİ</text>
+              <text x="46" y="229" fill="var(--ink)" font-size="10.5">normalize (3NF) — tekrar yok</text>
+              <text x="46" y="257" fill="var(--acc)" font-size="10" font-weight="700">ÖRNEK SİSTEMLER</text>
+              <text x="46" y="274" fill="var(--ink)" font-size="10.5">PostgreSQL, MySQL, SQL Server</text>
+
+              <path d="M338 160 L382 160" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#arrolap)"/>
+              <text x="360" y="148" text-anchor="middle" fill="var(--acc)" font-size="9.5" font-weight="700">ETL</text>
+
+              <rect x="385" y="45" width="305" height="240" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <text x="537" y="72" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="700">OLAP — analitik sistem</text>
+              <text x="537" y="90" text-anchor="middle" fill="var(--muted)" font-size="10.5">rapor ve analiz dünyası</text>
+              <line x1="385" y1="100" x2="690" y2="100" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="401" y="122" fill="var(--acc)" font-size="10" font-weight="700">AMAÇ</text>
+              <text x="401" y="139" fill="var(--ink)" font-size="10.5">soruyu cevapla: trend, toplam, kırılım</text>
+              <text x="401" y="167" fill="var(--acc)" font-size="10" font-weight="700">TİPİK SORGU</text>
+              <text x="401" y="184" fill="var(--ink)" font-size="10.5">büyük tarama: JOIN, GROUP BY, milyon satır</text>
+              <text x="401" y="212" fill="var(--acc)" font-size="10" font-weight="700">VERİ MODELİ</text>
+              <text x="401" y="229" fill="var(--ink)" font-size="10.5">denormalize (star schema) — okuma önce</text>
+              <text x="401" y="257" fill="var(--acc)" font-size="10" font-weight="700">ÖRNEK SİSTEMLER</text>
+              <text x="401" y="274" fill="var(--ink)" font-size="10.5">BigQuery, Snowflake, Redshift, ClickHouse</text>
+
+              <text x="360" y="315" text-anchor="middle" fill="var(--muted)" font-size="11">Aynı veri, iki farklı amaç için iki farklı biçimde modellenir.</text>
+            </g>
+          </svg>
+          <figcaption>OLTP işlemi kaydeder, OLAP soruyu cevaplar. Aradaki ok, Modül 3'te göreceğin ETL/ELT pipeline'larıdır.</figcaption>
+        </figure>
+
+        <h2>Dimensional modeling: fact, dimension ve star schema</h2>
+        <p>OLAP dünyasının klasikleşmiş yöntemi, Ralph Kimball'ın <strong>dimensional modeling</strong> yaklaşımıdır. İki tür tablo vardır:</p>
+        <ul>
+          <li><strong>Fact tablosu:</strong> ölçülebilir olayları tutar — satış tutarı, adet, süre gibi <em>sayılar</em> ve dimension'lara işaret eden anahtarlar. Dar ama upuzundur: milyarlarca satıra çıkabilir.</li>
+          <li><strong>Dimension tablosu:</strong> olayın <em>bağlamını</em> tutar — kim (müşteri), ne (ürün), nerede (mağaza), ne zaman (tarih). Geniş ama kısadır: bin müşteri, yüz ürün.</li>
+        </ul>
+        <p>Fact ortada, dimension'lar çevresinde dizilince ortaya çıkan yerleşime <strong>star schema (yıldız şema)</strong> denir. Analitik soruların hepsi aynı kalıba oturur: <em>ölçümü bağlama göre kes</em> — "şehre göre ciro" demek, fact'i <code>dim_musteri</code> ile join edip <code>sehir</code>e göre gruplamak demektir. Her dimension'a tek JOIN adımı yeter; sorgular hem basit hem hızlıdır.</p>
+        <p><strong>Snowflake schema</strong> bu yerleşimin bir varyantıdır: dimension'lar tekrar normalize edilir (<code>dim_urun</code> içindeki kategori bilgisi ayrı bir <code>dim_kategori</code>ye taşınır). Biraz daha az veri tekrarı sağlar ama her sorguya JOIN ekler; depolamanın ucuzladığı günümüzde çoğunlukla sade star tercih edilir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 680 400" width="680" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Star schema: ortada fact_satis, çevresinde dim_tarih, dim_musteri, dim_urun ve dim_magaza">
+            <g>
+              <line x1="340" y1="150" x2="340" y2="95" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <line x1="240" y1="210" x2="200" y2="210" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <line x1="440" y1="210" x2="480" y2="210" stroke="var(--dg-line)" stroke-width="1.5"/>
+              <line x1="340" y1="270" x2="340" y2="320" stroke="var(--dg-line)" stroke-width="1.5"/>
+
+              <rect x="250" y="25" width="180" height="70" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="340" y="49" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">dim_tarih</text>
+              <text x="340" y="72" text-anchor="middle" fill="var(--muted)" font-size="10">gun, ay, yil, ceyrek</text>
+
+              <rect x="30" y="175" width="170" height="70" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="115" y="199" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">dim_musteri</text>
+              <text x="115" y="222" text-anchor="middle" fill="var(--muted)" font-size="10">ad, sehir, segment</text>
+
+              <rect x="480" y="175" width="170" height="70" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="565" y="199" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">dim_urun</text>
+              <text x="565" y="222" text-anchor="middle" fill="var(--muted)" font-size="10">ad, kategori, marka</text>
+
+              <rect x="250" y="320" width="180" height="70" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="340" y="344" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">dim_magaza</text>
+              <text x="340" y="367" text-anchor="middle" fill="var(--muted)" font-size="10">sehir, tip</text>
+
+              <rect x="240" y="150" width="200" height="120" rx="12" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="2"/>
+              <text x="340" y="172" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">fact_satis</text>
+              <text x="340" y="188" text-anchor="middle" fill="var(--muted)" font-size="9">(1 satır = 1 satış kalemi)</text>
+              <text x="340" y="208" text-anchor="middle" fill="var(--muted)" font-size="10">tarih_sk, musteri_sk,</text>
+              <text x="340" y="224" text-anchor="middle" fill="var(--muted)" font-size="10">urun_sk, magaza_sk (FK)</text>
+              <line x1="256" y1="234" x2="424" y2="234" stroke="var(--dg-line)" stroke-width="1"/>
+              <text x="340" y="254" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="600">tutar, adet — ölçümler</text>
+
+              <rect x="520" y="290" width="130" height="45" rx="8" fill="var(--dg-box)" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="5 4"/>
+              <text x="585" y="312" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="600">dim_kategori</text>
+              <text x="585" y="327" text-anchor="middle" fill="var(--muted)" font-size="8.5">marka, ust_kategori</text>
+              <line x1="585" y1="245" x2="585" y2="290" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="4 4"/>
+              <text x="585" y="352" text-anchor="middle" fill="var(--muted)" font-size="9">snowflake varyantı: dim'i bölmek</text>
+            </g>
+          </svg>
+          <figcaption>Star schema: fact ortada sayıları, dimension'lar çevrede bağlamı tutar. Kesikli kutu, dimension'ı tekrar normalize eden snowflake varyantını gösterir.</figcaption>
+        </figure>
+
+        <div class="tip"><b>Önce grain'i belirle.</b> Fact tablosu tasarlarken ilk cümlen şu olmalı: "Bu tablonun bir satırı neyi temsil ediyor?" (grain — tanecik). "Bir satır = bir satış kalemi" ile "bir satır = günlük mağaza özeti" bambaşka tablolardır; grain'i baştan netleştirmeden kolon tartışmasına girme.</div>
+
+        <p>Star schema üzerinde tipik bir analitik sorgu şöyle görünür — fact'ten ölçüm, dimension'lardan bağlam:</p>
+
+        <figure class="codebox">
+          <figcaption>SQL — star schema üzerinde kırılım sorgusu</figcaption>
+          <pre><code data-lang="sql">-- Soru: "2026'da şehir ve kategori bazında toplam ciro nedir?"
+-- Kalıp hep aynı: fact JOIN dim'ler, ölçümü topla, bağlama göre grupla
+SELECT
+    m.sehir,
+    u.kategori,
+    SUM(f.tutar) AS toplam_ciro,
+    SUM(f.adet)  AS toplam_adet
+FROM fact_satis AS f
+JOIN dim_musteri AS m ON f.musteri_sk = m.musteri_sk
+JOIN dim_urun    AS u ON f.urun_sk    = u.urun_sk
+WHERE f.tarih_sk BETWEEN 20260101 AND 20261231   -- akıllı tarih anahtarı
+GROUP BY m.sehir, u.kategori
+ORDER BY toplam_ciro DESC;</code></pre>
+        </figure>
+
+        <h2>Tarih değişirse ne olacak? Slowly Changing Dimensions</h2>
+        <p>Dimension'lar adının hakkını verir: <em>yavaş</em> ama değişirler. Müşteri taşınır, ürünün kategorisi revize edilir, mağaza el değiştirir. Kritik soru şu: <strong>eski değeri ne yapacağız?</strong> Müşteri 42, İzmir'den İstanbul'a taşındı diyelim. <code>dim_musteri</code>'de şehri doğrudan güncellersen, geçmiş satışlar da İstanbul'a "göçer" — geçen yılın İzmir raporu sessizce değişir. Bu soruna verilen cevaplara <strong>SCD (Slowly Changing Dimension)</strong> desenleri denir; en çok kullanılan ikisi:</p>
+        <ul>
+          <li><strong>SCD Tip 1 — üzerine yaz:</strong> eski değer silinir, yenisi yazılır. Basittir; tarihçenin önemli olmadığı durumlar içindir (örn. yazım hatası düzeltmek).</li>
+          <li><strong>SCD Tip 2 — satır ekle:</strong> eski satır <code>gecerli_bitis</code> tarihi yazılarak "kapatılır", yeni durum <code>gecerli_baslangic</code> ile yeni bir satır olarak eklenir. Her sürüme ayrı bir <strong>surrogate key</strong> (vekil anahtar, <code>musteri_sk</code>) verilir; fact satırları o günün sürümüne bağlanır ve raporlar zamanda doğru kalır.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 760 235" width="760" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SCD Tip 2 örneği: aynı müşterinin geçerlilik tarihli iki satırı">
+            <g>
+              <text x="347" y="30" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">dim_musteri — müşteri 42 taşındıktan sonra</text>
+              <rect x="40" y="55" width="615" height="32" rx="6" fill="rgba(var(--acc-rgb),.15)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="75" y="75" text-anchor="middle" fill="var(--ink)" font-size="10" font-weight="700">musteri_sk</text>
+              <text x="147" y="75" text-anchor="middle" fill="var(--ink)" font-size="10" font-weight="700">musteri_id</text>
+              <text x="220" y="75" text-anchor="middle" fill="var(--ink)" font-size="10" font-weight="700">ad</text>
+              <text x="300" y="75" text-anchor="middle" fill="var(--ink)" font-size="10" font-weight="700">sehir</text>
+              <text x="405" y="75" text-anchor="middle" fill="var(--ink)" font-size="10" font-weight="700">gecerli_baslangic</text>
+              <text x="520" y="75" text-anchor="middle" fill="var(--ink)" font-size="10" font-weight="700">gecerli_bitis</text>
+              <text x="615" y="75" text-anchor="middle" fill="var(--ink)" font-size="10" font-weight="700">guncel_mi</text>
+
+              <rect x="40" y="87" width="615" height="34" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="75" y="108" text-anchor="middle" fill="var(--muted)" font-size="10.5">101</text>
+              <text x="147" y="108" text-anchor="middle" fill="var(--muted)" font-size="10.5">42</text>
+              <text x="220" y="108" text-anchor="middle" fill="var(--muted)" font-size="10.5">Zeynep</text>
+              <text x="300" y="108" text-anchor="middle" fill="var(--muted)" font-size="10.5">İzmir</text>
+              <text x="405" y="108" text-anchor="middle" fill="var(--muted)" font-size="10.5">2023-01-10</text>
+              <text x="520" y="108" text-anchor="middle" fill="var(--warn)" font-size="10.5" font-weight="600">2026-03-01</text>
+              <text x="615" y="108" text-anchor="middle" fill="var(--muted)" font-size="10.5">false</text>
+
+              <rect x="40" y="121" width="615" height="34" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="75" y="142" text-anchor="middle" fill="var(--ink)" font-size="10.5">207</text>
+              <text x="147" y="142" text-anchor="middle" fill="var(--ink)" font-size="10.5">42</text>
+              <text x="220" y="142" text-anchor="middle" fill="var(--ink)" font-size="10.5">Zeynep</text>
+              <text x="300" y="142" text-anchor="middle" fill="var(--ink)" font-size="10.5">İstanbul</text>
+              <text x="405" y="142" text-anchor="middle" fill="var(--ink)" font-size="10.5">2026-03-01</text>
+              <text x="520" y="142" text-anchor="middle" fill="var(--ink)" font-size="10.5">9999-12-31</text>
+              <text x="615" y="142" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="700">true</text>
+
+              <line x1="110" y1="55" x2="110" y2="155" stroke="var(--dg-line)" stroke-width="1"/>
+              <line x1="185" y1="55" x2="185" y2="155" stroke="var(--dg-line)" stroke-width="1"/>
+              <line x1="255" y1="55" x2="255" y2="155" stroke="var(--dg-line)" stroke-width="1"/>
+              <line x1="345" y1="55" x2="345" y2="155" stroke="var(--dg-line)" stroke-width="1"/>
+              <line x1="465" y1="55" x2="465" y2="155" stroke="var(--dg-line)" stroke-width="1"/>
+              <line x1="575" y1="55" x2="575" y2="155" stroke="var(--dg-line)" stroke-width="1"/>
+
+              <path d="M112 162 L112 170 L183 170 L183 162" stroke="var(--acc)" stroke-width="1.2" fill="none"/>
+              <text x="147" y="186" text-anchor="middle" fill="var(--acc)" font-size="9" font-weight="600">aynı iş anahtarı, iki sürüm</text>
+
+              <rect x="60" y="203" width="12" height="12" fill="var(--dg-box)" stroke="var(--warn)" stroke-width="1.4"/>
+              <text x="80" y="213" fill="var(--muted)" font-size="9.5">eski sürüm — aralığı kapandı (bitiş: 2026-03-01)</text>
+              <rect x="420" y="203" width="12" height="12" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="440" y="213" fill="var(--muted)" font-size="9.5">güncel sürüm — 9999-12-31 = hâlâ geçerli</text>
+            </g>
+          </svg>
+          <figcaption>SCD Tip 2: aynı müşteri (id 42) için iki satır, iki farklı surrogate key (101 ve 207). Geçerlilik aralıkları sayesinde her fact satırı "o günkü" müşteriye bağlanır.</figcaption>
+        </figure>
+
+        <div class="warn"><b>Tip 1 tarihçeyi geri getirilemez şekilde siler.</b> Üzerine yazdığın anda eski değer sonsuza dek gider ve geçmişe dönük raporlar sessizce değişir. "Nasıl olsa önemsiz" diye Tip 1 seçip altı ay sonra "taşınma öncesi davranış analizi" istenmesi, veri ekiplerinin klasik pişmanlık hikâyesidir.</div>
+
+        <figure class="codebox">
+          <figcaption>SQL — SCD Tip 2 güncellemesinin iki adımı</figcaption>
+          <pre><code data-lang="sql">-- Müşteri 42 İzmir'den İstanbul'a taşındı (2026-03-01)
+
+-- 1) Eski sürümü KAPAT: bitiş tarihini yaz, bayrağı indir
+UPDATE dim_musteri
+SET gecerli_bitis = DATE '2026-03-01',
+    guncel_mi     = FALSE
+WHERE musteri_id = 42
+  AND guncel_mi  = TRUE;
+
+-- 2) Yeni durumu YENİ SATIR olarak ekle (tarihçe korunur)
+INSERT INTO dim_musteri
+    (musteri_id, ad, sehir, gecerli_baslangic, gecerli_bitis, guncel_mi)
+VALUES
+    (42, 'Zeynep', 'İstanbul', DATE '2026-03-01', DATE '9999-12-31', TRUE);
+
+-- Bugünün görünümü:  WHERE guncel_mi = TRUE
+-- Tarihsel görünüm:  WHERE DATE '2025-06-15'
+--                    BETWEEN gecerli_baslangic AND gecerli_bitis</code></pre>
+        </figure>
+
+        <h2>Modern desenler: data vault, One Big Table ve dbt</h2>
+        <p>Star schema hâlâ analitiğin ana dili; ama sahada üç modern deseni daha duyacaksın. <strong>Data vault</strong>, kurumsal ve denetim-ağır ortamların yöntemidir: <em>hub</em> tabloları iş anahtarlarını (müşteri no gibi kimlikleri) tutar; <em>link</em> tabloları hub'lar arasındaki ilişkileri kaydeder; <em>satellite</em> tabloları ise niteliklerin zaman damgalı tarihçesini taşır. Kaynak sistemler değişse de modelin çekirdeği bozulmadığı için bankalar ve sigorta şirketleri sever.</p>
+        <p><strong>One Big Table (OBT)</strong> yaklaşımı ise ters uçtur: BigQuery gibi sütunsal motorlarda fact ve dimension'ları önceden join'leyip her şeyi tek geniş tabloda tutarsın. Depolama ucuz, sütunsal okuma hızlı olduğu için "JOIN'siz sorgu" pratikliği kazanırsın; bedeli, şema disiplinini ve güncelleme kolaylığını kaybetmektir.</p>
+        <p>Ve en önemli değişim: model artık diyagram olarak duvarda değil, <strong>dbt</strong> ile versiyonlanan SQL dosyaları olarak kodda yaşıyor. Her model bir <code>SELECT</code>; dbt bunlardan tabloları üretir, testler ve dokümantasyonla birlikte. Modelleme böylece yazılım mühendisliği pratiğiyle buluşur — ayrıntısı <a href="m3-etl-elt.html">ETL/ELT konusunda</a>.</p>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Veri modelleme "teorik" görünür ama sahanın en somut işlerindendir:</p>
+        <ul>
+          <li><strong>Analytics engineer rolü →</strong> günün büyük kısmı, kaynak tablolarından dbt ile star schema'lar inşa etmekle geçer; fact/dimension ayrımı işin günlük dilidir.</li>
+          <li><strong>BI araçlarında →</strong> Power BI ve Tableau (<a href="m4-gorsellestirme.html">görselleştirme konusu</a>) ilişki kurarken fact–dimension yapısı bekler; iyi modellenmiş şema, hızlı dashboard demektir.</li>
+          <li><strong>Mülakat beyaz tahtasında →</strong> "E-ticaret için şema tasarla" klasiği: önce ER ve kardinalite, ardından "peki raporlama için nasıl değişirdi?" sorusu gelir.</li>
+          <li><strong>Warehouse tasarımında →</strong> partition ve clustering kararları (<a href="m3-warehouse-lake.html">warehouse konusu</a>) modelin fiziksel katmanıdır; mantıksal model kötüyse hiçbir partition kurtaramaz.</li>
+          <li><strong>ML tarafında →</strong> feature store'lardaki (<a href="m8-feature-store.html">Modül 8</a>) "point-in-time doğruluk" derdi, SCD Tip 2'nin akrabasıdır: eğitim verisine o günkü değeri koymak zorundasın, bugünküyü değil.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Sipariş tablosuna müşterinin adını da yazmak OLTP'de neden hata, OLAP'ta neden strateji olabilir?</summary>
+            <div class="answer">OLTP'de bu <b>güncelleme anomalisi</b> yaratır: ad değişince binlerce satırı düzeltmen gerekir, bu yüzden normalize edilir. OLAP'ta ise veri nadiren güncellenir, amaç okuma hızıdır; JOIN'i azaltmak için bilinçli <b>denormalizasyon</b> yapılır. Aynı hamle, bağlama göre hata ya da strateji olur.</div>
+          </details>
+          <details class="quiz">
+            <summary>Bir tabloya bakıp fact mi dimension mı olduğunu nasıl anlarsın?</summary>
+            <div class="answer">İçeriğine bak: <b>fact</b> ölçülebilir sayılar (tutar, adet) ve başka tablolara işaret eden anahtarlarla doludur; dar ama milyarlarca satırdır. <b>Dimension</b> tanımlayıcı metinler (ad, şehir, kategori) taşır; geniş ama kısadır. Kaba test: "SUM alınca anlamlı mı?" — anlamlıysa fact kolonudur.</div>
+          </details>
+          <details class="quiz">
+            <summary>Müşteri adres değiştirdiğinde geçmiş raporların doğru kalması için SCD Tip 1 mi Tip 2 mi gerekir, neden?</summary>
+            <div class="answer"><b>Tip 2.</b> Tip 1 üzerine yazar; geçmiş satışlar yeni şehre "göçer" ve eski raporlar sessizce değişir. Tip 2 eski satırı geçerlilik tarihiyle kapatıp yeni satır ekler; her fact kaydı kendi dönemindeki sürüme bağlandığı için tarih çarpıtılmaz.</div>
+          </details>
+          <details class="quiz">
+            <summary>Sipariş ile Ürün arasındaki N–N ilişkiyi veritabanında nasıl kurarsın?</summary>
+            <div class="answer">Doğrudan kuramazsın — iki tabloya da tek FK yetmez. Araya bir <b>junction (ara) tablo</b> koyarsın: <code>siparis_kalemi(siparis_id, urun_id, adet)</code>. Böylece N–N ilişki, iki adet 1–N ilişkiye dönüşür; "adet" gibi ilişkiye ait nitelikler de doğal evini bulur.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Veri Modelleme</span><span class="term-en">Data Modeling</span><span class="lvl lvl-orta">Orta</span></div><p>Verinin varlıklarını, ilişkilerini ve kurallarını tablolara dönüşmeden önce tasarlama disiplini; yanlış modelin faturası yıllarca ödenir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">ER Diyagramı</span><span class="term-en">Entity-Relationship Diagram</span><span class="lvl lvl-orta">Orta</span></div><p>Varlıkları, niteliklerini ve aralarındaki ilişkileri gösteren şema; modellemenin ortak dili.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Kardinalite</span><span class="term-en">Cardinality</span><span class="lvl lvl-orta">Orta</span></div><p>İki varlık arasındaki ilişkinin "kaça kaç" sorusu: 1-1, 1-N ya da N-N. N-N ilişki ara tabloyla çözülür.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">OLTP</span><span class="term-en">OLTP</span><span class="lvl lvl-orta">Orta</span></div><p>Uygulamanın anlık işlemlerini yürüten sistem; küçük ve hızlı sorgular, normalize model.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">OLAP</span><span class="term-en">OLAP</span><span class="lvl lvl-orta">Orta</span></div><p>Analitik sorguların dünyası; milyonlarca satırı tarayan toplama sorguları, denormalize model.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Fact Tablosu</span><span class="term-en">Fact Table</span><span class="lvl lvl-orta">Orta</span></div><p>Ölçülebilir olayları (tutar, adet) ve dimension anahtarlarını tutan merkez tablo; dar ama milyarlarca satır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Dimension Tablosu</span><span class="term-en">Dimension Table</span><span class="lvl lvl-orta">Orta</span></div><p>Olayın bağlamını (kim, ne, nerede, ne zaman) taşıyan açıklayıcı tablo; geniş ama kısa.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Star Schema (Yıldız Şema)</span><span class="term-en">Star Schema</span><span class="lvl lvl-orta">Orta</span></div><p>Ortada fact, çevresinde dimension'lar: analitik sorgular için standart, tek JOIN adımlı yerleşim.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Snowflake Schema</span><span class="term-en">Snowflake Schema</span><span class="lvl lvl-ileri">İleri</span></div><p>Dimension'ların tekrar normalize edildiği star varyantı; daha az tekrar, daha çok JOIN.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Denormalizasyon</span><span class="term-en">Denormalization</span><span class="lvl lvl-orta">Orta</span></div><p>Okuma hızı için bilinçli veri tekrarına izin verme; OLAP modellemesinin temel hamlesi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">SCD</span><span class="term-en">Slowly Changing Dimension</span><span class="lvl lvl-ileri">İleri</span></div><p>Dimension nitelikleri değişince tarihçenin nasıl saklanacağını tanımlayan desenler; Tip 1 üzerine yazar, Tip 2 geçerlilik tarihli satır ekler.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Data Vault</span><span class="term-en">Data Vault</span><span class="lvl lvl-ileri">İleri</span></div><p>Hub, link ve satellite tablolarıyla kurulan, tarihçe ve denetim odaklı kurumsal modelleme yöntemi.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m2-veri-modelleme">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m2-nosql.html"><span>← Önceki</span><b>NoSQL ve Dağıtık Veritabanları</b></a>
+          <a class="next" href="m2-scraping.html"><span>Sonraki →</span><b>Web Scraping ve Veri Toplama</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

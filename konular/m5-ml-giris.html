@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML'e Giriş: Temel Kavramlar — Veri Atlası</title>
+<meta name="description" content="Machine learning'e giriş: feature, label, model, supervised/unsupervised/reinforcement öğrenme, train/validation/test ayrımı, overfitting ve generalization — ilk modelini kurmadan önce bilmen gereken tüm temel kavramlar.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m5" data-slug="m5-ml-giris">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m5">5. Makine Öğrenmesi</a><span class="sep">/</span>
+        <span>ML'e Giriş: Temel Kavramlar</span>
+      </nav>
+      <span class="mod-badge">Modül 5 · Makine Öğrenmesi</span>
+      <h1>ML'e Giriş: Temel Kavramlar</h1>
+      <p class="en-title">Intro to Machine Learning</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-baslangic">Başlangıç</span>
+        <span class="chip">⏱️ ~16 dk okuma</span>
+        <span class="chip">🔤 14 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Kural yazmaktan kural öğrenmeye</h2>
+        <p>Bir spam filtresi yazman gerektiğini düşün. Klasik programlama refleksiyle işe koyulursun: <em>"kazandınız" kelimesi geçiyorsa spam, gönderen adres tanımsızsa spam, çok fazla ünlem varsa spam…</em> İlk hafta fena çalışmaz. Sonra spamcılar "k-a-z-a-n-d-ı-n-ı-z" yazmaya başlar, meşru bir kargo e-postası "Kazandınız: ücretsiz teslimat" der ve kural listen her istisnayla biraz daha uzar. Bin kurallık bir if-else ormanına dönüşen bu yaklaşımın bakımı bir noktada imkânsızlaşır.</p>
+        <p><strong>Machine learning (makine öğrenmesi)</strong> problemi tersine çevirir: kuralları sen yazmazsın; bilgisayara binlerce <em>örnek</em> ("bu e-posta spam", "bu değil") verirsin, o da bu örneklerden kuralları <strong>kendisi çıkarır</strong>. Öğrenilen kurallar bütününe <strong>model</strong> denir. Fark tam olarak şudur:</p>
+        <ul>
+          <li><strong>Klasik programlama:</strong> kurallar + veri → cevaplar. Mantığı sen kurarsın, program uygular.</li>
+          <li><strong>ML:</strong> veri + cevaplar → kurallar (model). Mantığı veri kurar, sen süreci yönetirsin.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 300" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Klasik programlama ile makine öğrenmesinin karşılaştırması">
+            <g font-family="inherit">
+              <defs>
+                <marker id="aArrM" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--muted)"/></marker>
+                <marker id="aArrC" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              </defs>
+              <text x="182" y="28" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="700">Klasik Programlama</text>
+              <rect x="35" y="48" width="140" height="52" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="105" y="70" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Kurallar</text>
+              <text x="105" y="88" text-anchor="middle" fill="var(--muted)" font-size="10.5">elle yazılmış if'ler</text>
+              <rect x="190" y="48" width="140" height="52" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="260" y="70" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Veri</text>
+              <text x="260" y="88" text-anchor="middle" fill="var(--muted)" font-size="10.5">gelen e-postalar</text>
+              <path d="M105 104 L172 132" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#aArrM)"/>
+              <path d="M260 104 L193 132" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#aArrM)"/>
+              <rect x="110" y="136" width="145" height="50" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="182" y="157" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Program</text>
+              <text x="182" y="175" text-anchor="middle" fill="var(--muted)" font-size="10.5">kuralları uygular</text>
+              <path d="M182 190 L182 214" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#aArrM)"/>
+              <rect x="92" y="218" width="180" height="52" rx="10" fill="var(--dg-box)" stroke="var(--ok)" stroke-width="1.5"/>
+              <text x="182" y="240" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Cevaplar</text>
+              <text x="182" y="258" text-anchor="middle" fill="var(--muted)" font-size="10.5">spam / değil</text>
+
+              <line x1="360" y1="40" x2="360" y2="280" stroke="var(--dg-line)" stroke-width="1.2" stroke-dasharray="4 6"/>
+
+              <text x="540" y="28" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="700">Makine Öğrenmesi</text>
+              <rect x="395" y="48" width="135" height="52" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="462" y="70" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Veri</text>
+              <text x="462" y="88" text-anchor="middle" fill="var(--muted)" font-size="10.5">binlerce e-posta</text>
+              <rect x="545" y="48" width="150" height="52" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="620" y="70" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Cevaplar</text>
+              <text x="620" y="88" text-anchor="middle" fill="var(--muted)" font-size="10.5">etiket: spam / değil</text>
+              <path d="M462 104 L523 132" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#aArrC)"/>
+              <path d="M620 104 L557 132" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#aArrC)"/>
+              <rect x="455" y="136" width="170" height="50" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="540" y="157" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Öğrenme Algoritması</text>
+              <text x="540" y="175" text-anchor="middle" fill="var(--muted)" font-size="10.5">örüntüyü kendisi bulur</text>
+              <path d="M540 190 L540 214" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#aArrC)"/>
+              <rect x="448" y="218" width="184" height="52" rx="10" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="540" y="240" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Model (= kurallar)</text>
+              <text x="540" y="258" text-anchor="middle" fill="var(--muted)" font-size="10.5">öğrenilmiş spam filtresi</text>
+            </g>
+          </svg>
+          <figcaption>Klasik programlamada kuralı sen yazarsın; ML'de kural, veri ile cevapların içinden öğrenilir — çıktı çalıştırılabilir bir "model"dir.</figcaption>
+        </figure>
+
+        <p>Bu yaklaşım, kuralı elle yazmanın imkânsız olduğu her yerde parlar: bir fotoğraftaki kediyi tanımanın if-else'i yoktur; ama milyonlarca etiketli fotoğraftan öğrenilebilir. Şimdi bu dünyanın temel sözcüklerini tanıyalım.</p>
+
+        <h2>ML sözlüğünün çekirdeği: beş kavram</h2>
+        <p>Neredeyse tüm ML literatürü beş kelimenin üzerinde döner. Hepsini tek bir örnekle kuralım: <strong>ev fiyatı tahmini</strong>. Elinde geçmiş satışların tablosu var — her satır satılmış bir ev, sütunlarda metrekare, oda sayısı, bina yaşı, semt ve satış fiyatı.</p>
+        <ul>
+          <li><strong>Örnek (sample/instance)</strong> — tablodaki her satır: tek bir ev. Modelin öğrendiği birim budur; ne kadar çok ve çeşitli örnek, o kadar iyi.</li>
+          <li><strong>Feature (özellik)</strong> — modelin girdi olarak kullandığı sütunlar: metrekare, oda sayısı, bina yaşı, semt. "Modele ne gösteriyoruz?" sorusunun cevabı.</li>
+          <li><strong>Label (etiket)</strong> — tahmin etmeye çalıştığın sütun: satış fiyatı. "Doğru cevap" da denir; genelde <code>y</code> harfiyle gösterilir (feature'lar <code>X</code>).</li>
+          <li><strong>Model</strong> — feature'lardan label'a giden öğrenilmiş eşleme: "metrekare ve semti ver, fiyatı söyleyeyim" diyen matematiksel fonksiyon.</li>
+          <li><strong>Training (eğitim)</strong> — modelin iç parametrelerinin (ör. katsayıların) örneklere bakarak ayarlanması süreci. Kodda <code>fit()</code> çağrısının yaptığı iş. Eğitim bittikten sonra modele yeni bir ev gösterip fiyat sormaya <strong>prediction (tahmin)</strong> denir — kodda <code>predict()</code>.</li>
+        </ul>
+        <p>Bu tabloyu hazır hâle getirmek — eksik değerleri temizlemek, sütunları doğru tipe çevirmek — aslında <a href="m4-eda.html">pandas ile EDA</a> konusunda öğrendiğin işin ta kendisidir: ML projelerinde zamanın çoğu feature tablosunu kurmaya gider.</p>
+
+        <div class="note"><b>Etiket nereden gelir?</b> Ev fiyatında etiket geçmiş satış kayıtlarından bedavaya gelir; spam örneğinde kullanıcıların "spam bildir" tıkları etikettir. Ama tıbbi görüntü gibi alanlarda etiketi uzmanlar elle üretir ve bu çok pahalıdır. "Etiketli veri" ML'in en değerli ham maddesidir — bu yüzden etiketsiz veriyle çalışan yöntemler (birazdan) ayrı bir dal olmuştur.</div>
+
+        <h2>Üç öğrenme türü</h2>
+        <p>ML problemleri, elindeki verinin ve hedefin şekline göre üç büyük aileye ayrılır:</p>
+        <ul>
+          <li><strong>Supervised learning (gözetimli öğrenme)</strong> — veride hem feature'lar hem <em>etiketler</em> var; model "girdi → doğru cevap" eşlemesini öğrenir. Örnek: geçmiş satışlardan <em>ev fiyatı tahmini</em>; işlem geçmişinden <em>kredi kartı sahtekârlığı tespiti</em> (etiket: "bu işlem sahteydi"). Bir sonraki konu <a href="m5-supervised.html">Supervised Learning Algoritmaları</a> tamamen bu aileye ayrılmıştır.</li>
+          <li><strong>Unsupervised learning (gözetimsiz öğrenme)</strong> — etiket yok, yalnız feature'lar var; model veride kendiliğinden yapı arar. Örnek: e-ticaret müşterilerini davranışlarına göre <em>segmentlere ayırmak</em> (kimse segmentleri önceden etiketlemedi); sunucu metriklerinde <em>anomali tespiti</em> ("normalden sapan" örüntüyü bulmak). Detayı <a href="m5-unsupervised.html">Unsupervised Learning</a> konusunda.</li>
+          <li><strong>Reinforcement learning (pekiştirmeli öğrenme)</strong> — ne etiket ne hazır veri; bir <em>ajan</em> ortamda deneme-yanılma yapar, iyi hamleler <em>ödülle</em> pekiştirilir. Örnek: Go şampiyonunu yenen <em>AlphaGo</em> milyonlarca oyunu kendine karşı oynayarak öğrendi; <em>robotik</em>te bir kolun nesneyi kavramayı düşe kalka öğrenmesi. Ayrıca LLM'lerin "insan geri bildirimiyle" terbiye edilmesinde (RLHF) de karşına çıkacak.</li>
+        </ul>
+        <p>Pratikte sektörde en sık karşılaşacağın aile açık ara supervised learning'dir: iş dünyasının "geçmiş verim var, geleceği tahmin et" problemlerinin neredeyse tamamı bu kalıba oturur.</p>
+
+        <h2>Veriyi bölmek: train, validation, test</h2>
+        <p>Şimdi kritik bir soru: modelin iyi olup olmadığını nasıl anlarsın? "Eğitimde kullandığım veride ne kadar doğru tahmin yapıyor?" diye bakmak <strong>yanıltıcıdır</strong> — model o örnekleri zaten görmüştür. Sınav analojisiyle: <em>sınava çalıştığın sorularla sınav olmazsın.</em> Cevapları ezberlemiş olman, konuyu öğrendiğini göstermez.</p>
+        <p>Bu yüzden veri en başta parçalara ayrılır:</p>
+        <ul>
+          <li><strong>Train (eğitim) seti</strong> — modelin öğrendiği kısım: çalıştığın sorular.</li>
+          <li><strong>Validation (doğrulama) seti</strong> — model <em>seçimi</em> ve ayar için kullanılan kısım: deneme sınavı. "Hangi algoritma, hangi karmaşıklık?" kararlarını buradaki skora bakarak verirsin.</li>
+          <li><strong>Test seti</strong> — en sonda, <em>yalnızca bir kez</em> bakılan kısım: gerçek sınav. Modelin sahadaki performansının dürüst tahminidir.</li>
+        </ul>
+        <p>Neden validation ile test ayrı? Çünkü validation skoruna bakarak onlarca karar verirsin; farkında olmadan modeli o sete de "uydurmuş" olursun. Elinde hiç dokunulmamış bir test seti kalmazsa, sahaya çıkmadan önce dürüst bir ölçümün de kalmaz.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 210" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Train, validation ve test bölme şeridi">
+            <g font-family="inherit">
+              <text x="350" y="26" text-anchor="middle" fill="var(--muted)" font-size="11.5" font-weight="600">Örnek: 10.000 satırlık etiketli veri seti</text>
+              <rect x="40" y="44" width="434" height="56" rx="8" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="257" y="68" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">TRAIN — %70</text>
+              <text x="257" y="87" text-anchor="middle" fill="var(--muted)" font-size="10.5">7.000 satır — model burada öğrenir (fit)</text>
+              <rect x="474" y="44" width="93" height="56" rx="8" fill="var(--warn)" fill-opacity=".16" stroke="var(--warn)" stroke-width="1.6"/>
+              <text x="520" y="68" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">VAL</text>
+              <text x="520" y="87" text-anchor="middle" fill="var(--muted)" font-size="10.5">%15</text>
+              <rect x="567" y="44" width="93" height="56" rx="8" fill="var(--bad)" fill-opacity=".14" stroke="var(--bad)" stroke-width="1.6"/>
+              <text x="613" y="68" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">TEST</text>
+              <text x="613" y="87" text-anchor="middle" fill="var(--muted)" font-size="10.5">%15</text>
+              <text x="257" y="126" text-anchor="middle" fill="var(--muted)" font-size="10.5">sınava çalıştığın sorular</text>
+              <line x1="520" y1="100" x2="520" y2="128" stroke="var(--warn)" stroke-width="1.4"/>
+              <text x="470" y="144" text-anchor="middle" fill="var(--ink)" font-size="11">Model seçimi ve hiperparametre ayarı</text>
+              <text x="470" y="160" text-anchor="middle" fill="var(--muted)" font-size="10.5">deneme sınavı</text>
+              <line x1="613" y1="100" x2="613" y2="172" stroke="var(--bad)" stroke-width="1.4"/>
+              <text x="540" y="188" text-anchor="middle" fill="var(--ink)" font-size="11">Final sınavı: en sonda, yalnızca 1 kez</text>
+            </g>
+          </svg>
+          <figcaption>%70 / %15 / %15 klasik bir başlangıç oranıdır. Veri çok büyükse validation ve test payları küçülebilir; küçükse cross-validation devreye girer (Modül 5'in son konusu).</figcaption>
+        </figure>
+
+        <div class="warn"><b>Test setine "bakma".</b> Test skorunu görüp modeli değiştirir, sonra tekrar test edersen, test seti artık gizli bir validation setine dönüşmüştür — skoru iyimserleşir ama sahada aynısını göremezsin. Test seti kasadaki mühürlü zarftır: bir kez açılır.</div>
+
+        <p>Kod tarafında bu bölme tek satırdır. İlk uçtan uca modelini kurmak için gerekenlerin tamamı şu kadar:</p>
+
+        <figure class="codebox">
+          <figcaption>Python — scikit-learn ile uçtan uca ilk model</figcaption>
+          <pre><code data-lang="python">from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+
+# X: feature'lar (girdi sütunları), y: label (hedef sütun)
+X = evler[["metrekare", "oda_sayisi", "bina_yasi"]]
+y = evler["fiyat"]
+
+# 1) Veriyi böl: %80 train, %20 test
+#    random_state → bölme her çalıştırmada aynı olsun (tekrarlanabilirlik)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# 2) Modeli kur ve eğit — fit(): "örneklerden kuralları öğren"
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+# 3) Modelin HİÇ görmediği evler için tahmin yap
+tahmin = model.predict(X_test)
+
+# 4) Skorla: R² 1'e yaklaştıkça tahminler gerçeğe yakın demektir
+print(model.score(X_test, y_test))   # örn. 0.78
+print(model.coef_)                   # öğrenilen katsayılar = "kurallar"</code></pre>
+        </figure>
+
+        <h2>Overfitting ve underfitting: ezber ile yüzeysellik arasında</h2>
+        <p>Modelin başına gelebilecek iki temel hastalık vardır ve ikisi de sınav analojisiyle kolay anlaşılır:</p>
+        <ul>
+          <li><strong>Underfitting (eksik öğrenme)</strong> — model çok basit kalmış, verideki deseni yakalayamıyor: konuya hiç çalışmamış öğrenci. Belirtisi: <em>hem train hem test skoru kötü.</em></li>
+          <li><strong>Overfitting (aşırı öğrenme)</strong> — model çok karmaşık; deseni değil, örnekleri ve gürültüyü <em>ezberlemiş</em>: soru bankasının cevap anahtarını ezberleyen ama kavramı anlamayan öğrenci. Belirtisi: <em>train skoru parlak, test skoru kötü.</em></li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 250" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Underfit, dengeli ve overfit modellerin karşılaştırması">
+            <g font-family="inherit">
+              <text x="125" y="32" text-anchor="middle" fill="var(--warn)" font-size="13" font-weight="700">Underfit</text>
+              <rect x="15" y="45" width="220" height="170" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <g fill="var(--acc)" fill-opacity=".85">
+                <circle cx="35" cy="90" r="4"/><circle cx="60" cy="140" r="4"/><circle cx="85" cy="170" r="4"/><circle cx="110" cy="185" r="4"/><circle cx="135" cy="182" r="4"/><circle cx="160" cy="160" r="4"/><circle cx="185" cy="120" r="4"/><circle cx="215" cy="70" r="4"/>
+              </g>
+              <line x1="30" y1="148" x2="220" y2="132" stroke="var(--warn)" stroke-width="2.5"/>
+              <text x="125" y="236" text-anchor="middle" fill="var(--muted)" font-size="10.5">deseni ıskalar: train de test de kötü</text>
+
+              <text x="360" y="32" text-anchor="middle" fill="var(--ok)" font-size="13" font-weight="700">Tam kararında</text>
+              <rect x="250" y="45" width="220" height="170" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <g fill="var(--acc)" fill-opacity=".85">
+                <circle cx="270" cy="90" r="4"/><circle cx="295" cy="140" r="4"/><circle cx="320" cy="170" r="4"/><circle cx="345" cy="185" r="4"/><circle cx="370" cy="182" r="4"/><circle cx="395" cy="160" r="4"/><circle cx="420" cy="120" r="4"/><circle cx="450" cy="70" r="4"/>
+              </g>
+              <path d="M270 90 Q358 290 450 70" fill="none" stroke="var(--ok)" stroke-width="2.5"/>
+              <text x="360" y="236" text-anchor="middle" fill="var(--muted)" font-size="10.5">genel deseni yakalar: genellenir</text>
+
+              <text x="595" y="32" text-anchor="middle" fill="var(--bad)" font-size="13" font-weight="700">Overfit</text>
+              <rect x="485" y="45" width="220" height="170" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <g fill="var(--acc)" fill-opacity=".85">
+                <circle cx="505" cy="90" r="4"/><circle cx="530" cy="140" r="4"/><circle cx="555" cy="170" r="4"/><circle cx="580" cy="185" r="4"/><circle cx="605" cy="182" r="4"/><circle cx="630" cy="160" r="4"/><circle cx="655" cy="120" r="4"/><circle cx="685" cy="70" r="4"/>
+              </g>
+              <polyline points="505,90 517,118 530,140 543,126 555,170 567,148 580,185 593,166 605,182 617,150 630,160 643,126 655,120 670,142 685,70" fill="none" stroke="var(--bad)" stroke-width="2"/>
+              <text x="595" y="236" text-anchor="middle" fill="var(--muted)" font-size="10.5">gürültüyü ezberler: train iyi, test kötü</text>
+            </g>
+          </svg>
+          <figcaption>Aynı veri, üç model: çok basit doğru deseni ıskalar (underfit), dengeli model genel eğilimi yakalar, çok karmaşık model her noktadan geçmek için zikzak çizer (overfit).</figcaption>
+        </figure>
+
+        <p>Bu dengeye literatürde <strong>bias-variance tradeoff</strong> denir. Sezgisi şu: çok basit modelin hatası <em>önyargısından</em> gelir (bias — "her şey doğrusaldır" gibi katı bir varsayım); çok karmaşık modelin hatası <em>oynaklığından</em> gelir (variance — veri birazcık değişse model bambaşka olurdu, çünkü gürültüye tutunmuş). Karmaşıklığı artırdıkça bias düşer ama variance yükselir; ikisinin toplamının en küçük olduğu bir "tatlı nokta" vardır:</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 680 310" width="680" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Model karmaşıklığına göre train ve validation hatası eğrileri">
+            <g font-family="inherit">
+              <defs>
+                <marker id="aAx" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--muted)"/></marker>
+              </defs>
+              <line x1="70" y1="255" x2="635" y2="255" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#aAx)"/>
+              <line x1="70" y1="255" x2="70" y2="42" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#aAx)"/>
+              <text x="352" y="292" text-anchor="middle" fill="var(--muted)" font-size="12">Model karmaşıklığı</text>
+              <text x="36" y="150" text-anchor="middle" fill="var(--muted)" font-size="12" transform="rotate(-90 36 150)">Hata</text>
+              <path d="M92 130 C 250 225, 400 240, 605 244" fill="none" stroke="var(--acc)" stroke-width="2.5"/>
+              <path d="M92 95 C 200 200, 260 218, 330 214 C 420 209, 520 120, 605 55" fill="none" stroke="var(--bad)" stroke-width="2.5"/>
+              <line x1="330" y1="255" x2="330" y2="100" stroke="var(--ok)" stroke-width="1.8" stroke-dasharray="5 4"/>
+              <circle cx="330" cy="212" r="5" fill="var(--ok)"/>
+              <text x="330" y="88" text-anchor="middle" fill="var(--ok)" font-size="12" font-weight="700">tatlı nokta</text>
+              <text x="165" y="60" text-anchor="middle" fill="var(--warn)" font-size="11.5" font-weight="700">UNDERFIT</text>
+              <text x="165" y="76" text-anchor="middle" fill="var(--muted)" font-size="10.5">bias yüksek</text>
+              <text x="545" y="185" text-anchor="middle" fill="var(--bad)" font-size="11.5" font-weight="700">OVERFIT</text>
+              <text x="545" y="201" text-anchor="middle" fill="var(--muted)" font-size="10.5">variance yüksek</text>
+              <line x1="400" y1="50" x2="430" y2="50" stroke="var(--acc)" stroke-width="3"/>
+              <text x="437" y="54" fill="var(--ink)" font-size="11.5">Train hatası</text>
+              <line x1="400" y1="72" x2="430" y2="72" stroke="var(--bad)" stroke-width="3"/>
+              <text x="437" y="76" fill="var(--ink)" font-size="11.5">Validation hatası</text>
+            </g>
+          </svg>
+          <figcaption>Karmaşıklık arttıkça train hatası hep düşer; validation hatası önce düşer, sonra tekrar yükselir. Hedef, U eğrisinin dibindeki "tatlı nokta"dır.</figcaption>
+        </figure>
+
+        <p>Diyagramdaki U eğrisini kendi gözünle görmek istersen, aynı veriye bir basit bir de aşırı esnek model uydurup skorları karşılaştırman yeter:</p>
+
+        <figure class="codebox">
+          <figcaption>Python — overfitting'i skorlarda yakalamak: düşük vs yüksek dereceli polinom</figcaption>
+          <pre><code data-lang="python">from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression
+from sklearn.pipeline import make_pipeline
+
+# Aynı veri, iki farklı karmaşıklık:
+# derece 1 → düz doğru (basit), derece 15 → kıvrım dolu eğri (karmaşık)
+for derece in [1, 15]:
+    model = make_pipeline(PolynomialFeatures(derece), LinearRegression())
+    model.fit(X_train, y_train)
+
+    train_skor = model.score(X_train, y_train)   # gördüğü veride
+    test_skor = model.score(X_test, y_test)      # görmediği veride
+    print(f"derece={derece:2d}  train R²={train_skor:.2f}  test R²={test_skor:.2f}")
+
+# Tipik çıktı:
+# derece= 1  train R²=0.72  test R²=0.68   → iki skor yakın: dengeli
+# derece=15  train R²=0.99  test R²=0.21   → uçurum var: EZBERLEMİŞ
+# Kural: train ile test skoru arasındaki büyük fark = overfitting alarmı</code></pre>
+        </figure>
+
+        <h2>Generalization: asıl hedef görülmemiş veri</h2>
+        <p>Buraya kadarki her kavram tek bir fikre hizmet ediyor: <strong>generalization (genelleme)</strong>. Modelin değeri, eğitimde gördüğü veride değil, <em>yarın karşılaşacağı görülmemiş veride</em> ne kadar isabetli olduğudur. Train skoru sadece bir ara ölçümdür; müşteriye, patrona ve kendine raporlayacağın şey her zaman görülmemiş veri üzerindeki performanstır.</p>
+        <p>Bu hedefin pratik bir sonucu var: <strong>ilk modelin daima basit olsun.</strong> Buna <strong>baseline (taban çizgisi)</strong> denir — örneğin "her ev için ortalama fiyatı tahmin et" ya da iki satırlık bir linear regression. Baseline sana iki şey kazandırır: (1) karmaşık modellerin gerçekten değer katıp katmadığını ölçeceğin bir referans, (2) veri hazırlığındaki hataları erkenden yakalayan ucuz bir duman testi. Basit modeli yenemeyen süslü modelin süsü fazladan risktir.</p>
+
+        <div class="tip"><b>Önce baseline, sonra süs.</b> Sahada iyi ekiplerin ritmi şudur: basit model → dürüst ölçüm → karmaşıklığı ancak skor kazandırdıkça artır. "En yeni modeli denedim" değil, "baseline'ı şu kadar geçtim" cümlesi itibar görür. Ölçümün nasıl yapılacağını <a href="m5-model-degerlendirme.html">Model Değerlendirme ve Tuning</a> konusunda derinleştireceğiz.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Bu sayfadaki kavramlar, ML'le ilgili her işin ortak dilidir:</p>
+        <ul>
+          <li><strong>İş tanımları →</strong> "churn tahmini", "talep tahmini", "fraud tespiti" projelerinin hepsi aynı iskelettir: feature tablosu kur, etiketi tanımla, böl, eğit, görülmemiş veride ölç.</li>
+          <li><strong>Zamanın dağılımı →</strong> tipik bir ML projesinde sürenin %70-80'i feature tablosunu hazırlamaya gider; bu beceri <a href="m4-eda.html">EDA</a> ve <a href="m5-feature-engineering.html">Feature Engineering</a> konularının işidir.</li>
+          <li><strong>Kod incelemelerinde →</strong> "train/test ayrımını nerede yaptın, test setine sızıntı var mı?" sorusu, ML kod review'larının bir numaralı sorusudur.</li>
+          <li><strong>Model raporlarında →</strong> "train %99, test %60" gören bir mülakatçı senden tek kelime bekler: overfitting. Bu teşhisi koyabilmek başlı başına bir mülakat sorusudur.</li>
+          <li><strong>Derin öğrenmeye köprü →</strong> Modül 6'daki sinir ağları da aynı kavramlarla yaşar: aynı train/val/test disiplini, aynı overfitting savaşı — sadece model daha büyüktür.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Klasik programlama ile machine learning arasındaki temel fark nedir?</summary>
+            <div class="answer">Klasik programlamada <b>kuralları sen yazarsın</b>: kurallar + veri → cevaplar. ML'de ise veri + cevaplar (etiketler) algoritmaya verilir, <b>kurallar veriden öğrenilir</b> ve çıktı bir modeldir. ML, kuralı elle yazmanın imkânsız olduğu problemlerde (spam, görüntü tanıma) devreye girer.</div>
+          </details>
+          <details class="quiz">
+            <summary>Veriyi neden 2 değil 3 parçaya bölüyoruz? Validation'ın test setinden farkı ne?</summary>
+            <div class="answer">Validation seti <b>model seçimi ve hiperparametre ayarı</b> için defalarca kullanılır — deneme sınavıdır. Bu kararları vere vere modeli validation setine de kısmen uydurursun. Test seti ise <b>en sonda yalnızca bir kez</b> bakılan dokunulmamış settir; sahadaki performansın dürüst tahminini ancak o verir.</div>
+          </details>
+          <details class="quiz">
+            <summary>Modelin train R²'si 0.99, test R²'si 0.30 çıktı. Teşhisin nedir, ne yaparsın?</summary>
+            <div class="answer">Bu tablo <b>overfitting</b>'in ders kitabı örneğidir: model train verisini ezberlemiş ama genelleyememiş. Çözüm yönü model karmaşıklığını azaltmaktır: daha basit model, daha az feature, düzenlileştirme (regularization) ya da daha fazla eğitim verisi.</div>
+          </details>
+          <details class="quiz">
+            <summary>Müşterileri davranışlarına göre gruplara ayırmak ile kredi kartı işleminin sahte olup olmadığını tahmin etmek hangi öğrenme türlerine girer?</summary>
+            <div class="answer">Gruplara ayırmada önceden tanımlı bir "doğru cevap" yoktur — model yapıyı kendisi bulur: <b>unsupervised learning</b> (kümeleme). Sahtekârlık tahmininde ise geçmiş işlemler "sahte / değil" diye etiketlidir: <b>supervised learning</b> (sınıflandırma).</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Makine Öğrenmesi</span><span class="term-en">Machine Learning</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Kuralları elle yazmak yerine örnek veriden öğrenen sistemler kurma yaklaşımı; çıktısı modeldir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Özellik</span><span class="term-en">Feature</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Modelin girdi olarak kullandığı sütun/değişken: metrekare, oda sayısı gibi. Genelde X ile gösterilir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Etiket</span><span class="term-en">Label</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Tahmin edilmeye çalışılan hedef değer ("doğru cevap"): evin fiyatı, e-postanın spam olup olmadığı. Genelde y ile gösterilir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Model</span><span class="term-en">Model</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Feature'lardan etikete giden, veriden öğrenilmiş eşleme; ML sürecinin çalıştırılabilir çıktısı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Eğitim</span><span class="term-en">Training</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Model parametrelerinin örnek veriye bakarak ayarlanması süreci; kodda fit() çağrısı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Tahmin</span><span class="term-en">Prediction</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Eğitilmiş modelin yeni bir örnek için ürettiği çıktı; kodda predict() çağrısı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Supervised Learning (Gözetimli)</span><span class="term-en">Supervised Learning</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Etiketli veriyle "girdi → doğru cevap" eşlemesini öğrenme ailesi; sektörde en yaygın ML türü.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Unsupervised Learning (Gözetimsiz)</span><span class="term-en">Unsupervised Learning</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Etiketsiz veride kendiliğinden yapı arama ailesi: kümeleme, anomali tespiti, boyut indirgeme.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Reinforcement Learning (Pekiştirmeli)</span><span class="term-en">Reinforcement Learning</span><span class="lvl lvl-orta">Orta</span></div><p>Ajanın ortamda deneme-yanılma yapıp ödülle öğrenmesi; oyun AI'ları, robotik ve RLHF'in temeli.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Train/Test Ayrımı</span><span class="term-en">Train-Test Split</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Veriyi öğrenme ve dürüst ölçüm parçalarına bölme; "çalıştığın sorularla sınav olmama" ilkesi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Validation Seti</span><span class="term-en">Validation Set</span><span class="lvl lvl-orta">Orta</span></div><p>Model seçimi ve hiperparametre ayarında kullanılan ara set; test setini "yakmadan" deneme sınavı imkânı verir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Overfitting (Aşırı Öğrenme)</span><span class="term-en">Overfitting</span><span class="lvl lvl-orta">Orta</span></div><p>Modelin deseni değil örnekleri ve gürültüyü ezberlemesi; train skoru yüksek, test skoru düşük kalır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Underfitting (Eksik Öğrenme)</span><span class="term-en">Underfitting</span><span class="lvl lvl-orta">Orta</span></div><p>Modelin çok basit kalıp verideki deseni yakalayamaması; hem train hem test skoru kötüdür.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Genelleme</span><span class="term-en">Generalization</span><span class="lvl lvl-orta">Orta</span></div><p>Modelin görülmemiş veride iyi çalışabilmesi — ML'in asıl hedefi. Tüm bölme ve değerlendirme disiplini buna hizmet eder.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m5-ml-giris">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m4-zaman-serisi.html"><span>← Önceki</span><b>Zaman Serisi Analizi ve Tahminleme</b></a>
+          <a class="next" href="m5-supervised.html"><span>Sonraki →</span><b>Supervised Learning Algoritmaları</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

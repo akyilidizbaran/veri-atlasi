@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Veri Yapıları ve Algoritmalar — Veri Atlası</title>
+<meta name="description" content="Big-O notasyonu, array ve linked list, stack ve queue, hash table, ağaç ve graf yapıları: pandas'ın, veritabanlarının ve Airflow DAG'lerinin altında dönen mekanizmalar, Python örnekleriyle.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m1" data-slug="m1-veri-yapilari-algoritmalar">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m1">1. Temeller ve Hazırlık</a><span class="sep">/</span>
+        <span>Veri Yapıları ve Algoritmalar</span>
+      </nav>
+      <span class="mod-badge">Modül 1 · Temeller ve Hazırlık</span>
+      <h1>Veri Yapıları ve Algoritmalar</h1>
+      <p class="en-title">Data Structures &amp; Algorithms</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~17 dk okuma</span>
+        <span class="chip">🔤 12 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Neden bir veri öğrencisi algoritma bilmeli?</h2>
+        <p><code>df.groupby("sehir").sum()</code> — tek satır. Ama o satır çalışırken pandas bir hash table kurar, milyonlarca satırı kovalara dağıtır, gerekirse arkada bir sıralama çalıştırır. 10 satırlık pandas kodunun altında, bu sayfada tanışacağın yapılar döner. Onları bilmek sana üç şey kazandırır:</p>
+        <ul>
+          <li><strong>Performans sezgisi</strong> — "Bu kod neden 4 saat sürüyor?" sorusuna tahminle değil, analizle cevap verirsin; veri 10 katına çıktığında ne olacağını önceden görürsün.</li>
+          <li><strong>Araçları anlamak</strong> — Airflow'un DAG'i, Kafka'nın kuyruğu, SQL indexinin B-tree'si… Kullandığın her aracın adında ve tasarımında bu yapılar var.</li>
+          <li><strong>Mülakatlar</strong> — data engineer ve data scientist mülakatlarında algoritma turu standarttır; sorular çoğunlukla bu sayfadaki yapıların etrafında döner.</li>
+        </ul>
+        <p>Bu sayfa bir bilgisayar bilimi dersinin özeti değil; veri işinde <em>gerçekten</em> karşına çıkacak kadarını, saha bağlantılarını göstererek anlatıyor. <a href="m1-python.html">Önceki konudaki</a> list ve dict bilgin burada mekanizmaya dönüşecek.</p>
+
+        <h2>Big-O: büyüme hızıyla düşünmek</h2>
+        <p>Doğru soru "bu kod kaç saniye sürer?" değildir — cevap donanıma göre değişir. Doğru soru şu: <strong>"veri 10 katına çıkarsa süre kaç katına çıkar?"</strong> <strong>Big-O notasyonu</strong> bu büyüme eğrisinin kısa adıdır ve <strong>zaman karmaşıklığını (time complexity)</strong> ifade eder. Sabitler ve küçük terimler atılır: 3n + 20 işlem yapan algoritma O(n)'dir, çünkü ölçek büyüyünce yalnız en hızlı büyüyen terim önemlidir.</p>
+        <p>Beş eğri, günlük hayattaki karşılıklarıyla:</p>
+        <ul>
+          <li><strong>O(1) — sabit:</strong> dict'te anahtarla erişim, listenin sonuna ekleme. Veri büyüse de süre değişmez.</li>
+          <li><strong>O(log n) — logaritmik:</strong> sıralı veride ortadan bölerek arama. 1 milyon kayıt → ~20 adım. Telefon rehberini ortasından açmak.</li>
+          <li><strong>O(n) — doğrusal:</strong> bir sütunun toplamı, listeyi baştan sona tarama. Veri 10x → süre 10x.</li>
+          <li><strong>O(n log n):</strong> iyi sıralama algoritmalarının sınıfı — <code>sort_values</code>, SQL'in <code>ORDER BY</code>'ı.</li>
+          <li><strong>O(n²) — karesel:</strong> iç içe iki döngü, "her satırı her satırla karşılaştır". 1 milyon satırda 10¹² işlem — pratikte ölüm.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 680 320" width="680" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Big-O büyüme eğrileri grafiği">
+            <defs>
+              <marker id="arrAxisB" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--muted)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <!-- eksenler -->
+              <path d="M70 260 L634 260" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#arrAxisB)"/>
+              <path d="M70 260 L70 36" stroke="var(--dg-line)" stroke-width="1.5" marker-end="url(#arrAxisB)"/>
+              <text x="352" y="292" text-anchor="middle" fill="var(--muted)" font-size="11.5">veri boyutu (n)</text>
+              <text x="28" y="150" text-anchor="middle" fill="var(--muted)" font-size="11.5" transform="rotate(-90 28 150)">işlem sayısı</text>
+              <!-- eğriler -->
+              <path d="M78 238 L560 238" stroke="var(--ok)" stroke-width="2.2" fill="none"/>
+              <text x="570" y="242" fill="var(--ok)" font-size="12" font-weight="700">O(1)</text>
+              <path d="M78 252 C150 218, 280 200, 560 186" stroke="var(--acc)" stroke-width="2.2" fill="none"/>
+              <text x="570" y="190" fill="var(--acc)" font-size="12" font-weight="700">O(log n)</text>
+              <path d="M78 254 L560 104" stroke="var(--warn)" stroke-width="2.2" fill="none"/>
+              <text x="570" y="106" fill="var(--warn)" font-size="12" font-weight="700">O(n)</text>
+              <path d="M78 254 Q220 236 302 44" stroke="var(--bad)" stroke-width="2.4" fill="none"/>
+              <text x="314" y="52" fill="var(--bad)" font-size="12" font-weight="700">O(n²)</text>
+              <text x="440" y="60" text-anchor="middle" fill="var(--faint)" font-size="10.5">n = 1M için: O(log n) ≈ 20 · O(n) = 1M · O(n²) = 10¹²</text>
+            </g>
+          </svg>
+          <figcaption>Küçük n'de eğriler iç içedir; ölçek büyüdükçe aralarındaki fark uçuruma dönüşür. O(n log n), O(n) ile O(n²) arasında yaşar.</figcaption>
+        </figure>
+
+        <div class="note"><b>Big-O kronometre değildir.</b> Büyüme trendini söyler, mutlak süreyi değil: küçük n'de O(n²) bir algoritma, sabitleri ağır bir O(n log n)'den hızlı bile olabilir. Ama veri büyüdükçe eğri her zaman kazanır — veri işinde de veri hep büyür.</div>
+
+        <h2>Diziler ve bağlı listeler</h2>
+        <p><strong>Array (dizi)</strong>, aynı boyuttaki elemanların bellekte <em>yan yana</em> dizilmesidir. Bu bitişiklik ona süper gücünü verir: <code>liste[3]</code> demek "başlangıç adresi + 3 × eleman boyutu" hesabıdır — kaçıncı eleman olursa olsun <strong>O(1)</strong>'de erişirsin. Bedeli de var: araya eleman sokmak, sonrasındaki herkesi kaydırmak demektir (O(n)); büyümek için de yeni yer ayırıp kopyalamak gerekir.</p>
+        <p><strong>Linked list (bağlı liste)</strong> tam ters ödünleşimi seçer: her <strong>düğüm (node)</strong>, değerin yanında bir sonraki düğümün adresini (pointer) taşır; düğümler bellekte dağınık durabilir. Araya ekleme/silme yalnızca iki pointer değiştirmektir (O(1)), ama i'inci elemana gitmek için okları tek tek saymak zorundasın (O(n)).</p>
+        <p>Bellek yerleşiminin gizli kahramanı <a href="m1-bilgisayar-temelleri.html">önceki konudan</a> tanıdığın cache'tir: CPU belleği blok blok okur, bitişik veri cache'e topluca gelir — bu yüzden array taraması modern donanımda uçar. NumPy ve pandas'ın hız sırrı, sütunları bitişik C dizilerinde tutmalarıdır. Python'un <code>list</code>'i ise aslında pointer'lardan oluşan bir "dinamik array"dir — esnektir ama NumPy kadar cache dostu değildir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 270" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Array ve linked list bellek yerleşimi karşılaştırması">
+            <defs>
+              <marker id="arrLLB" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <!-- array -->
+              <text x="165" y="30" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Array — bitişik bellek</text>
+              <rect x="30" y="60" width="54" height="44" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.4"/>
+              <rect x="84" y="60" width="54" height="44" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.4"/>
+              <rect x="138" y="60" width="54" height="44" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.4"/>
+              <rect x="192" y="60" width="54" height="44" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.4"/>
+              <rect x="246" y="60" width="54" height="44" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="57" y="87" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">10</text>
+              <text x="111" y="87" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">20</text>
+              <text x="165" y="87" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">30</text>
+              <text x="219" y="87" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">40</text>
+              <text x="273" y="87" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">50</text>
+              <text x="57" y="122" text-anchor="middle" fill="var(--muted)" font-size="10.5">0</text>
+              <text x="111" y="122" text-anchor="middle" fill="var(--muted)" font-size="10.5">1</text>
+              <text x="165" y="122" text-anchor="middle" fill="var(--muted)" font-size="10.5">2</text>
+              <text x="219" y="122" text-anchor="middle" fill="var(--muted)" font-size="10.5">3</text>
+              <text x="273" y="122" text-anchor="middle" fill="var(--muted)" font-size="10.5">4</text>
+              <text x="165" y="150" text-anchor="middle" fill="var(--muted)" font-size="10.5">adres = başlangıç + index × boyut</text>
+              <text x="165" y="168" text-anchor="middle" fill="var(--ok)" font-size="11" font-weight="700">index ile erişim: O(1)</text>
+              <text x="165" y="190" text-anchor="middle" fill="var(--faint)" font-size="10.5">bitişik veri cache'e blok blok yüklenir</text>
+              <!-- linked list -->
+              <text x="520" y="30" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Linked list — dağınık düğümler</text>
+              <rect x="360" y="70" width="88" height="40" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <path d="M418 70 L418 110" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="389" y="95" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">10</text>
+              <text x="433" y="95" text-anchor="middle" fill="var(--acc)" font-size="12" font-weight="700">•</text>
+              <rect x="555" y="120" width="88" height="40" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <path d="M613 120 L613 160" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="584" y="145" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">20</text>
+              <text x="628" y="145" text-anchor="middle" fill="var(--acc)" font-size="12" font-weight="700">•</text>
+              <rect x="400" y="185" width="88" height="40" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <path d="M458 185 L458 225" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="429" y="210" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="600">30</text>
+              <text x="473" y="210" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="700">∅</text>
+              <path d="M441 98 Q520 100 553 136" stroke="var(--acc)" stroke-width="1.6" fill="none" marker-end="url(#arrLLB)"/>
+              <path d="M628 164 Q618 208 492 206" stroke="var(--acc)" stroke-width="1.6" fill="none" marker-end="url(#arrLLB)"/>
+              <text x="520" y="250" text-anchor="middle" fill="var(--muted)" font-size="11">erişim: okları takip et → O(n) · araya ekleme: pointer değiştir → O(1)</text>
+            </g>
+          </svg>
+          <figcaption>Aynı üç değer, iki farklı bellek düzeni. Array index hesabıyla zıplar; linked list okları takip eder. NumPy'ın hızı soldaki düzenden gelir.</figcaption>
+        </figure>
+
+        <h2>Stack ve queue: LIFO ile FIFO</h2>
+        <p><strong>Stack (yığın)</strong>, tabak yığını gibi çalışır: eleman üstten konur (<em>push</em>), üstten alınır (<em>pop</em>). Son giren ilk çıkar — <strong>LIFO</strong> (last in, first out). En tanıdık örneği editördeki <strong>undo</strong>'dur: Ctrl+Z, en <em>son</em> yaptığın işlemi geri alır. Daha derindeki örnek <strong>call stack</strong>'tir: her fonksiyon çağrısı yığına itilir, biten çağrı yığından düşer. <strong>Özyineleme (recursion)</strong> — fonksiyonun kendini çağırması — bu yığını hızla büyütür; durma koşulunu unutursan Python'un ünlü <code>RecursionError</code>'ı (stack overflow) seni bulur.</p>
+        <p><strong>Queue (kuyruk)</strong> ise kasadaki sıradır: arkadan girilir (<em>enqueue</em>), önden çıkılır (<em>dequeue</em>). İlk giren ilk çıkar — <strong>FIFO</strong> (first in, first out). Adalet gerektiren her yerde odur: <a href="m3-orkestrasyon.html">Airflow scheduler'ının</a> bekleyen task sırası, işçi havuzlarına dağıtılan görevler, <a href="m3-streaming.html">Kafka'daki</a> mesaj akışı — bir partition, aslında sürekli okunan devasa bir kuyruktur. Python'da iki ucu da O(1) olan hazır yapı: <code>collections.deque</code>.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 300" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Stack ve queue çalışma biçimi karşılaştırması">
+            <defs>
+              <marker id="arrStkPushB" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--ok)"/></marker>
+              <marker id="arrStkPopB" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--warn)"/></marker>
+              <marker id="arrQinB" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--ok)"/></marker>
+              <marker id="arrQoutB" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--warn)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <!-- stack -->
+              <text x="170" y="28" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Stack (yığın)</text>
+              <path d="M85 110 L85 240 L255 240 L255 110" stroke="var(--dg-line)" stroke-width="1.6" fill="none"/>
+              <rect x="95" y="200" width="150" height="36" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="170" y="223" text-anchor="middle" fill="var(--muted)" font-size="11">görev 1 (ilk giren)</text>
+              <rect x="95" y="160" width="150" height="36" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="170" y="183" text-anchor="middle" fill="var(--muted)" font-size="11">görev 2</text>
+              <rect x="95" y="120" width="150" height="36" rx="6" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="170" y="143" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">görev 3 (son giren)</text>
+              <path d="M130 58 L130 102" stroke="var(--ok)" stroke-width="2" marker-end="url(#arrStkPushB)"/>
+              <text x="122" y="76" text-anchor="end" fill="var(--ok)" font-size="11" font-weight="700">push</text>
+              <path d="M210 102 L210 58" stroke="var(--warn)" stroke-width="2" marker-end="url(#arrStkPopB)"/>
+              <text x="218" y="76" fill="var(--warn)" font-size="11" font-weight="700">pop</text>
+              <text x="170" y="264" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">LIFO — son giren ilk çıkar</text>
+              <text x="170" y="282" text-anchor="middle" fill="var(--muted)" font-size="10.5">undo (Ctrl+Z) · çağrı yığını (call stack)</text>
+              <!-- queue -->
+              <text x="535" y="28" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Queue (kuyruk)</text>
+              <rect x="420" y="130" width="76" height="44" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="458" y="157" text-anchor="middle" fill="var(--muted)" font-size="11">iş 3 (yeni)</text>
+              <rect x="497" y="130" width="76" height="44" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="535" y="157" text-anchor="middle" fill="var(--muted)" font-size="11">iş 2</text>
+              <rect x="574" y="130" width="76" height="44" rx="6" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="612" y="157" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="600">iş 1 (önde)</text>
+              <path d="M370 152 L414 152" stroke="var(--ok)" stroke-width="2" marker-end="url(#arrQinB)"/>
+              <text x="392" y="138" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="700">enqueue</text>
+              <path d="M656 152 L692 152" stroke="var(--warn)" stroke-width="2" marker-end="url(#arrQoutB)"/>
+              <text x="670" y="138" text-anchor="middle" fill="var(--warn)" font-size="10.5" font-weight="700">dequeue</text>
+              <text x="535" y="264" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">FIFO — ilk giren ilk çıkar</text>
+              <text x="535" y="282" text-anchor="middle" fill="var(--muted)" font-size="10.5">task queue (Airflow) · mesaj kuyruğu (Kafka)</text>
+            </g>
+          </svg>
+          <figcaption>Stack tek uçtan (üstten) çalışır, queue iki uçtan: arkadan gir, önden çık. Hangi ucun kullanıldığı, kimin önce işleneceğini belirler.</figcaption>
+        </figure>
+
+        <h2>Hash table: O(1) aramanın sırrı</h2>
+        <p>Problem şu: 1 milyon elemanlı bir listede "bu müşteri var mı?" sorusu ortalama 500 bin karşılaştırma ister — O(n). <strong>Hash table (hash tablosu)</strong> bu soruyu tek adıma indirir. Numara basittir: anahtarı bir <strong>hash fonksiyonundan</strong> geçirirsin, çıkan sayının kova sayısına göre modunu alırsın ve doğrudan o <strong>kovaya (bucket)</strong> bakarsın. Aramak yok; adresi <em>hesaplıyorsun</em>.</p>
+        <p>İki anahtar aynı kovaya düşerse buna <strong>çakışma (collision)</strong> denir; kovada kısa bir zincir tutularak çözülür. İyi bir hash fonksiyonu anahtarları kovalar arasında dengeli dağıtır, tablo dolmaya başlayınca da büyütülüp her şey yeniden yerleştirilir (rehash). Sonuç: ekleme, silme ve arama <em>amortize</em> O(1).</p>
+        <p>Python bağlantısı doğrudan: <strong>dict ve set birer hash table'dır.</strong> <code>x in kume</code> O(1) iken <code>x in liste</code> O(n)'dir. Dict anahtarlarının değişmez (hashable) olması zorunluluğu da buradan gelir: <a href="m1-python.html">önceki konuda</a> "tuple anahtar olur, list olmaz" demiştik — çünkü değeri değişen bir anahtarın hash'i de değişir ve tablo onu bir daha bulamaz.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 300" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Hash table: anahtardan kovaya giden yol">
+            <defs>
+              <marker id="arrHashB" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--muted)"/></marker>
+              <marker id="arrHashAccB" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              <marker id="arrHashWarnB" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--warn)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <!-- anahtarlar -->
+              <text x="85" y="44" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="600">anahtarlar</text>
+              <rect x="25" y="58" width="120" height="36" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="85" y="80" text-anchor="middle" fill="var(--ink)" font-size="11.5">"ankara"</text>
+              <rect x="25" y="140" width="120" height="36" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="85" y="162" text-anchor="middle" fill="var(--ink)" font-size="11.5">"izmir"</text>
+              <rect x="25" y="218" width="120" height="36" rx="8" fill="var(--dg-box)" stroke="var(--warn)" stroke-width="1.4"/>
+              <text x="85" y="240" text-anchor="middle" fill="var(--ink)" font-size="11.5">"bolu"</text>
+              <!-- hash kutusu -->
+              <rect x="215" y="118" width="150" height="64" rx="10" fill="rgba(var(--acc-rgb),.18)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="290" y="144" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">hash()</text>
+              <text x="290" y="164" text-anchor="middle" fill="var(--muted)" font-size="10.5">anahtar → sayı</text>
+              <path d="M147 76 L211 132" stroke="var(--dg-line)" stroke-width="1.5" fill="none" marker-end="url(#arrHashB)"/>
+              <path d="M147 158 L211 150" stroke="var(--dg-line)" stroke-width="1.5" fill="none" marker-end="url(#arrHashB)"/>
+              <path d="M147 236 L211 168" stroke="var(--dg-line)" stroke-width="1.5" fill="none" marker-end="url(#arrHashB)"/>
+              <!-- hash -> kova okları -->
+              <text x="415" y="108" text-anchor="middle" fill="var(--muted)" font-size="10">index = hash % 6</text>
+              <path d="M367 138 L474 130" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#arrHashAccB)"/>
+              <path d="M367 152 L474 204" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#arrHashAccB)"/>
+              <path d="M367 166 C420 232 440 216 474 212" stroke="var(--warn)" stroke-width="1.8" fill="none" marker-end="url(#arrHashWarnB)"/>
+              <!-- kova dizisi -->
+              <text x="570" y="28" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">kova (bucket) dizisi</text>
+              <rect x="480" y="40" width="180" height="34" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="472" y="61" text-anchor="end" fill="var(--muted)" font-size="10.5">0</text>
+              <text x="570" y="61" text-anchor="middle" fill="var(--faint)" font-size="10.5">boş</text>
+              <rect x="480" y="78" width="180" height="34" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="472" y="99" text-anchor="end" fill="var(--muted)" font-size="10.5">1</text>
+              <text x="570" y="99" text-anchor="middle" fill="var(--faint)" font-size="10.5">boş</text>
+              <rect x="480" y="116" width="180" height="34" rx="6" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="472" y="137" text-anchor="end" fill="var(--muted)" font-size="10.5">2</text>
+              <text x="570" y="137" text-anchor="middle" fill="var(--ink)" font-size="10.5">"ankara": 5.8M</text>
+              <rect x="480" y="154" width="180" height="34" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="472" y="175" text-anchor="end" fill="var(--muted)" font-size="10.5">3</text>
+              <text x="570" y="175" text-anchor="middle" fill="var(--faint)" font-size="10.5">boş</text>
+              <rect x="480" y="192" width="180" height="34" rx="6" fill="rgba(var(--acc-rgb),.15)" stroke="var(--warn)" stroke-width="1.5"/>
+              <text x="472" y="213" text-anchor="end" fill="var(--muted)" font-size="10.5">4</text>
+              <text x="570" y="213" text-anchor="middle" fill="var(--ink)" font-size="10.5">"izmir" → "bolu" (zincir)</text>
+              <rect x="480" y="230" width="180" height="34" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="472" y="251" text-anchor="end" fill="var(--muted)" font-size="10.5">5</text>
+              <text x="570" y="251" text-anchor="middle" fill="var(--faint)" font-size="10.5">boş</text>
+              <text x="570" y="288" text-anchor="middle" fill="var(--warn)" font-size="10.5" font-weight="700">çakışma: iki anahtar aynı kovaya düşerse zincirle</text>
+            </g>
+          </svg>
+          <figcaption>Anahtar → hash fonksiyonu → kova numarası. Aramıyorsun, adresi hesaplıyorsun; Python dict ve set'in O(1) hızının kaynağı bu.</figcaption>
+        </figure>
+
+        <figure class="codebox">
+          <figcaption>Python — list'te O(n) arama ile dict'te O(1) lookup'ı ölçelim</figcaption>
+          <pre><code data-lang="python">import time
+
+N = 1_000_000
+liste = list(range(N))
+sozluk = {i: True for i in range(N)}   # aynı iş set(liste) ile de olur
+
+aranan = N - 1        # en kötü durum: listenin en sonundaki eleman
+
+t0 = time.perf_counter()
+aranan in liste       # O(n) — baştan sona tarar
+t_liste = time.perf_counter() - t0
+
+t0 = time.perf_counter()
+aranan in sozluk      # O(1) — hash ile doğrudan kovaya gider
+t_dict = time.perf_counter() - t0
+
+print(f"liste: {t_liste*1000:.2f} ms | dict: {t_dict*1000:.4f} ms")
+# Tipik çıktı: liste: ~10 ms | dict: ~0.0005 ms → binlerce kat fark
+# Döngü içinde tekrar tekrar arıyorsan bu fark saatlere dönüşür</code></pre>
+        </figure>
+
+        <div class="tip"><b>Tek satırlık hızlandırma.</b> Milyonlarca kez "bu değeri daha önce gördüm mü?" kontrolü yapacaksan, önce <code>gorulenler = set(liste)</code> de, sonra <code>x in gorulenler</code> diye sor. Bu tek satır, O(n²)'ye dönüşen döngüleri O(n)'e indirir — saatlik işleri dakikaya çevirir.</div>
+
+        <h2>Ağaçlar ve graflar</h2>
+        <p><strong>Ağaç (tree)</strong>, kök–dal–yaprak hiyerarşisidir: her düğümün bir ebeveyni, sıfır ya da daha çok çocuğu vardır. Bilgisayarındaki klasör yapısı bir ağaçtır. <strong>Binary tree</strong>'de her düğümün en fazla iki çocuğu olur; <strong>BST (binary search tree)</strong> buna bir kural ekler: sol taraf kökten küçük, sağ taraf büyük (sol &lt; kök &lt; sağ). Bu kural sayesinde arama her adımda yarıya iner — O(log n). <a href="m2-sql.html">Veritabanı indexlerinin</a> B-tree'si, bu fikrin diske uyarlanmış hâlidir: <code>WHERE id = 42</code> sorgusunun milisaniyede dönmesinin sebebi. Ağaçta gezinme (traversal) recursion'la doğal ifade edilir: "kendini sol çocuk için çağır, düğümü işle, kendini sağ çocuk için çağır."</p>
+        <p><strong>Graf (graph)</strong> hiyerarşi şartını da kaldırır: <strong>düğümler (node)</strong> ve onları bağlayan <strong>kenarlardan (edge)</strong> oluşur; kenarlar yönlü ya da yönsüz olabilir. Sosyal ağlar (kim kimi takip ediyor), öneri motorları, rota bulma — hepsi graf problemleridir. Veri mühendisliğinin yıldızı ise <strong>DAG</strong> (directed acyclic graph — yönlü döngüsüz graf): <a href="m3-orkestrasyon.html">Airflow'daki pipeline'ın</a> ta kendisi. Task'lar düğüm, bağımlılıklar kenardır; döngü olmaması "işin bir gün bitmesinin" garantisidir. <a href="m3-spark.html">Spark'ın</a> sorgu planı ve data lineage (verinin soy ağacı) da graf olarak modellenir.</p>
+
+        <h2>Arama ve sıralama, kısaca</h2>
+        <p><strong>Linear search</strong> tek seçenek olduğunda kullanılır: veri sırasızsa baştan sona bakarsın, O(n). Veri <em>sıralıysa</em> <strong>binary search (ikili arama)</strong> devreye girer: ortaya bak, hedef küçükse sol yarıya, büyükse sağ yarıya daral — her adım arama uzayını yarıya indirir, O(log n). 1 milyar elemanda bile ~30 adım.</p>
+        <div class="warn"><b>Binary search'ün tek ama acımasız şartı: liste sıralı olmalı.</b> Sırasız veride hata fırlatmaz — sessizce <em>yanlış</em> sonuç döndürür. Bu yüzden desen hep şudur: bir kez sırala, sonra istediğin kadar binary search yap.</div>
+        <p>Sıralamanın kendisi ise karşılaştırma tabanlı algoritmalar için O(n log n)'den aşağı inemez — bu teorik bir alt sınırdır. Python'un <code>sort()</code>'u (Timsort) ve pandas'ın <code>sort_values</code>'u bu sınıftadır. Pratik karar şöyle özetlenir: veriyi bir kez sıralayıp defalarca binary search yapacaksan sırala; sadece "var mı / karşılığı ne" soruları soracaksan sıralamayı hiç dert etme, hash table kullan.</p>
+
+        <figure class="codebox">
+          <figcaption>Python — binary search: her adımda yarıya böl</figcaption>
+          <pre><code data-lang="python">def binary_search(sirali_liste, hedef):
+    """Sıralı listede hedefin index'ini O(log n) adımda bulur; yoksa -1."""
+    sol, sag = 0, len(sirali_liste) - 1
+    while sol &lt;= sag:
+        orta = (sol + sag) // 2
+        if sirali_liste[orta] == hedef:
+            return orta                    # bulundu
+        elif sirali_liste[orta] &lt; hedef:
+            sol = orta + 1                 # sağ yarıya daral
+        else:
+            sag = orta - 1                 # sol yarıya daral
+    return -1
+
+musteri_idler = list(range(0, 2_000_000, 2))   # 1 milyon SIRALI ID
+
+print(binary_search(musteri_idler, 1_337_420))  # 668710
+
+# Linear search aynı işi en kötü 1.000.000 karşılaştırmada yapar;
+# binary search log2(1.000.000) ≈ 20 karşılaştırmada bitirir.</code></pre>
+        </figure>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Bu yapıları elle kodlaman nadiren istenir; ama isimleri ve ödünleşimleri her gün karşına çıkar:</p>
+        <ul>
+          <li><strong>Hash table →</strong> pandas'ta <code>merge</code> bir hash join, <code>groupby</code> bir hash table kurulumudur; <a href="m4-eda.html">EDA yaparken</a> altında bu döner.</li>
+          <li><strong>B-tree →</strong> <a href="m2-sql.html">SQL'de</a> "bu sorguya index atalım" cümlesi, "diske uyarlanmış bir arama ağacı kuralım" demektir.</li>
+          <li><strong>DAG →</strong> <a href="m3-orkestrasyon.html">Airflow pipeline'ları</a> yönlü döngüsüz graflardır; "upstream/downstream" konuşmaları graf terminolojisidir.</li>
+          <li><strong>Queue →</strong> <a href="m3-streaming.html">Kafka</a> partition'ları, worker havuzları ve retry mekanizmaları kuyruk mantığıyla çalışır.</li>
+          <li><strong>Sort →</strong> <a href="m3-spark.html">Spark'ın</a> shuffle aşaması dağıtık bir sıralama/karma dağıtım problemidir; maliyetli olmasının sebebi budur.</li>
+          <li><strong>Mülakat →</strong> soruların büyük bölümü "bunu hash map'le O(n)'e indirebilir misin?" kalıbına iner; two-pointer ve set kullanımı en sık iki numaradır.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>O(n²) bir algoritman 1.000 satırda 1 saniye sürüyor. 10.000 satırda kabaca ne beklersin?</summary>
+            <div class="answer"><b>~100 saniye.</b> Veri 10 katına çıktı; karesel büyümede iş 10² = 100 katına çıkar. Aynı büyüme O(n) algoritmada ~10 saniye, O(n log n)'de ~13 saniye demek olurdu — eğrinin sınıfı, ölçekte kaderi belirler.</div>
+          </details>
+          <details class="quiz">
+            <summary><code>x in benim_listem</code> ile <code>x in benim_setim</code> arasında ne fark var?</summary>
+            <div class="answer">List'te <code>in</code> operatörü elemanları <b>baştan sona tarar</b>: O(n). Set bir hash table olduğu için x'in hash'ini hesaplayıp <b>doğrudan ilgili kovaya bakar</b>: O(1). Milyonluk koleksiyonda ve döngü içinde bu fark binlerce kata çıkar.</div>
+          </details>
+          <details class="quiz">
+            <summary>Bir metin editörünün undo özelliğini stack ile mi queue ile mi kurarsın? Neden?</summary>
+            <div class="answer"><b>Stack ile.</b> Geri alma "en <i>son</i> yapılan işlemi iptal et" demektir — LIFO. Her işlem yığına push edilir, Ctrl+Z en üsttekini pop eder. Queue (FIFO) kullansaydın Ctrl+Z, sabah yaptığın ilk değişikliği geri alırdı!</div>
+          </details>
+          <details class="quiz">
+            <summary>Binary search'ün ön şartı nedir ve 1 milyon elemanlı bir listede kaç adımda biter?</summary>
+            <div class="answer">Liste <b>sıralı</b> olmalı — aksi hâlde sessizce yanlış sonuç döner. Sıralıysa her adım arama uzayını yarıya indirir: log₂(1.000.000) ≈ <b>20 adım</b>. Linear search aynı işte en kötü 1 milyon karşılaştırma yapar.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Algoritma</span><span class="term-en">Algorithm</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Bir problemi çözmek için izlenen adım adım tarif; girdiyi çıktıya dönüştürür.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Big-O Notasyonu</span><span class="term-en">Big-O Notation</span><span class="lvl lvl-orta">Orta</span></div><p>Girdi büyüdükçe işlem sayısının nasıl büyüdüğünü özetleyen gösterim.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Dizi</span><span class="term-en">Array</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Bellekte bitişik duran elemanlar; index ile O(1) erişim, NumPy'ın temeli.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Bağlı Liste</span><span class="term-en">Linked List</span><span class="lvl lvl-orta">Orta</span></div><p>Pointer'larla bağlı dağınık düğümler; araya ekleme ucuz, index erişimi pahalı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Yığın (Stack)</span><span class="term-en">Stack</span><span class="lvl lvl-orta">Orta</span></div><p>LIFO — son giren ilk çıkar; undo ve call stack'in yapısı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Kuyruk (Queue)</span><span class="term-en">Queue</span><span class="lvl lvl-orta">Orta</span></div><p>FIFO — ilk giren ilk çıkar; task queue'ların ve mesaj sistemlerinin temeli.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Hash Tablosu</span><span class="term-en">Hash Table</span><span class="lvl lvl-orta">Orta</span></div><p>Anahtarı hash fonksiyonuyla kovaya eşleyip O(1) arama sağlar; dict/set'in altyapısı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Ağaç</span><span class="term-en">Tree</span><span class="lvl lvl-orta">Orta</span></div><p>Kök–dal–yaprak hiyerarşisi; BST ve veritabanı indexlerinin (B-tree) temeli.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Graf</span><span class="term-en">Graph</span><span class="lvl lvl-orta">Orta</span></div><p>Düğüm + kenar yapısı; sosyal ağlar, lineage ve Airflow DAG'leri graf örneğidir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">İkili Arama</span><span class="term-en">Binary Search</span><span class="lvl lvl-orta">Orta</span></div><p>Sıralı veride arama uzayını her adımda yarıya indirir: O(log n).</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Özyineleme</span><span class="term-en">Recursion</span><span class="lvl lvl-orta">Orta</span></div><p>Fonksiyonun kendini çağırması; ağaç gezinmenin doğal yolu, call stack'in müşterisi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Zaman Karmaşıklığı</span><span class="term-en">Time Complexity</span><span class="lvl lvl-orta">Orta</span></div><p>Çalışma süresinin girdiyle büyüme biçimi; Big-O ile ifade edilir.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m1-veri-yapilari-algoritmalar">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m1-python.html"><span>← Önceki</span><b>Python: Verinin Ana Dili</b></a>
+          <a class="next" href="m1-matematik.html"><span>Sonraki →</span><b>Matematik Temelleri</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

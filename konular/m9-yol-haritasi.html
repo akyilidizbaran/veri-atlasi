@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Öğrenme Yol Haritası ve Kaynaklar — Veri Atlası</title>
+<meta name="description" content="12–18 aylık üç fazlı öğrenme planı, Data Engineer ve ML/AI Engineer yollarının dürüst karşılaştırması, öğrenme taktikleri, kaynak rafı ve junior mülakat hazırlığı.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m9" data-slug="m9-yol-haritasi">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m9">9. Kariyer ve Yol Haritası</a><span class="sep">/</span>
+        <span>Öğrenme Yol Haritası ve Kaynaklar</span>
+      </nav>
+      <span class="mod-badge">Modül 9 · Kariyer ve Yol Haritası</span>
+      <h1>Öğrenme Yol Haritası ve Kaynaklar</h1>
+      <p class="en-title">Learning Roadmap &amp; Resources</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-baslangic">Başlangıç</span>
+        <span class="chip">⏱️ ~16 dk okuma</span>
+        <span class="chip">🔤 10 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Neden bir haritaya ihtiyacın var?</h2>
+        <p>Bu sitenin dokuz modülünü gezdin: <a href="m1-bilgisayar-temelleri.html">bit'lerden</a> <a href="m7-ajanlar-multimodal.html">AI ajanlarına</a> kadar. Şimdi en tehlikeli tuzağın adını koyalım: <strong>her şeyi aynı anda öğrenmeye çalışmak.</strong> Pazartesi Spark, salı PyTorch, çarşamba Kubernetes… Bu tempo, üç ay sonra hiçbirinde derinleşememiş, yorgun bir öğrenci üretir. Harita tam da bunun için var: neyi <em>şimdi</em>, neyi <em>sonra</em>, neyi <em>hiç</em> öğrenmeyeceğine karar vermek.</p>
+        <p>Hedef profil bellidir ve adı var: <strong>T-shaped profil</strong>. T harfinin yatay çizgisi geniş temel bilgindir — her kategoriden konuşabilecek kadar SQL, Python, istatistik, bulut. Dikey çizgisi ise 1–2 dalda gerçek derinliktir — işe alındığın uzmanlık. Her şeyde derinleşmeye çalışan kişi hiçbir yerde derinleşemez; sadece geniş bilen kişi ise "her şeyden az anlayan" olarak kalır. T, ikisinin dengesidir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 640 300" width="640" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="T-shaped profil: geniş temel ve derin uzmanlık">
+            <g font-family="inherit">
+              <text x="320" y="30" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">T-shaped profil — geniş temel + 1–2 derin dal</text>
+              <text x="320" y="60" text-anchor="middle" fill="var(--muted)" font-size="10.5">"her konuda sohbete katılabilecek kadar"</text>
+              <rect x="60" y="70" width="520" height="48" rx="9" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="320" y="99" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Geniş temel: Python · SQL · Git · istatistik · bulut · BI</text>
+              <rect x="270" y="118" width="100" height="140" rx="9" fill="rgba(var(--acc-rgb),.3)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="320" y="193" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700" transform="rotate(-90 320 193)">Derin uzmanlık</text>
+              <text x="395" y="183" fill="var(--muted)" font-size="10.5">1–2 dalda derinlik:</text>
+              <text x="395" y="198" fill="var(--muted)" font-size="10.5">iş seni bununla işe alır</text>
+              <text x="320" y="280" text-anchor="middle" fill="var(--muted)" font-size="10.5">örn. data pipeline'ları (DE) ya da model geliştirme (ML/AI)</text>
+            </g>
+          </svg>
+          <figcaption>Yatay çubuk seni takım toplantısında konuşulabilir kılar; dikey çubuk maaşını öder. İkisi birden gerekir.</figcaption>
+        </figure>
+
+        <h2>12–18 aylık örnek plan: üç faz</h2>
+        <p>Sıfırdan işe hazır seviyeye tipik yolculuk — haftada ~10 saat ayıran biri için — üç faza bölünür. Süreler kişiye göre esner; sıra esnemez:</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 760 250" width="760" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Üç fazlı 0-18 ay öğrenme zaman çizelgesi">
+            <g font-family="inherit">
+              <text x="380" y="22" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">0–18 ay: temeller → uzmanlaşma → production olgunluğu</text>
+              <defs>
+                <marker id="yolArr1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              </defs>
+              <rect x="40" y="90" width="149" height="60" rx="9" fill="rgba(var(--acc-rgb),.28)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="114" y="115" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Faz 1 · Temeller</text>
+              <text x="114" y="134" text-anchor="middle" fill="var(--muted)" font-size="10.5">Python · SQL · Git · istatistik</text>
+              <rect x="189" y="90" width="224" height="60" rx="9" fill="rgba(var(--acc-rgb),.16)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="301" y="115" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Faz 2 · Uzmanlaşma</text>
+              <text x="301" y="134" text-anchor="middle" fill="var(--muted)" font-size="10.5">DE yolu VEYA ML/AI yolu</text>
+              <rect x="413" y="90" width="299" height="60" rx="9" fill="rgba(var(--acc-rgb),.08)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="562" y="115" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Faz 3 · Production olgunluğu</text>
+              <text x="562" y="134" text-anchor="middle" fill="var(--muted)" font-size="10.5">MLOps · portfolyo · iş başvuruları</text>
+              <line x1="40" y1="165" x2="700" y2="165" stroke="var(--dg-line)" stroke-width="1.6"/>
+              <path d="M700 165 L716 165" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#yolArr1)"/>
+              <line x1="40" y1="158" x2="40" y2="172" stroke="var(--dg-line)" stroke-width="1.6"/>
+              <line x1="189" y1="158" x2="189" y2="172" stroke="var(--dg-line)" stroke-width="1.6"/>
+              <line x1="413" y1="158" x2="413" y2="172" stroke="var(--dg-line)" stroke-width="1.6"/>
+              <line x1="700" y1="158" x2="700" y2="172" stroke="var(--dg-line)" stroke-width="1.6"/>
+              <text x="40" y="188" text-anchor="middle" fill="var(--muted)" font-size="10.5">0</text>
+              <text x="189" y="188" text-anchor="middle" fill="var(--muted)" font-size="10.5">4. ay</text>
+              <text x="413" y="188" text-anchor="middle" fill="var(--muted)" font-size="10.5">10. ay</text>
+              <text x="700" y="188" text-anchor="middle" fill="var(--muted)" font-size="10.5">18. ay</text>
+              <rect x="55" y="203" width="34" height="21" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="72" y="218" text-anchor="middle" fill="var(--ink)" font-size="10.5">M1</text>
+              <rect x="97" y="203" width="34" height="21" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="114" y="218" text-anchor="middle" fill="var(--ink)" font-size="10.5">M2</text>
+              <rect x="139" y="203" width="34" height="21" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="156" y="218" text-anchor="middle" fill="var(--ink)" font-size="10.5">M4</text>
+              <rect x="208" y="203" width="86" height="21" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="251" y="218" text-anchor="middle" fill="var(--ink)" font-size="10.5">M3 (DE)</text>
+              <rect x="302" y="203" width="102" height="21" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="353" y="218" text-anchor="middle" fill="var(--ink)" font-size="10.5">M5–M7 (ML/AI)</text>
+              <rect x="474" y="203" width="40" height="21" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="494" y="218" text-anchor="middle" fill="var(--ink)" font-size="10.5">M8</text>
+              <rect x="522" y="203" width="40" height="21" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)"/><text x="542" y="218" text-anchor="middle" fill="var(--ink)" font-size="10.5">M9</text>
+              <rect x="570" y="203" width="82" height="21" rx="6" fill="rgba(var(--acc-rgb),.15)" stroke="var(--acc)"/><text x="611" y="218" text-anchor="middle" fill="var(--ink)" font-size="10.5">Portfolyo</text>
+            </g>
+          </svg>
+          <figcaption>Fazların altındaki rozetler Veri Atlası modüllerine karşılık gelir. Süreler ortalamadır: haftalık saatin artarsa kısalır, azalırsa uzar — sıra değişmez.</figcaption>
+        </figure>
+
+        <ul>
+          <li><strong>Faz 1 (0–4 ay) · Temeller.</strong> <a href="m1-python.html">Python</a>, <a href="m2-sql.html">SQL</a>, <a href="m1-linux-git.html">Linux ve Git</a>, <a href="m1-matematik.html">matematik</a> ve <a href="m4-istatistiksel-cikarim.html">istatistik</a>. Bu faz sıkıcı görünebilir ama atlanamaz: sonraki her şey bu dört ayağın üstüne oturur. Fazın çıkış bileti, <a href="m9-portfolyo.html">portfolyo konusundaki</a> başlangıç seviyesi bir projeyi bitirmektir.</li>
+          <li><strong>Faz 2 (4–10 ay) · Uzmanlaşma dalını seç.</strong> Ya <strong>Data Engineering yolu</strong>: <a href="m3-etl-elt.html">pipeline'lar</a>, <a href="m3-orkestrasyon.html">Airflow</a>, <a href="m3-warehouse-lake.html">warehouse</a>, <a href="m3-bulut.html">bulut</a> — Modül 3 ağırlıklı. Ya da <strong>ML/AI yolu</strong>: <a href="m5-ml-giris.html">ML temelleri</a>, <a href="m6-sinir-aglari.html">derin öğrenme</a>, <a href="m7-llm-temelleri.html">LLM'ler</a> — Modül 5–6–7. İkisinin ortak çekirdeği aynıdır: Python, SQL, bulut ve <a href="m4-eda.html">veriyle düşünme</a>. Yani "yanlış" dal seçsen bile birikimin çoğu diğerine taşınır.</li>
+          <li><strong>Faz 3 (10–18 ay) · Production olgunluğu.</strong> <a href="m8-deployment.html">Deployment</a>, <a href="m8-cicd-tracking.html">CI/CD</a>, <a href="m8-monitoring.html">monitoring</a> — <a href="m8-sorumlu-ai.html">Modül 8'in</a> tamamı — artı <a href="m9-portfolyo.html">orta/ileri seviye portfolyo projeleri</a> ve iş başvuruları. "Notebook'ta çalışıyor"dan "üretimde yaşıyor"a geçiş, junior'ı işe alınabilir yapan sıçramadır.</li>
+        </ul>
+
+        <div class="warn"><b>Tutorial hell'e dikkat.</b> Kurs üstüne kurs bitirip hiç proje yapmamak en yaygın takılma biçimidir: izlerken her şey kolay görünür, boş editörde ise el durur. Kural: her kurs bittiğinde, öğrendiğini kullanan küçük bir şey inşa etmeden yenisine başlama.</div>
+
+        <h2>İki yol: dürüst bir karşılaştırma</h2>
+        <p>Faz 2'deki dal seçimi için pazarlama cilası olmadan tablo şu:</p>
+        <ul>
+          <li><strong>Data Engineer:</strong> Talep geniş ve istikrarlı — her veri toplayan şirketin DE'ye ihtiyacı var, ama herkes ML ekibi kurmuyor. Giriş yolu daha net: SQL + Python + bir bulut + Airflow/dbt seti, junior ilanlarının çoğunu karşılar. İşin doğası "sistem kurma" ağırlıklıdır; matematik derinliği daha az gerekir.</li>
+          <li><strong>ML/AI Engineer:</strong> Daha parlak görünür, rekabet de o oranda yoğundur — özellikle junior seviyede aday sayısı pozisyon sayısını fazlasıyla aşar. <a href="m1-matematik.html">Matematik</a> ve <a href="m4-istatistiksel-cikarim.html">istatistik</a> derinliği ciddi fark yaratır. Girişte güçlü portfolyo neredeyse zorunludur.</li>
+          <li><strong>Melez roller yükseliyor:</strong> <strong>Analytics Engineer</strong> (dbt ekseninde, analist ile DE arası) ve <strong>AI Engineer</strong> (LLM/RAG uygulamaları kuran, <a href="m7-rag.html">Modül 7</a> ağırlıklı) son yılların en hızlı büyüyen ilan başlıkları arasında. Ortak çekirdeği sağlam kuran biri bu rollere yanlamasına geçebilir.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 375" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ortak çekirdekten Data Engineering ve ML/AI dallarına ayrılan kariyer ağacı">
+            <g font-family="inherit">
+              <text x="350" y="22" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="600">Kariyer ağacı: gövde ortak, dallar seçim</text>
+              <defs>
+                <marker id="yolArr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              </defs>
+              <rect x="60" y="110" width="250" height="118" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="185" y="134" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Data Engineering yolu</text>
+              <text x="185" y="150" text-anchor="middle" fill="var(--muted)" font-size="10.5">Modül 3 ağırlıklı</text>
+              <rect x="72" y="160" width="110" height="24" rx="7" fill="rgba(var(--acc-rgb),.15)" stroke="var(--dg-line)"/><text x="127" y="176" text-anchor="middle" fill="var(--ink)" font-size="10.5">Data Engineer</text>
+              <rect x="190" y="160" width="108" height="24" rx="7" fill="rgba(var(--acc-rgb),.15)" stroke="var(--dg-line)"/><text x="244" y="176" text-anchor="middle" fill="var(--ink)" font-size="10.5">Analytics Eng.</text>
+              <rect x="115" y="192" width="140" height="24" rx="7" fill="rgba(var(--acc-rgb),.15)" stroke="var(--dg-line)"/><text x="185" y="208" text-anchor="middle" fill="var(--ink)" font-size="10.5">Platform Engineer</text>
+              <rect x="390" y="110" width="250" height="118" rx="10" fill="var(--dg-box)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="515" y="134" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">ML / AI yolu</text>
+              <text x="515" y="150" text-anchor="middle" fill="var(--muted)" font-size="10.5">Modül 5–6–7 ağırlıklı</text>
+              <rect x="402" y="160" width="110" height="24" rx="7" fill="rgba(var(--acc-rgb),.15)" stroke="var(--dg-line)"/><text x="457" y="176" text-anchor="middle" fill="var(--ink)" font-size="10.5">ML Engineer</text>
+              <rect x="520" y="160" width="108" height="24" rx="7" fill="rgba(var(--acc-rgb),.15)" stroke="var(--dg-line)"/><text x="574" y="176" text-anchor="middle" fill="var(--ink)" font-size="10.5">Data Scientist</text>
+              <rect x="445" y="192" width="140" height="24" rx="7" fill="rgba(var(--acc-rgb),.15)" stroke="var(--dg-line)"/><text x="515" y="208" text-anchor="middle" fill="var(--ink)" font-size="10.5">AI Engineer</text>
+              <path d="M320 300 L195 234" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#yolArr2)"/>
+              <path d="M380 300 L505 234" stroke="var(--acc)" stroke-width="1.8" marker-end="url(#yolArr2)"/>
+              <text x="350" y="264" text-anchor="middle" fill="var(--muted)" font-size="10.5">melez roller (Analytics Eng. · AI Eng.)</text>
+              <text x="350" y="279" text-anchor="middle" fill="var(--muted)" font-size="10.5">iki dalın kesişiminde doğar</text>
+              <rect x="200" y="300" width="300" height="52" rx="10" fill="rgba(var(--acc-rgb),.2)" stroke="var(--acc)" stroke-width="1.8"/>
+              <text x="350" y="322" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Ortak çekirdek</text>
+              <text x="350" y="340" text-anchor="middle" fill="var(--muted)" font-size="10.5">Python · SQL · Git · istatistik · bulut</text>
+            </g>
+          </svg>
+          <figcaption>Gövde (ortak çekirdek) her iki dalı da taşır: dal değiştirmek ağacı sökmek değil, yeni bir dala tırmanmaktır.</figcaption>
+        </figure>
+
+        <h2>Öğrenme taktikleri</h2>
+        <p>Ne öğreneceğin kadar <em>nasıl</em> öğrendiğin de plan konusudur. Dört kanıtlanmış taktik:</p>
+        <ul>
+          <li><strong>Proje bazlı öğrenme &gt; pasif kurs.</strong> Video izlerken beyin "anladım" sinyali verir ama bu tanıma yanılsamasıdır; bilgi ancak boş editörde bir şey kurarken kalıcılaşır. Oran olarak: 1 saat kursa en az 1–2 saat uygulama.</li>
+          <li><strong>20 dakika kuralı.</strong> Bir hataya takıldığında 20 dakika kendi başına debug et — <a href="m1-linux-git.html">hata mesajı okumak</a> başlı başına bir beceridir. 20 dakika sonra hâlâ takılıysan sormaktan çekinme: sonsuz debug da, hiç denemeden sormak da öğrenmeyi öldürür.</li>
+          <li><strong>Spaced repetition (aralıklı tekrar).</strong> Bugün öğrendiğini yarın, üç gün sonra ve haftaya kısa kısa tekrar et; unutma eğrisi böyle kırılır. <a href="../sozluk.html">Sözlük sayfası</a> tam bu iş için: haftada bir açıp terimleri üstünden geç.</li>
+          <li><strong>Öğrettiğinde öğrenirsin.</strong> Her hafta öğrendiğin bir şeyi kısa bir blog yazısı, LinkedIn gönderisi ya da bir arkadaşına anlatımla dışa aktar. Anlatamadığın yeri anlamamışsındır — bu test hiç yanılmaz, üstelik yazdıkların networking'in en doğal biçimidir.</li>
+        </ul>
+
+        <figure class="codebox">
+          <figcaption>Metin — haftalık çalışma planı şablonu (~10 saat)</figcaption>
+          <pre><code data-lang="text">HAFTALIK PLAN ŞABLONU — işe/okula ek ~10 saat
+
+Pzt   19:00–20:00   Teori: kurs/kitap bölümü (1 saat)
+Sal   19:00–20:00   Pratik: LeetCode SQL ya da Kaggle alıştırması
+Çar   —             Dinlenme (tükenmişlik, planın bir numaralı düşmanı)
+Per   19:00–20:00   Teori: kursun devamı + kendi cümlelerinle not
+Cum   19:00–19:30   Tekrar: haftanın notları (spaced repetition)
+Cmt   10:00–13:00   PROJE: portfolyo projene kesintisiz 3 saatlik blok
+Paz   10:00–12:00   PROJE: devam + haftalık mini özet/blog yazısı
+
+Denge: ~3 saat teori / ~2 saat pratik / ~5 saat proje.
+Kural 1: proje saatleri pazarlık konusu DEĞİL — asıl öğrenme orada.
+Kural 2: plan aksarsa suçluluk yok; kaldığın yerden devam et.</code></pre>
+        </figure>
+
+        <h2>Kaynak rafı</h2>
+        <p>Kaynak bolluğu da bir tuzaktır; az sayıda, kanıtlanmış kaynağa sadık kal. İsim isim raf (aramaya yazınca ilk sonuçta bulursun):</p>
+        <ul>
+          <li><strong>Kitaplar:</strong> <em>Designing Data-Intensive Applications</em> (dağıtık sistemlerin başucu kitabı; <a href="m2-nosql.html">Modül 2</a>–<a href="m3-streaming.html">3'ün</a> derin hâli), <em>Hands-On Machine Learning</em> (uygulamalı ML klasiği; <a href="m5-supervised.html">Modül 5</a>–<a href="m6-cnn.html">6'nın</a> yol arkadaşı), <em>Fundamentals of Data Engineering</em> (DE yolunun kavramsal haritası).</li>
+          <li><strong>Kurslar:</strong> fast.ai (yukarıdan aşağı pratik derin öğrenme), Andrew Ng'nin ML Specialization'ı (temelleri sağlam döşer), DataTalksClub DE Zoomcamp (ücretsiz, proje bazlı, uçtan uca data engineering).</li>
+          <li><strong>Pratik platformları:</strong> Kaggle (veri + yarışma), LeetCode SQL ve StrataScratch (mülakattaki canlı SQL sorularının antrenman sahası).</li>
+          <li><strong>Topluluklar:</strong> şehrindeki veri/AI meetup'ları, DataTalksClub ve benzeri Slack/Discord grupları, yerel Python toplulukları. İlk işlerin çoğu ilan değil, tanışıklık üzerinden gelir — networking lüks değil, kariyer altyapısıdır.</li>
+        </ul>
+
+        <div class="note"><b>Bootcamp gerekli mi?</b> Şart değil. Bootcamp'in sattığı şey içerik değil, disiplin ve çevre — içeriğin tamamı ücretsiz kaynaklarda var. Kendi kendine disiplin kurabiliyorsan (yukarıdaki haftalık plan gibi) paranı ayırma; kuramıyorsan iyi araştırılmış bir bootcamp, mezunlarının nerede işe girdiğine bakarak seçilirse anlamlı olabilir.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <p>Yol haritasının son durağı mülakat masasıdır. Junior Data Engineer / ML Engineer mülakatları tipik olarak dört başlıktan oluşur:</p>
+        <ul>
+          <li><strong>SQL canlı kodlama.</strong> Ekran paylaşımında JOIN'li, <a href="m2-sql.html">window function'lı</a> sorgular yazmak — junior DE mülakatının en garantili bölümü. LeetCode SQL antrenmanı doğrudan buraya çalışır.</li>
+          <li><strong>Sistem tasarımı temelleri.</strong> "Günde 10 milyon olaylık bir clickstream pipeline'ı nasıl kurardın?" — senden mükemmel mimari değil, <a href="m3-etl-elt.html">batch/streaming</a>, <a href="m3-warehouse-lake.html">depolama katmanları</a> gibi kavramlarla düşünebildiğini görmek isterler.</li>
+          <li><strong>ML kavram soruları.</strong> <a href="m5-ml-giris.html">Overfitting nedir</a>, <a href="m5-model-degerlendirme.html">precision/recall ne zaman hangisi</a>, <a href="m5-feature-engineering.html">data leakage nasıl olur</a> — ezber değil sezgi test edilir.</li>
+          <li><strong>Davranışsal sorular.</strong> "Zorlandığın bir projeyi anlat" — cevabın iskeleti <a href="m9-portfolyo.html">portfolyo konusunda gördüğün STAR yöntemi</a>, malzemesi ise kendi projelerindir.</li>
+        </ul>
+        <p>Maaş beklentisi konusunda iki cümle yeter: ilk işte önceliğin maaş maksimizasyonu değil, öğrenme yoğunluğu yüksek bir ortam olsun. Piyasa aralığını ilanlardan ve topluluklardan araştır, kendini ne ucuza satıp ne de ilk görüşmede fiyat pazarlığına kilitle.</p>
+
+        <h2>Atlas'ın bilinçli sınırları</h2>
+        <p>İyi bir harita, neyi göstermediğini de söyler. Veri Atlası'nda kasıtlı olarak yüzeysel bıraktığımız ya da hiç girmediğimiz alanlar şunlar — ihtiyacın olduğunda nereye bakacağını bil:</p>
+        <ul>
+          <li><strong>Pekiştirmeli öğrenme (reinforcement learning):</strong> <a href="m5-ml-giris.html">tanım düzeyinde</a> geçti ve <a href="m7-fine-tuning.html">RLHF</a> bağlamında karşına çıktı, ama kendi modülü yok. Sebebi dürüstçe şu: RL, veri mühendisliği ve uygulamalı AI ilanlarının çok küçük bir kısmında geçer. Robotik, oyun ya da araştırma yoluna gidiyorsan ayrıca çalışman gerekir.</li>
+          <li><strong>Graf sinir ağları (GNN):</strong> dolandırıcılık tespiti ve moleküler modelleme gibi niş ama değerli alanlarda çok güçlüdür; genel yol için gerekli değildir.</li>
+          <li><strong>Ses ve konuşma işleme:</strong> multimodal başlığı altında değindik; derinleşmek başlı başına bir uzmanlık dalıdır.</li>
+          <li><strong>Bayesçi istatistik ve deneysel tasarımın derinliği:</strong> <a href="m4-istatistiksel-cikarim.html">A/B testi</a> temellerini kurduk; hiyerarşik modeller ve bandit algoritmaları doğal bir sonraki adımdır.</li>
+          <li><strong>Veritabanı içselleri:</strong> sorgu optimizasyonu, depolama motorları ve dağıtık uzlaşı algoritmalarının derinliği. Ölçekte çalışan bir veri mühendisi olarak eninde sonunda buraya geleceksin; başlangıç kaynağı <em>Designing Data-Intensive Applications</em>.</li>
+        </ul>
+        <p>Bunların hiçbiri önemsiz değil; sadece <em>ilk 18 ayın</em> içinde değiller. T-shaped profilinin dikey çubuğunu seçtiğinde, bu listeden birine dalmak en doğal sonraki adımdır.</p>
+
+        <h2>Veri Atlası'nı bitirdin — sıra sende</h2>
+        <p>Dokuz modül önce "bilgisayar veriyi nasıl işler?" diye sormuştuk; bugün bir <a href="m7-rag.html">RAG mimarisini</a>, bir <a href="m3-orkestrasyon.html">Airflow DAG'ini</a>, bir <a href="m8-monitoring.html">drift alarmını</a> okuyup anlayabiliyorsun. Bu az şey değil. Ama dürüst olalım: okumak seni yolcu yapar, yürümek yolu sen yaparsın. Bundan sonraki öğretmenin klavyendir — ilk projenin ilk commit'i, bu sitedeki bütün sayfalardan daha çok şey öğretecek. Takıldığında burası yerinde duruyor: modüllere dön, <a href="../sozluk.html">sözlüğü</a> karıştır, haritaya bak. Yol uzun ama yönü belli. Şimdi editörünü aç.</p>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>T-shaped profil nedir ve "her şeyi öğren" yaklaşımından neden daha iyidir?</summary>
+            <div class="answer">Yatayda <b>geniş temel</b> (her kategoriden konuşabilecek kadar bilgi), dikeyde <b>1–2 dalda gerçek derinlik</b>. Her şeyde derinleşmeye çalışmak hiçbir yerde derinleşememekle sonuçlanır; işe alım ise dikey çubuğa — kanıtlanmış uzmanlığa — bakar. Yatay çubuk da seni ekip içinde çevirmen kılar.</div>
+          </details>
+          <details class="quiz">
+            <summary>Faz 2'de dal seçmek neden "riskli" değildir?</summary>
+            <div class="answer">Çünkü iki dalın <b>ortak çekirdeği</b> (Python, SQL, Git, istatistik, bulut) aynıdır ve Faz 1'de zaten kurulur. DE yolunda ilerleyip ML/AI'ye geçsen bile birikimin büyük kısmı taşınır; melez roller (Analytics Engineer, AI Engineer) zaten bu kesişimde yaşar. Asıl risk dal seçmemek, yani hiçbir yerde derinleşmemektir.</div>
+          </details>
+          <details class="quiz">
+            <summary>20 dakika kuralı nedir ve iki uç davranışı nasıl dengeler?</summary>
+            <div class="answer">Bir hataya takılınca <b>önce 20 dakika kendi başına debug et, sonra sor.</b> Hiç denemeden sormak, hata çözme kasını köreltir; saatlerce tek başına debelenmek ise zamanı ve motivasyonu yakar. 20 dakika, "öğrenme acısı" ile "verimsiz acı" arasındaki pratik sınırdır.</div>
+          </details>
+          <details class="quiz">
+            <summary>Junior Data Engineer mülakatında en garantili bölüm hangisidir ve nasıl hazırlanılır?</summary>
+            <div class="answer"><b>SQL canlı kodlama:</b> ekran başında JOIN, GROUP BY ve window function'lı sorgular yazmak neredeyse her junior DE sürecinde vardır. Hazırlık yolu bellidir: LeetCode SQL / StrataScratch'te düzenli antrenman + konuşarak çözme alışkanlığı (mülakatta düşünceni sesli anlatman beklenir).</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Yol Haritası</span><span class="term-en">Roadmap</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Neyi hangi sırayla öğreneceğini belirleyen plan; "her şeyi aynı anda" tuzağının panzehiri.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">T-shaped Profil</span><span class="term-en">T-shaped Skills</span><span class="lvl lvl-orta">Orta</span></div><p>Geniş temel bilgi (yatay) + 1–2 dalda derin uzmanlık (dikey) birleşimi; modern teknik kariyerin hedef profili.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Data Engineer</span><span class="term-en">Data Engineer</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Veriyi kaynaktan alıp güvenilir pipeline'larla kullanılır hâle getiren rol; talebi geniş, giriş yolu görece net.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">ML Engineer</span><span class="term-en">Machine Learning Engineer</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>ML modellerini geliştirip üretime taşıyan rol; matematik derinliği ve güçlü portfolyo girişte fark yaratır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Analytics Engineer</span><span class="term-en">Analytics Engineer</span><span class="lvl lvl-orta">Orta</span></div><p>Analist ile data engineer arasındaki melez rol; dbt ekseninde, warehouse içinde temiz veri modelleri kurar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">AI Engineer</span><span class="term-en">AI Engineer</span><span class="lvl lvl-orta">Orta</span></div><p>LLM ve RAG tabanlı uygulamalar kuran yeni nesil rol; ML araştırmasından çok ürün mühendisliğine yakındır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Bootcamp</span><span class="term-en">Bootcamp</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Yoğunlaştırılmış ücretli eğitim programı; sattığı asıl şey içerik değil, disiplin ve çevredir — şart değildir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Spaced Repetition (Aralıklı Tekrar)</span><span class="term-en">Spaced Repetition</span><span class="lvl lvl-orta">Orta</span></div><p>Bilgiyi artan aralıklarla tekrar ederek unutma eğrisini kırma tekniği; terim ve kavram kalıcılığının en kanıtlı yolu.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Mülakat</span><span class="term-en">Technical Interview</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Teknik işe alım süreci: SQL canlı kodlama, sistem tasarımı, ML kavramları ve davranışsal sorulardan oluşur.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Networking (Çevre Edinme)</span><span class="term-en">Networking</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Meetup, topluluk ve paylaşımlarla profesyonel çevre kurma; ilk işlerin çoğu ilandan değil tanışıklıktan gelir.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m9-yol-haritasi">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <div class="tip"><b>Müfredatın sonuna geldin.</b> Bu, Veri Atlası'nın son konusuydu — bundan sonrası klavyede yazılır. Terimleri taze tutmak için <a href="../sozluk.html">sözlüğe</a> düzenli uğra; ilerlemeni görmek ve eksik kalan konuları kapatmak için <a href="../index.html#konular">ana sayfadaki konu haritasına</a> dön. İlk portfolyo projenin commit'i, bu sitenin en güzel mezuniyet belgesidir.</div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m9-ekosistem.html"><span>← Önceki</span><b>Araç Ekosistemi Haritası</b></a>
+          <a class="next empty" href="../index.html" aria-hidden="true"><span>Sonraki →</span><b>—</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Öneri Sistemleri — Veri Atlası</title>
+<meta name="description" content="İçerik tabanlı ve işbirlikçi filtreleme, kullanıcı-ürün matrisi, matris çarpanlarına ayırma ve latent factor'lar, soğuk başlangıç, precision@k ve NDCG ile değerlendirme.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m5" data-slug="m5-oneri-sistemleri">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular" class="active">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m5">5. Makine Öğrenmesi</a><span class="sep">/</span>
+        <span>Öneri Sistemleri</span>
+      </nav>
+      <span class="mod-badge">Modül 5 · Makine Öğrenmesi</span>
+      <h1>Öneri Sistemleri</h1>
+      <p class="en-title">Recommender Systems</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~16 dk okuma</span>
+        <span class="chip">🔤 12 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>Günde onlarca kez karşılaştığın model</h2>
+        <p>Netflix'in ana ekranı, Spotify'ın haftalık listesi, YouTube'un "sıradaki" videosu, e-ticaretin "bunu alanlar şunu da aldı" kutusu, sosyal medyanın akışı — hepsi aynı problemin farklı kılıklarıdır: <strong>milyonlarca seçenek arasından bu kişiye şimdi hangisini göstermeliyim?</strong></p>
+        <p>Bu, makine öğrenmesinin ekonomik olarak en yoğun uygulanan alanıdır. Büyük platformlarda izlenen içeriğin ve satın alınan ürünlerin önemli bir kısmı arama sonucundan değil, önerilerden gelir. Bir veri bilimcinin kariyerinde "sınıflandırma" ve "regresyon"dan sonra en sık karşılaştığı üçüncü problem tipi budur.</p>
+        <p>Öğrenme açısından da güzel bir konu: burada <a href="m5-unsupervised.html">boyut indirgeme</a>, <a href="m7-llm-temelleri.html">embedding</a> ve <a href="m7-rag.html">vektör benzerliği</a> kavramlarının hepsi tek bir problemde buluşur.</p>
+
+        <h2>Kullanıcı-ürün matrisi ve seyreklik</h2>
+        <p>Neredeyse her öneri sistemi aynı veri yapısıyla başlar: satırların kullanıcılar, sütunların ürünler, hücrelerin etkileşim olduğu dev bir matris. Sorunun tamamı tek cümleyle şudur: <strong>boş hücreleri tahmin et.</strong></p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 290" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Seyrek kullanıcı-ürün matrisi ve tahmin edilecek boş hücre">
+            <g>
+              <text x="360" y="20" text-anchor="middle" fill="var(--faint)" font-size="11.5" font-weight="700">Kullanıcı × Ürün matrisi — hücre: verilen puan</text>
+
+              <text x="212" y="48" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="700">Ürün 1</text>
+              <text x="284" y="48" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="700">Ürün 2</text>
+              <text x="356" y="48" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="700">Ürün 3</text>
+              <text x="428" y="48" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="700">Ürün 4</text>
+              <text x="500" y="48" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="700">Ürün 5</text>
+              <text x="572" y="48" text-anchor="middle" fill="var(--muted)" font-size="11" font-weight="700">Ürün 6</text>
+
+              <text x="168" y="80" text-anchor="end" fill="var(--ink)" font-size="11.5" font-weight="700">Ayşe</text>
+              <text x="168" y="118" text-anchor="end" fill="var(--acc)" font-size="11.5" font-weight="800">Baran</text>
+              <text x="168" y="156" text-anchor="end" fill="var(--ink)" font-size="11.5" font-weight="700">Ceren</text>
+              <text x="168" y="194" text-anchor="end" fill="var(--ink)" font-size="11.5" font-weight="700">Deniz</text>
+              <text x="168" y="232" text-anchor="end" fill="var(--ink)" font-size="11.5" font-weight="700">Emre</text>
+
+              <g font-size="12" font-weight="700" text-anchor="middle">
+                <rect x="180" y="60" width="64" height="30" rx="6" fill="rgba(var(--acc-rgb),.24)" stroke="var(--acc)" stroke-width="1"/><text x="212" y="80" fill="var(--ink)">5</text>
+                <rect x="252" y="60" width="64" height="30" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1"/><text x="284" y="80" fill="var(--faint)">?</text>
+                <rect x="324" y="60" width="64" height="30" rx="6" fill="rgba(var(--acc-rgb),.24)" stroke="var(--acc)" stroke-width="1"/><text x="356" y="80" fill="var(--ink)">4</text>
+                <rect x="396" y="60" width="64" height="30" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1"/><text x="428" y="80" fill="var(--faint)">?</text>
+                <rect x="468" y="60" width="64" height="30" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1"/><text x="500" y="80" fill="var(--faint)">?</text>
+                <rect x="540" y="60" width="64" height="30" rx="6" fill="rgba(var(--acc-rgb),.24)" stroke="var(--acc)" stroke-width="1"/><text x="572" y="80" fill="var(--ink)">1</text>
+
+                <rect x="180" y="98" width="64" height="30" rx="6" fill="rgba(var(--acc-rgb),.10)" stroke="var(--warn)" stroke-width="2"/><text x="212" y="118" fill="var(--warn)">?</text>
+                <rect x="252" y="98" width="64" height="30" rx="6" fill="rgba(var(--acc-rgb),.24)" stroke="var(--acc)" stroke-width="1"/><text x="284" y="118" fill="var(--ink)">3</text>
+                <rect x="324" y="98" width="64" height="30" rx="6" fill="rgba(var(--acc-rgb),.24)" stroke="var(--acc)" stroke-width="1"/><text x="356" y="118" fill="var(--ink)">5</text>
+                <rect x="396" y="98" width="64" height="30" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1"/><text x="428" y="118" fill="var(--faint)">?</text>
+                <rect x="468" y="98" width="64" height="30" rx="6" fill="rgba(var(--acc-rgb),.24)" stroke="var(--acc)" stroke-width="1"/><text x="500" y="118" fill="var(--ink)">2</text>
+                <rect x="540" y="98" width="64" height="30" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1"/><text x="572" y="118" fill="var(--faint)">?</text>
+
+                <rect x="180" y="136" width="64" height="30" rx="6" fill="rgba(var(--acc-rgb),.24)" stroke="var(--acc)" stroke-width="1"/><text x="212" y="156" fill="var(--ink)">4</text>
+                <rect x="252" y="136" width="64" height="30" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1"/><text x="284" y="156" fill="var(--faint)">?</text>
+                <rect x="324" y="136" width="64" height="30" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1"/><text x="356" y="156" fill="var(--faint)">?</text>
+                <rect x="396" y="136" width="64" height="30" rx="6" fill="rgba(var(--acc-rgb),.24)" stroke="var(--acc)" stroke-width="1"/><text x="428" y="156" fill="var(--ink)">5</text>
+                <rect x="468" y="136" width="64" height="30" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1"/><text x="500" y="156" fill="var(--faint)">?</text>
+                <rect x="540" y="136" width="64" height="30" rx="6" fill="rgba(var(--acc-rgb),.24)" stroke="var(--acc)" stroke-width="1"/><text x="572" y="156" fill="var(--ink)">1</text>
+
+                <rect x="180" y="174" width="64" height="30" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1"/><text x="212" y="194" fill="var(--faint)">?</text>
+                <rect x="252" y="174" width="64" height="30" rx="6" fill="rgba(var(--acc-rgb),.24)" stroke="var(--acc)" stroke-width="1"/><text x="284" y="194" fill="var(--ink)">3</text>
+                <rect x="324" y="174" width="64" height="30" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1"/><text x="356" y="194" fill="var(--faint)">?</text>
+                <rect x="396" y="174" width="64" height="30" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1"/><text x="428" y="194" fill="var(--faint)">?</text>
+                <rect x="468" y="174" width="64" height="30" rx="6" fill="rgba(var(--acc-rgb),.24)" stroke="var(--acc)" stroke-width="1"/><text x="500" y="194" fill="var(--ink)">2</text>
+                <rect x="540" y="174" width="64" height="30" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1"/><text x="572" y="194" fill="var(--faint)">?</text>
+
+                <rect x="180" y="212" width="64" height="30" rx="6" fill="rgba(var(--acc-rgb),.24)" stroke="var(--acc)" stroke-width="1"/><text x="212" y="232" fill="var(--ink)">5</text>
+                <rect x="252" y="212" width="64" height="30" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1"/><text x="284" y="232" fill="var(--faint)">?</text>
+                <rect x="324" y="212" width="64" height="30" rx="6" fill="rgba(var(--acc-rgb),.24)" stroke="var(--acc)" stroke-width="1"/><text x="356" y="232" fill="var(--ink)">4</text>
+                <rect x="396" y="212" width="64" height="30" rx="6" fill="rgba(var(--acc-rgb),.24)" stroke="var(--acc)" stroke-width="1"/><text x="428" y="232" fill="var(--ink)">4</text>
+                <rect x="468" y="212" width="64" height="30" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1"/><text x="500" y="232" fill="var(--faint)">?</text>
+                <rect x="540" y="212" width="64" height="30" rx="6" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1"/><text x="572" y="232" fill="var(--faint)">?</text>
+              </g>
+
+              <text x="360" y="266" text-anchor="middle" fill="var(--warn)" font-size="11" font-weight="700">Görev: Baran → Ürün 1 hücresini tahmin et</text>
+              <text x="360" y="282" text-anchor="middle" fill="var(--muted)" font-size="10.5">Bu oyuncak matriste doluluk %47; gerçek platformlarda %1'in çok altındadır.</text>
+            </g>
+          </svg>
+          <figcaption>Öneri problemi, devasa ve neredeyse boş bir matristeki eksik hücreleri doldurma problemidir.</figcaption>
+        </figure>
+
+        <p>İki önemli ayrım:</p>
+        <ul>
+          <li><strong>Seyreklik (sparsity).</strong> Milyonlarca ürün varken bir kullanıcı bunların belki 50'sine dokunur. Matrisin %99,9'u boştur — bu, klasik ML'de alışık olmadığın bir zorluktur.</li>
+          <li><strong>Explicit vs implicit feedback.</strong> <em>Explicit</em>, kullanıcının bilinçli verdiği sinyaldir (5 yıldız, beğeni). Nadir ama nettir. <em>Implicit</em>, davranıştan çıkarılan sinyaldir (tıklama, izleme süresi, satın alma). Bol ama gürültülüdür: tıklamak beğenmek değildir, izlememek beğenmemek değildir — belki de hiç görmemiştir. Gerçek sistemlerin çoğu implicit sinyalle çalışır ve "görmedi" ile "beğenmedi"yi ayırt etmek işin en zor kısmıdır.</li>
+        </ul>
+
+        <h2>İki temel yaklaşım</h2>
+        <p><strong>İçerik tabanlı filtreleme (content-based)</strong> ürünün kendi özelliklerine bakar: tür, yazar, fiyat aralığı, metin açıklaması. "Bilim kurgu sevdin, işte başka bir bilim kurgu." Yeni ürünlerde bile çalışır ve önerisi açıklanabilir; ama kullanıcıyı kendi balonunda hapseder — sürprize yer yoktur.</p>
+        <p><strong>İşbirlikçi filtreleme (collaborative filtering)</strong> ürünün ne olduğunu hiç umursamaz; yalnızca <em>davranış desenlerine</em> bakar: "Seninle aynı şeyleri beğenen kullanıcılar bunu da beğendi." Şaşırtıcı ve isabetli öneriler üretir, alan bilgisi gerektirmez — ama yeni kullanıcı ve yeni üründe çuvallar.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 254" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="İçerik tabanlı ve işbirlikçi filtrelemenin karşılaştırması">
+            <defs>
+              <marker id="rsArr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g>
+              <rect x="14" y="30" width="336" height="204" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="182" y="22" text-anchor="middle" fill="var(--acc)" font-size="12.5" font-weight="800">İçerik tabanlı</text>
+              <text x="182" y="52" text-anchor="middle" fill="var(--muted)" font-size="10.5">"Ürünün özelliklerine bak"</text>
+              <rect x="40" y="66" width="128" height="52" rx="8" fill="var(--surface-2)" stroke="var(--acc)" stroke-width="1.2"/>
+              <text x="104" y="86" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">Beğendiğin film</text>
+              <text x="104" y="102" text-anchor="middle" fill="var(--muted)" font-size="9.5">bilim kurgu · uzay · 90'lar</text>
+              <rect x="196" y="66" width="128" height="52" rx="8" fill="rgba(var(--acc-rgb),.14)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="260" y="86" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">Önerilen film</text>
+              <text x="260" y="102" text-anchor="middle" fill="var(--muted)" font-size="9.5">bilim kurgu · uzay · 90'lar</text>
+              <path d="M170 92 L192 92" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#rsArr)"/>
+              <text x="182" y="146" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="700">+ Yeni üründe de çalışır, açıklanabilir</text>
+              <text x="182" y="166" text-anchor="middle" fill="var(--bad)" font-size="10.5" font-weight="700">− Sürpriz yok: hep aynı kutunun içi</text>
+              <text x="182" y="196" text-anchor="middle" fill="var(--muted)" font-size="10">Ürün özelliklerini elle ya da metinden</text>
+              <text x="182" y="211" text-anchor="middle" fill="var(--muted)" font-size="10">(TF-IDF, embedding) çıkarman gerekir.</text>
+
+              <rect x="370" y="30" width="336" height="204" rx="12" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="538" y="22" text-anchor="middle" fill="var(--acc)" font-size="12.5" font-weight="800">İşbirlikçi filtreleme</text>
+              <text x="538" y="52" text-anchor="middle" fill="var(--muted)" font-size="10.5">"Senin gibi kullanıcılara bak"</text>
+              <circle cx="418" cy="88" r="15" fill="rgba(var(--acc-rgb),.20)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="418" y="92" text-anchor="middle" fill="var(--ink)" font-size="10" font-weight="700">Sen</text>
+              <circle cx="482" cy="72" r="13" fill="var(--surface-2)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="482" y="76" text-anchor="middle" fill="var(--muted)" font-size="9">A</text>
+              <circle cx="482" cy="106" r="13" fill="var(--surface-2)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="482" y="110" text-anchor="middle" fill="var(--muted)" font-size="9">B</text>
+              <path d="M434 84 L468 74" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <path d="M434 94 L468 104" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="504" y="92" fill="var(--muted)" font-size="9.5">benzer zevk</text>
+              <rect x="574" y="62" width="112" height="52" rx="8" fill="rgba(var(--acc-rgb),.14)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="630" y="82" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">Onların beğenip</text>
+              <text x="630" y="98" text-anchor="middle" fill="var(--ink)" font-size="11" font-weight="700">senin görmediğin</text>
+              <path d="M548 88 L570 88" stroke="var(--acc)" stroke-width="1.6" marker-end="url(#rsArr)"/>
+              <text x="538" y="146" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="700">+ Sürprizli, alan bilgisi gerektirmez</text>
+              <text x="538" y="166" text-anchor="middle" fill="var(--bad)" font-size="10.5" font-weight="700">− Yeni kullanıcı/üründe çaresiz</text>
+              <text x="538" y="196" text-anchor="middle" fill="var(--muted)" font-size="10">Ürünün ne olduğunu bilmez; yalnızca</text>
+              <text x="538" y="211" text-anchor="middle" fill="var(--muted)" font-size="10">kim neye dokunmuş, ona bakar.</text>
+            </g>
+          </svg>
+          <figcaption>Üretim sistemleri neredeyse her zaman <strong>hibrittir</strong>: ikisinin sinyallerini birleştirir.</figcaption>
+        </figure>
+
+        <p>İşbirlikçi filtrelemenin en anlaşılır biçimi <strong>komşuluk tabanlı</strong> olanıdır ve iki yönü vardır. <em>User-user</em>: sana benzeyen kullanıcıları bul, onların beğendiklerini öner. <em>Item-item</em>: senin beğendiğin ürüne benzeyen ürünleri bul ("bu ürünü görüntüleyenler şunu da görüntüledi"). Pratikte item-item tercih edilir, çünkü ürün benzerlikleri kullanıcı zevklerinden çok daha yavaş değişir — bir kez hesaplayıp uzun süre kullanabilirsin.</p>
+        <p>Benzerlik ölçüsü tanıdık: <strong>cosine similarity</strong>. <a href="m1-matematik.html">Vektörler arasındaki açı</a>, tıpkı <a href="m7-rag.html">RAG'de belge aramada</a> olduğu gibi burada da "benzerlik" demektir.</p>
+
+        <figure class="codebox">
+          <figcaption>Python — item-item benzerliğiyle basit öneri</figcaption>
+          <pre><code data-lang="python">import pandas as pd
+from sklearn.metrics.pairwise import cosine_similarity
+
+# Satır = kullanıcı, sütun = ürün, hücre = puan (dokunulmamışlar 0)
+M = df.pivot_table(index="kullanici_id", columns="urun_id", values="puan").fillna(0)
+
+# Ürünleri karşılaştırmak için matrisi transpoze et: her ürün, kullanıcı vektörüyle temsil edilir
+benzerlik = pd.DataFrame(cosine_similarity(M.T), index=M.columns, columns=M.columns)
+
+def oner(kullanici, k=5):
+    gecmis = M.loc[kullanici]
+    skor = benzerlik.dot(gecmis)        # her ürünün, kullanıcının sevdikleriyle benzerlik toplamı
+    skor = skor[gecmis == 0]            # zaten dokunduklarını önerme
+    return skor.sort_values(ascending=False).head(k)
+
+print(oner("baran"))
+# urun_id
+# 412    3.81   → Baran'ın beğendiği ürünlere en çok benzeyenler
+# 108    3.44</code></pre>
+        </figure>
+
+        <h2>Matris çarpanlarına ayırma: gizli zevk boyutları</h2>
+        <p>Komşuluk yöntemleri milyonlarca kullanıcıda hem yavaşlar hem de seyreklikten boğulur. Modern çözüm <strong>matris çarpanlarına ayırmadır (matrix factorization)</strong>: devasa ve boşluklu kullanıcı-ürün matrisini, iki küçük ve <em>yoğun</em> matrisin çarpımı olarak yaklaşıklarsın.</p>
+        <p>Fikir şu: her kullanıcıyı ve her ürünü aynı <strong>k boyutlu gizli uzayda</strong> (latent space) bir vektörle temsil et. Bu boyutlar kimse tarafından tanımlanmaz; algoritma veriden kendisi bulur. Sonradan bakınca birine "aksiyon-severlik", ötekine "yenilik tercihi" diyebilirsin ama modelin umurunda değildir. Bir kullanıcının bir ürünü ne kadar seveceği, iki vektörün <a href="m1-matematik.html">iç çarpımıdır (dot product)</a>.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 240" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kullanıcı-ürün matrisinin iki küçük matrise ayrılması">
+            <g>
+              <rect x="24" y="52" width="150" height="130" rx="8" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="99" y="40" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="800">R</text>
+              <text x="99" y="106" text-anchor="middle" fill="var(--muted)" font-size="11">1M kullanıcı</text>
+              <text x="99" y="124" text-anchor="middle" fill="var(--muted)" font-size="11">× 100K ürün</text>
+              <text x="99" y="150" text-anchor="middle" fill="var(--bad)" font-size="10.5" font-weight="700">%99,9 boş</text>
+              <text x="99" y="204" text-anchor="middle" fill="var(--faint)" font-size="10">gözlenen matris</text>
+
+              <text x="200" y="122" text-anchor="middle" fill="var(--acc)" font-size="18" font-weight="800">≈</text>
+
+              <rect x="232" y="52" width="72" height="130" rx="8" fill="rgba(var(--acc-rgb),.16)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="268" y="40" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="800">U</text>
+              <text x="268" y="110" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="700">1M × k</text>
+              <text x="268" y="128" text-anchor="middle" fill="var(--muted)" font-size="9.5">kullanıcı</text>
+              <text x="268" y="141" text-anchor="middle" fill="var(--muted)" font-size="9.5">vektörleri</text>
+              <text x="268" y="204" text-anchor="middle" fill="var(--faint)" font-size="10">zevk profili</text>
+
+              <text x="326" y="122" text-anchor="middle" fill="var(--acc)" font-size="16" font-weight="800">×</text>
+
+              <rect x="348" y="88" width="230" height="58" rx="8" fill="rgba(var(--acc-rgb),.16)" stroke="var(--acc)" stroke-width="1.6"/>
+              <text x="463" y="76" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="800">V</text>
+              <text x="463" y="112" text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="700">k × 100K</text>
+              <text x="463" y="130" text-anchor="middle" fill="var(--muted)" font-size="9.5">ürün vektörleri</text>
+              <text x="463" y="204" text-anchor="middle" fill="var(--faint)" font-size="10">ürün karakteri</text>
+
+              <rect x="596" y="60" width="112" height="114" rx="9" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="652" y="82" text-anchor="middle" fill="var(--acc)" font-size="10.5" font-weight="800">k = gizli boyut</text>
+              <text x="652" y="102" text-anchor="middle" fill="var(--muted)" font-size="9.5">(genelde 20–200)</text>
+              <text x="652" y="124" text-anchor="middle" fill="var(--muted)" font-size="9.5">boyut 1: aksiyon?</text>
+              <text x="652" y="139" text-anchor="middle" fill="var(--muted)" font-size="9.5">boyut 2: yenilik?</text>
+              <text x="652" y="158" text-anchor="middle" fill="var(--faint)" font-size="9">isimleri yoktur —</text>
+              <text x="652" y="169" text-anchor="middle" fill="var(--faint)" font-size="9">veriden doğarlar</text>
+
+              <text x="360" y="228" text-anchor="middle" fill="var(--muted)" font-size="10.5">Tahmin = kullanıcı vektörü · ürün vektörü. Boş hücreler böylece dolar.</text>
+            </g>
+          </svg>
+          <figcaption>Milyarlarca hücrelik matris, birkaç yüz milyon sayıyla temsil edilir — hem sıkıştırma hem genelleme.</figcaption>
+        </figure>
+
+        <div class="note"><b>Bu tanıdık geldiyse haklısın.</b> Kullanıcıyı ve ürünü aynı uzayda vektörle temsil etmek, tam olarak <a href="m7-llm-temelleri.html">embedding</a> fikridir. Öneri sistemleri bu fikri LLM'lerden yıllar önce kullanmaya başladı; bugün "iki kule (two-tower)" mimarilerinde kullanıcı ve ürün embedding'leri sinir ağlarıyla öğrenilir ve öneri, <a href="m7-rag.html">vektör veritabanında</a> en yakın komşu aramasına dönüşür.</div>
+
+        <figure class="codebox">
+          <figcaption>Python — SVD ile gizli faktörleri çıkarmak</figcaption>
+          <pre><code data-lang="python">import numpy as np
+from sklearn.decomposition import TruncatedSVD
+
+# Ürünleri ve kullanıcıları 20 gizli boyutta temsil et
+svd = TruncatedSVD(n_components=20, random_state=42)
+U = svd.fit_transform(M)      # (kullanıcı × 20) — herkesin "zevk vektörü"
+V = svd.components_           # (20 × ürün)      — her ürünün karakteri
+
+tahmin = np.dot(U, V)         # boş hücreler dahil TÜM matris yeniden kuruldu
+tahmin_df = pd.DataFrame(tahmin, index=M.index, columns=M.columns)
+
+# Baran'ın hiç dokunmadığı ürünler içinde en yüksek tahminler:
+dokunulmamis = M.loc["baran"] == 0
+print(tahmin_df.loc["baran"][dokunulmamis].nlargest(5))
+
+# Not: Gerçek sistemlerde SVD yerine yalnızca GÖZLENEN hücreler üzerinden optimize eden
+# ALS / BPR gibi yöntemler kullanılır — boşluğu "0 puan" saymak yanıltıcıdır.</code></pre>
+        </figure>
+
+        <h2>Soğuk başlangıç: en inatçı sorun</h2>
+        <p><strong>Cold start (soğuk başlangıç)</strong>, geçmiş verisi olmayan kullanıcı ya da ürün için öneri üretememe sorunudur. Üç biçimi vardır ve her birinin ayrı çözümü:</p>
+        <ul>
+          <li><strong>Yeni kullanıcı:</strong> popülerlik tabanlı öneriyle başla (herkesin sevdiği), kayıt sırasında birkaç tercih sor, ilk tıklamalardan hızla öğren.</li>
+          <li><strong>Yeni ürün:</strong> içerik tabanlı sinyaller devreye girer — ürünün metni, kategorisi, görseli mevcut ürünlerle eşleştirilir.</li>
+          <li><strong>Yeni sistem:</strong> hiç veri yokken işbirlikçi filtreleme imkânsızdır; kurallar ve içerik benzerliğiyle başlanır, veri biriktikçe geçiş yapılır.</li>
+        </ul>
+        <p>Bu yüzden "hibrit" mimari lüks değil zorunluluktur: <a href="m5-supervised.html">gradient boosting</a> gibi bir sıralama modeline hem işbirlikçi skoru hem içerik benzerliğini hem de popülerliği feature olarak verirsin.</p>
+
+        <h2>Değerlendirme: doğruluk yetmez</h2>
+        <p>Öneri sistemlerinde metrik seçimi <a href="m5-model-degerlendirme.html">klasik ML'den</a> farklıdır, çünkü kullanıcı sadece <em>ilk birkaç</em> öneriyi görür. Bu yüzden metrikler "@k" ekiyle gelir:</p>
+        <ul>
+          <li><strong>Precision@k:</strong> gösterdiğim k öneriden kaçı isabetliydi?</li>
+          <li><strong>Recall@k:</strong> kullanıcının gerçekten ilgilendiği ürünlerin kaçını ilk k'ya sokabildim?</li>
+          <li><strong>NDCG:</strong> sıralamayı da ödüllendirir — doğru öneriyi 1. sıraya koymak, 10. sıraya koymaktan daha değerlidir.</li>
+        </ul>
+        <p>Ama işin püf noktası şudur: <strong>yalnız isabet ölçmek sistemi bozar.</strong> En yüksek isabeti "kullanıcının zaten alacağı şeyi öner" stratejisi verir — ki bu hiçbir değer yaratmaz. Bu yüzden <em>çeşitlilik (diversity)</em>, <em>kapsam (coverage)</em> ve <em>sürpriz (serendipity)</em> gibi ölçüler birlikte izlenir. Aşırı isabet odaklı sistemler <strong>filtre balonuna</strong> yol açar: kullanıcıya hep aynı türden içerik gösterilir, keşif ölür, uzun vadede ilgi de ölür.</p>
+
+        <div class="warn"><b>Offline skorlar yalan söyleyebilir.</b> Geçmiş loglarla ölçtüğün başarı yanlıdır: kullanıcı yalnızca <em>eski sistemin gösterdiklerine</em> tıklayabilmiştir (feedback loop). Bir önerinin gerçekten iyi olup olmadığına ancak <a href="m4-istatistiksel-cikarim.html">canlı A/B testi</a> karar verir. Endüstri kuralı: offline metrikler aday elemek için, A/B testi karar vermek içindir.</div>
+
+        <h2>Üretimde: iki aşamalı mimari</h2>
+        <p>100 bin ürün arasından her istekte tek tek skor hesaplamak imkânsızdır. Bu yüzden büyük sistemler işi ikiye böler — bu, <a href="m7-rag.html">RAG'deki retrieval + reranking</a> deseninin aynısıdır:</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 720 226" width="720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="İki aşamalı öneri mimarisi hunisi">
+            <defs>
+              <marker id="rsArr2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g>
+              <rect x="24" y="60" width="164" height="86" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.3"/>
+              <text x="106" y="88" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="800">100.000 ürün</text>
+              <text x="106" y="110" text-anchor="middle" fill="var(--muted)" font-size="10.5">tüm katalog</text>
+              <text x="106" y="128" text-anchor="middle" fill="var(--faint)" font-size="10">hepsini skorlamak imkânsız</text>
+
+              <path d="M192 103 L246 103" stroke="var(--acc)" stroke-width="2" marker-end="url(#rsArr2)"/>
+              <text x="219" y="92" text-anchor="middle" fill="var(--acc)" font-size="10" font-weight="700">retrieval</text>
+              <text x="219" y="122" text-anchor="middle" fill="var(--muted)" font-size="9.5">~10 ms</text>
+
+              <rect x="252" y="70" width="164" height="66" rx="10" fill="rgba(var(--acc-rgb),.12)" stroke="var(--acc)" stroke-width="1.5"/>
+              <text x="334" y="96" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="800">500 aday</text>
+              <text x="334" y="116" text-anchor="middle" fill="var(--muted)" font-size="10">ucuz model · vektör araması</text>
+
+              <path d="M420 103 L474 103" stroke="var(--acc)" stroke-width="2" marker-end="url(#rsArr2)"/>
+              <text x="447" y="92" text-anchor="middle" fill="var(--acc)" font-size="10" font-weight="700">ranking</text>
+              <text x="447" y="122" text-anchor="middle" fill="var(--muted)" font-size="9.5">~30 ms</text>
+
+              <rect x="480" y="78" width="164" height="50" rx="10" fill="rgba(var(--acc-rgb),.22)" stroke="var(--acc)" stroke-width="1.8"/>
+              <text x="562" y="98" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="800">10 öneri</text>
+              <text x="562" y="116" text-anchor="middle" fill="var(--muted)" font-size="10">pahalı model · bol feature</text>
+
+              <text x="360" y="176" text-anchor="middle" fill="var(--muted)" font-size="10.5">Retrieval hızlı ve kaba eler; ranking yavaş ama isabetlidir — hesabı yalnızca 500 adaya harcar.</text>
+              <text x="360" y="198" text-anchor="middle" fill="var(--muted)" font-size="10.5">Son adımda iş kuralları girer: stokta olmayanı, az önce gösterileni, uygunsuz içeriği ele.</text>
+            </g>
+          </svg>
+          <figcaption>Aynı huni deseni arama motorlarında, reklam sistemlerinde ve RAG'de karşına çıkacak.</figcaption>
+        </figure>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <ul>
+          <li><strong>E-ticaret:</strong> ana sayfa vitrini, "birlikte alınanlar", sepet tamamlama, e-posta kampanyaları.</li>
+          <li><strong>İçerik platformları:</strong> akış sıralaması, "sıradaki" içerik, kişisel çalma listeleri.</li>
+          <li><strong>Beklenmedik yerler:</strong> iş ilanı eşleştirme, ürün araması sıralaması, bakım parçası önerisi — hepsi aynı matematiktir.</li>
+          <li><strong>Veri mühendisliği tarafı:</strong> etkileşim olayları <a href="m3-streaming.html">akış hattından</a> gelir, kullanıcı/ürün vektörleri <a href="m8-feature-store.html">feature store'da</a> taze tutulur, öneriler <a href="m8-deployment.html">düşük gecikmeli servis</a> olarak sunulur.</li>
+        </ul>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Yeni açılan bir platformda hangi yaklaşımla başlarsın?</summary>
+            <div class="answer"><b>İçerik tabanlı (ve popülerlik) ile.</b> İşbirlikçi filtreleme kullanıcı davranışından beslenir; hiç etkileşim yokken hesaplayacak bir şey yoktur — klasik <b>soğuk başlangıç</b> durumu. Ürün özellikleriyle benzerlik kurup, veri biriktikçe işbirlikçi sinyalleri karışıma eklersin.</div>
+          </details>
+          <details class="quiz">
+            <summary>Implicit feedback'te "izlemedi" neden "beğenmedi" demek değildir?</summary>
+            <div class="answer">Çünkü izlememesinin en olası sebebi <b>o içeriği hiç görmemiş olmasıdır</b>. Explicit feedback'te (1 yıldız) olumsuzluk açıktır; implicit'te boşluk belirsizdir: görmedi mi, gördü de ilgilenmedi mi bilinmez. Bu yüzden boş hücreleri "0 puan" saymak modeli yanıltır; ALS/BPR gibi yöntemler bu belirsizliği ağırlıklandırarak ele alır.</div>
+          </details>
+          <details class="quiz">
+            <summary>Matris çarpanlarına ayırmadaki "gizli boyutlar" ne anlama gelir?</summary>
+            <div class="answer">Algoritmanın veriden kendi kendine bulduğu, önceden isimlendirilmemiş zevk eksenleridir. Sonradan bakınca birine "aksiyon-severlik" diyebilirsin ama model onları etiketle öğrenmez. Kullanıcı ve ürün <b>aynı k boyutlu uzayda</b> vektörlerle temsil edilir; tahmin bu iki vektörün iç çarpımıdır — yani embedding fikrinin ta kendisi.</div>
+          </details>
+          <details class="quiz">
+            <summary>Precision@10'u tek başına maksimize etmek neden kötü bir hedeftir?</summary>
+            <div class="answer">Çünkü en yüksek isabeti "kullanıcının zaten bulacağı/alacağı şeyi öner" stratejisi verir — sistem hiç değer üretmeden mükemmel skor alır. Ayrıca <b>filtre balonu</b> oluşur: hep aynı türden içerik gösterilir, keşif ve uzun vadeli ilgi ölür. Çözüm, isabetin yanında <b>çeşitlilik ve kapsam</b> ölçmek ve nihai kararı <b>A/B testine</b> bırakmaktır.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Öneri Sistemi</span><span class="term-en">Recommender System</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Çok sayıda seçenek arasından belirli bir kullanıcı için en uygun olanları sıralayıp sunan sistem.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">İçerik Tabanlı Filtreleme</span><span class="term-en">Content-Based Filtering</span><span class="lvl lvl-orta">Orta</span></div><p>Ürünün kendi özelliklerine (tür, metin, kategori) bakarak benzer ürünleri öneren yaklaşım; yeni üründe de çalışır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">İşbirlikçi Filtreleme</span><span class="term-en">Collaborative Filtering</span><span class="lvl lvl-orta">Orta</span></div><p>Yalnızca kullanıcı davranış desenlerine bakan yaklaşım: "senin gibi kullanıcılar bunu da beğendi".</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Kullanıcı-Ürün Matrisi</span><span class="term-en">User-Item Matrix</span><span class="lvl lvl-orta">Orta</span></div><p>Satırları kullanıcı, sütunları ürün, hücreleri etkileşim olan matris; öneri problemi bu matrisin boşluklarını doldurmaktır.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Seyreklik</span><span class="term-en">Sparsity</span><span class="lvl lvl-orta">Orta</span></div><p>Matrisin ezici çoğunluğunun boş olması; gerçek platformlarda doluluk %1'in altındadır ve modellemenin ana zorluğudur.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Implicit Feedback</span><span class="term-en">Implicit Feedback</span><span class="lvl lvl-orta">Orta</span></div><p>Davranıştan çıkarılan dolaylı sinyal (tıklama, izleme süresi); bol ama gürültülüdür — "görmedi" ile "beğenmedi" ayırt edilemez.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Matris Çarpanlarına Ayırma</span><span class="term-en">Matrix Factorization</span><span class="lvl lvl-ileri">İleri</span></div><p>Büyük seyrek matrisi iki küçük yoğun matrisin çarpımıyla yaklaşıklama; öneri sistemlerinin klasik omurgası.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Latent Factor (Gizli Faktör)</span><span class="term-en">Latent Factor</span><span class="lvl lvl-ileri">İleri</span></div><p>Algoritmanın veriden kendi bulduğu isimsiz zevk boyutları; kullanıcı ve ürünü aynı uzayda temsil eder.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Soğuk Başlangıç</span><span class="term-en">Cold Start</span><span class="lvl lvl-orta">Orta</span></div><p>Yeni kullanıcı, yeni ürün veya yeni sistemde geçmiş veri olmadığı için öneri üretememe sorunu.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Precision@k</span><span class="term-en">Precision@k</span><span class="lvl lvl-orta">Orta</span></div><p>Gösterilen ilk k öneriden kaçının isabetli olduğu; kullanıcı yalnızca ilk birkaç satırı gördüğü için "@k" ile ölçülür.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">NDCG</span><span class="term-en">Normalized Discounted Cumulative Gain</span><span class="lvl lvl-ileri">İleri</span></div><p>Sıralama kalitesini ölçen metrik: doğru öneriyi üst sıraya koymayı, alt sıraya koymaktan daha çok ödüllendirir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Filtre Balonu</span><span class="term-en">Filter Bubble</span><span class="lvl lvl-orta">Orta</span></div><p>Aşırı isabet odaklı önerinin kullanıcıyı hep aynı içerik türüne hapsetmesi; çeşitlilik ölçülmezse kaçınılmazdır.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m5-oneri-sistemleri">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m5-model-degerlendirme.html"><span>← Önceki</span><b>Model Değerlendirme ve Tuning</b></a>
+          <a class="next" href="m5-nlp.html"><span>Sonraki →</span><b>Klasik NLP: Metni Sayıya Çevirmek</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Model Değerlendirme ve Tuning — Veri Atlası</title>
+<meta name="description" content="Confusion matrix, precision/recall, F1, ROC AUC, MAE/RMSE/R², cross-validation ve hyperparameter tuning: modelinin gerçekten iyi olup olmadığını ölçme rehberi.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%230b1020'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("va-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-module="m5" data-slug="m5-model-degerlendirme">
+<div id="readbar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Veri Atlası ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient></defs>
+        <circle cx="16" cy="16" r="5" fill="url(#lg)"/>
+        <circle cx="26" cy="7" r="3" fill="url(#lg)"/>
+        <circle cx="6" cy="9" r="3" fill="url(#lg)"/>
+        <circle cx="24" cy="26" r="3" fill="url(#lg)"/>
+        <path d="M16 16L26 7M16 16L6 9M16 16L24 26" stroke="url(#lg)" stroke-width="1.6"/>
+      </svg>
+      Veri <em>Atlası</em>
+    </a>
+    <nav class="site-nav" aria-label="Site gezinmesi">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+      <button id="theme-toggle" aria-label="Tema değiştir" title="Tema değiştir">
+        <svg class="ico-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="topic-head">
+      <nav class="crumbs" aria-label="Sayfa yolu">
+        <a href="../index.html">Ana Sayfa</a><span class="sep">/</span>
+        <a href="../index.html#m5">5. Makine Öğrenmesi</a><span class="sep">/</span>
+        <span>Model Değerlendirme ve Tuning</span>
+      </nav>
+      <span class="mod-badge">Modül 5 · Makine Öğrenmesi</span>
+      <h1>Model Değerlendirme ve Tuning</h1>
+      <p class="en-title">Model Evaluation &amp; Tuning</p>
+      <div class="topic-meta">
+        <span class="lvl lvl-orta">Orta</span>
+        <span class="chip">⏱️ ~18 dk okuma</span>
+        <span class="chip">🔤 14 temel terim</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="prose">
+
+        <h2>%99 accuracy'nin yalanı</h2>
+        <p>Bir kredi kartı şirketinde çalışıyorsun; 100.000 işlemin 1.000'i sahte. Hiçbir şey öğrenmeyen, her işleme körlemesine "temiz" diyen bir model kur: <strong>accuracy (doğruluk) %99</strong>. Etkileyici bir sunum slaytı — ve sıfır yakalanan dolandırıcılık. İşte makine öğrenmesinin en klasik paradoksu: <a href="m5-feature-engineering.html">dengesiz veride</a> accuracy, modelin değil veri dağılımının notudur.</p>
+        <p>Bu sayfanın derdi tam olarak bu: <strong>"iyi model" iddiasını nasıl dürüstçe ölçersin?</strong> Yanlış metrik seçersen kötü modeli parlatırsın; yanlış doğrulama kurarsan iyi skoru şansa borçlu olursun. Önce sınıflandırma metriklerini, sonra regresyon metriklerini, sonra da güvenilir ölçüm düzeneğini (cross-validation) ve model ayarlamayı (hyperparameter tuning) kuracağız.</p>
+
+        <div class="tip"><b>Önce baseline kur.</b> Her projede ilk model, en aptal model olmalı: "hep çoğunluk sınıfını söyle" ya da "hep ortalamayı tahmin et". Bu <strong>baseline (taban model)</strong> sana kıyas çizgisi verir — %99 accuracy'nin etkileyici mi yoksa bedava mı olduğunu ancak baseline'a bakınca anlarsın. Baseline'ı geçemeyen karmaşık model, süslü bir zaman kaybıdır.</div>
+
+        <h2>Confusion matrix: dört hücrede bütün hikâye</h2>
+        <p>İkili sınıflandırmada modelin yapabileceği her şey 2×2'lik bir tabloya sığar. Pozitif sınıfa "spam" diyelim:</p>
+        <ul>
+          <li><strong>TP (true positive)</strong> — spam'e spam dedik: doğru alarm.</li>
+          <li><strong>FN (false negative)</strong> — spam'e normal dedik: <em>kaçırdık</em>.</li>
+          <li><strong>FP (false positive)</strong> — normale spam dedik: <em>yanlış alarm</em>.</li>
+          <li><strong>TN (true negative)</strong> — normale normal dedik: doğru geçiş.</li>
+        </ul>
+        <p>Bu dört sayıdan iki hayati oran doğar. <strong>Precision (kesinlik)</strong>: "spam" dediklerimin kaçı gerçekten spam? — yanlış alarmın maliyetini ölçer. <strong>Recall (duyarlılık)</strong>: gerçek spam'lerin kaçını yakaladım? — kaçırmanın maliyetini ölçer.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 760 340" width="760" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Confusion matrix ve precision ile recall formüllerinin hangi hücrelerden geldiği">
+            <defs>
+              <marker id="arrm1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+              <marker id="arrm2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--warn)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="240" y="40" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Tahmin: Spam</text>
+              <text x="380" y="40" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Tahmin: Normal</text>
+              <text x="158" y="108" text-anchor="end" fill="var(--ink)" font-size="12.5" font-weight="700">Gerçek: Spam</text>
+              <text x="158" y="193" text-anchor="end" fill="var(--ink)" font-size="12.5" font-weight="700">Gerçek: Normal</text>
+              <!-- hücreler -->
+              <rect x="170" y="55" width="140" height="85" rx="8" fill="rgba(var(--acc-rgb),.14)" stroke="var(--ok)" stroke-width="1.8"/>
+              <text x="240" y="95" text-anchor="middle" fill="var(--ink)" font-size="20" font-weight="800">40</text>
+              <text x="240" y="118" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="600">TP · doğru alarm</text>
+              <rect x="310" y="55" width="140" height="85" rx="8" fill="var(--dg-box)" stroke="var(--bad)" stroke-width="1.8"/>
+              <text x="380" y="95" text-anchor="middle" fill="var(--ink)" font-size="20" font-weight="800">10</text>
+              <text x="380" y="118" text-anchor="middle" fill="var(--bad)" font-size="10.5" font-weight="600">FN · kaçan spam</text>
+              <rect x="170" y="140" width="140" height="85" rx="8" fill="var(--dg-box)" stroke="var(--bad)" stroke-width="1.8"/>
+              <text x="240" y="180" text-anchor="middle" fill="var(--ink)" font-size="20" font-weight="800">15</text>
+              <text x="240" y="203" text-anchor="middle" fill="var(--bad)" font-size="10.5" font-weight="600">FP · yanlış alarm</text>
+              <rect x="310" y="140" width="140" height="85" rx="8" fill="rgba(var(--acc-rgb),.14)" stroke="var(--ok)" stroke-width="1.8"/>
+              <text x="380" y="180" text-anchor="middle" fill="var(--ink)" font-size="20" font-weight="800">935</text>
+              <text x="380" y="203" text-anchor="middle" fill="var(--ok)" font-size="10.5" font-weight="600">TN · doğru geçiş</text>
+              <!-- precision: sol sütun -->
+              <path d="M240 232 L240 258" stroke="var(--acc)" stroke-width="2" marker-end="url(#arrm1)"/>
+              <text x="240" y="282" text-anchor="middle" fill="var(--acc)" font-size="13" font-weight="700">Precision = TP / (TP + FP) = 40/55 ≈ 0.73</text>
+              <text x="240" y="300" text-anchor="middle" fill="var(--muted)" font-size="11">"spam" dediklerimin kaçı gerçekten spam? (sol sütun)</text>
+              <!-- recall: üst satır -->
+              <path d="M458 97 L492 97" stroke="var(--warn)" stroke-width="2" marker-end="url(#arrm2)"/>
+              <text x="502" y="88" fill="var(--warn)" font-size="13" font-weight="700">Recall = TP / (TP + FN)</text>
+              <text x="502" y="106" fill="var(--warn)" font-size="13" font-weight="700">= 40/50 = 0.80</text>
+              <text x="502" y="126" fill="var(--muted)" font-size="11">gerçek spamların kaçını</text>
+              <text x="502" y="141" fill="var(--muted)" font-size="11">yakaladım? (üst satır)</text>
+              <text x="380" y="330" text-anchor="middle" fill="var(--faint)" font-size="11">1000 e-posta · accuracy = 975/1000 = %97,5 — ama hikâyeyi precision ve recall anlatıyor</text>
+            </g>
+          </svg>
+          <figcaption>Precision sol sütundan (alarm verdiklerim), recall üst satırdan (gerçek pozitifler) hesaplanır. Aynı matristen iki farklı soru, iki farklı cevap.</figcaption>
+        </figure>
+
+        <p>Peki hangisi önemli? Cevap her zaman şu sorudadır: <strong>hangi hata daha pahalı?</strong></p>
+        <ul>
+          <li><strong>Spam filtresi:</strong> FP pahalıdır — patronun e-postasını spam'e atmak felaket, birkaç spam'in gelen kutusuna sızması nahoş ama katlanılır. Precision öncelikli.</li>
+          <li><strong>Kanser taraması:</strong> FN pahalıdır — hastayı "temiz" deyip kaçırmak telafisizdir, yanlış alarm ise ek tetkikle çözülür. Recall öncelikli.</li>
+        </ul>
+        <p>İkisini tek sayıda özetlemek gerektiğinde <strong>F1 skoru</strong> kullanılır: precision ile recall'un harmonik ortalaması. Harmonik ortalama acımasızdır — biri düşükse F1 de düşer; yani F1, "ikisinde birden fena olmayan" modeli ödüllendirir.</p>
+
+        <h2>ROC eğrisi ve AUC: eşikten bağımsız bakış</h2>
+        <p>Modelin aslında "spam" demez; 0–1 arası bir <em>olasılık</em> verir ve sen bir <strong>eşik (threshold)</strong> seçersin: 0.5 üstü spam. Eşiği kaydırdıkça precision ve recall zıt yönde oynar — o hâlde tek eşikteki skor, modelin tamamını anlatmaz. <strong>ROC eğrisi</strong>, olası tüm eşikler için "yakalama oranı"nı (TPR = recall) "yanlış alarm oranı"na (FPR) karşı çizer. Eğrinin altında kalan alan <strong>AUC</strong>, 0.5 (yazı-tura) ile 1.0 (mükemmel ayrım) arasında tek sayılık bir özettir: "rastgele bir pozitif, rastgele bir negatiften daha yüksek skor alır mı?" sorusunun olasılığıdır.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 640 320" width="640" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ROC eğrisi: rastgele modelin çaprazı, iyi modelin kavisi ve gölgeli AUC alanı">
+            <defs>
+              <marker id="arrm3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--dg-line)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <path d="M80 260 C 90 130, 150 95, 250 82 C 350 72, 450 70, 520 70 L 520 260 Z" fill="rgba(var(--acc-rgb),.15)"/>
+              <path d="M80 260 L560 260" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrm3)"/>
+              <path d="M80 260 L80 40" stroke="var(--dg-line)" stroke-width="1.6" marker-end="url(#arrm3)"/>
+              <path d="M80 260 L520 70" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="6 5"/>
+              <path d="M80 260 C 90 130, 150 95, 250 82 C 350 72, 450 70, 520 70" fill="none" stroke="var(--acc)" stroke-width="2.5"/>
+              <circle cx="150" cy="100" r="6" fill="var(--warn)" stroke="var(--ink)" stroke-width="1"/>
+              <text x="164" y="96" fill="var(--warn)" font-size="11" font-weight="600">bir eşik = eğride bir nokta</text>
+              <text x="330" y="165" text-anchor="middle" fill="var(--acc)" font-size="15" font-weight="800">AUC ≈ 0.93</text>
+              <text x="330" y="184" text-anchor="middle" fill="var(--muted)" font-size="10.5">gölgeli alan: eğrinin altı</text>
+              <text x="400" y="232" text-anchor="middle" fill="var(--muted)" font-size="11" transform="rotate(-22 400 232)">rastgele tahmin (AUC = 0.5)</text>
+              <text x="320" y="292" text-anchor="middle" fill="var(--muted)" font-size="12">False Positive Rate — yanlış alarm oranı</text>
+              <text x="44" y="150" text-anchor="middle" fill="var(--muted)" font-size="12" transform="rotate(-90 44 150)">True Positive Rate — recall</text>
+              <text x="530" y="52" text-anchor="end" fill="var(--ok)" font-size="11" font-weight="600">ideal köşe: sol üst</text>
+            </g>
+          </svg>
+          <figcaption>Her eşik, eğri üzerinde bir noktadır; eğri sol üst köşeye yaklaştıkça model iyidir. Çapraz çizgi yazı-tura seviyesi: AUC 0.5.</figcaption>
+        </figure>
+
+        <p>Bir uyarı: ROC, negatif sınıf devasa olduğunda (fraud gibi %99–%1 durumlar) fazla iyimser görünebilir, çünkü FPR'nin paydası milyonlarca negatiftir ve binlerce yanlış alarm bile oranı kıpırdatmaz. Bu durumlarda <strong>precision-recall (PR) eğrisi</strong> tercih edilir: paydasında negatif kalabalığı yoktur, azınlık sınıfındaki performansı acımasızca gösterir. Kural olarak: dengeli veri → ROC AUC, ağır dengesiz veri → PR eğrisi ve average precision.</p>
+
+        <figure class="codebox">
+          <figcaption>Python — sınıflandırma metriklerini okumak</figcaption>
+          <pre><code data-lang="python">from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score
+
+y_pred = model.predict(X_test)                   # 0/1 sınıf tahmini
+y_olasilik = model.predict_proba(X_test)[:, 1]   # pozitif sınıf olasılığı
+
+print(confusion_matrix(y_test, y_pred))
+# [[935  15]     → üst satır gerçek negatifler: TN=935, FP=15
+#  [ 10  40]]    → alt satır gerçek pozitifler: FN=10, TP=40
+
+print(classification_report(y_test, y_pred))
+# precision 0.73 → alarm verdiklerimin %73'ü gerçekten pozitif
+# recall    0.80 → gerçek pozitiflerin %80'ini yakaladım
+# f1-score  0.76 → ikisinin harmonik ortalaması
+
+# ROC AUC eşikten bağımsızdır: etiket değil OLASILIK ister
+print(roc_auc_score(y_test, y_olasilik))         # örn. 0.93</code></pre>
+        </figure>
+
+        <h2>Regresyon metrikleri: MAE, RMSE, R²</h2>
+        <p>Hedef sayısal olduğunda (ev fiyatı, talep adedi) hücreler değil <em>hata büyüklükleri</em> konuşur:</p>
+        <ul>
+          <li><strong>MAE (mean absolute error)</strong> — hataların mutlak değer ortalaması. Yorumu en kolay olandır: "ortalama 42.000 TL şaşıyoruz" cümlesi doğrudan MAE'dir. Tüm hatalara eşit davranır.</li>
+          <li><strong>RMSE (root mean squared error)</strong> — hataların karesinin ortalamasının karekökü. Kare alma, <em>büyük hataları orantısız cezalandırır</em>: 10 tane 1'lik hata yerine 1 tane 10'luk hata RMSE'yi çok daha fazla şişirir. Nadir ama büyük yanılmaların pahalı olduğu işlerde (stok, enerji) tercih sebebi; aykırı değerlere de o ölçüde hassastır.</li>
+          <li><strong>R² (açıklanan varyans)</strong> — modelin, hedefteki değişkenliğin ne kadarını açıkladığı: 1.0 mükemmel, 0.0 "ortalamayı söylemekten farksız", negatif ise ortalamadan bile kötü. Ölçekten bağımsız olduğu için farklı problemler arasında kabaca kıyas sağlar; ama tek başına "iyi/kötü" damgası basmaz — %40'lık R² churn tahmininde altın, fizik deneyinde skandaldır.</li>
+        </ul>
+        <p>Pratik ikili: raporlamada MAE (herkes anlar) + optimizasyon/kıyasta RMSE. İkisi arasındaki makas açıksa (RMSE &gt;&gt; MAE), birkaç büyük hatan var demektir — <a href="m4-eda.html">EDA'ya</a> dönüp o kuyruğu incele.</p>
+
+        <h2>Cross-validation: skorunu şansa emanet etme</h2>
+        <p>Tek bir train/test split'in sorunu şudur: skor, o split'in <em>şansına</em> bağlıdır. Kolay örnekler tesadüfen test'e düştüyse kendini olduğundan iyi sanırsın; tersi de olur. Küçük ve orta boy veride bu oynaklık ciddi boyuttadır.</p>
+        <p><strong>K-fold cross-validation</strong> çözümü basittir: veriyi k eşit parçaya (fold) böl; k tur boyunca her turda farklı bir parça validation, kalanlar eğitim olsun. Sonuç, k skorun <strong>ortalaması ± standart sapması</strong>dır: hem daha güvenilir bir tahmin hem de "skor ne kadar oynak?" bilgisi. Sınıflandırmada <strong>stratified k-fold</strong> kullanılır: her fold'da sınıf oranları korunur — dengesiz veride şart.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 680 270" width="680" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="5-fold cross-validation: her turda farklı parça doğrulama olur">
+            <g font-family="inherit">
+              <rect x="110" y="18" width="14" height="14" rx="3" fill="rgba(var(--acc-rgb),.35)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="132" y="30" fill="var(--muted)" font-size="11">doğrulama (validation)</text>
+              <rect x="290" y="18" width="14" height="14" rx="3" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="312" y="30" fill="var(--muted)" font-size="11">eğitim (train)</text>
+              <g font-size="11.5" fill="var(--muted)">
+                <text x="98" y="70" text-anchor="end">1. tur</text>
+                <text x="98" y="110" text-anchor="end">2. tur</text>
+                <text x="98" y="150" text-anchor="end">3. tur</text>
+                <text x="98" y="190" text-anchor="end">4. tur</text>
+                <text x="98" y="230" text-anchor="end">5. tur</text>
+              </g>
+              <!-- satırlar: her turda farklı fold validation -->
+              <g stroke-width="1.4">
+                <rect x="110" y="50" width="92" height="30" rx="5" fill="rgba(var(--acc-rgb),.35)" stroke="var(--acc)"/>
+                <rect x="210" y="50" width="92" height="30" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+                <rect x="310" y="50" width="92" height="30" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+                <rect x="410" y="50" width="92" height="30" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+                <rect x="510" y="50" width="92" height="30" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+                <rect x="110" y="90" width="92" height="30" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+                <rect x="210" y="90" width="92" height="30" rx="5" fill="rgba(var(--acc-rgb),.35)" stroke="var(--acc)"/>
+                <rect x="310" y="90" width="92" height="30" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+                <rect x="410" y="90" width="92" height="30" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+                <rect x="510" y="90" width="92" height="30" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+                <rect x="110" y="130" width="92" height="30" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+                <rect x="210" y="130" width="92" height="30" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+                <rect x="310" y="130" width="92" height="30" rx="5" fill="rgba(var(--acc-rgb),.35)" stroke="var(--acc)"/>
+                <rect x="410" y="130" width="92" height="30" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+                <rect x="510" y="130" width="92" height="30" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+                <rect x="110" y="170" width="92" height="30" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+                <rect x="210" y="170" width="92" height="30" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+                <rect x="310" y="170" width="92" height="30" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+                <rect x="410" y="170" width="92" height="30" rx="5" fill="rgba(var(--acc-rgb),.35)" stroke="var(--acc)"/>
+                <rect x="510" y="170" width="92" height="30" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+                <rect x="110" y="210" width="92" height="30" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+                <rect x="210" y="210" width="92" height="30" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+                <rect x="310" y="210" width="92" height="30" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+                <rect x="410" y="210" width="92" height="30" rx="5" fill="var(--dg-box)" stroke="var(--dg-line)"/>
+                <rect x="510" y="210" width="92" height="30" rx="5" fill="rgba(var(--acc-rgb),.35)" stroke="var(--acc)"/>
+              </g>
+              <g font-size="11" fill="var(--acc)" font-weight="600">
+                <text x="614" y="70">skor 1</text>
+                <text x="614" y="110">skor 2</text>
+                <text x="614" y="150">skor 3</text>
+                <text x="614" y="190">skor 4</text>
+                <text x="614" y="230">skor 5</text>
+              </g>
+              <text x="356" y="260" text-anchor="middle" fill="var(--faint)" font-size="11">final değerlendirme = 5 skorun ortalaması ± standart sapması — her satır aynı verinin farklı bölünüşü</text>
+            </g>
+          </svg>
+          <figcaption>5-fold CV: her kayıt tam bir kez validation'da kullanılır; ortalama skor tek split'ten çok daha güvenilirdir, sapma da oynaklığı raporlar.</figcaption>
+        </figure>
+
+        <div class="note"><b>Zaman serisinde k-fold yasak.</b> Satış tahmini gibi zamana bağlı verilerde fold'ları rastgele karıştırırsan model geleceği görerek geçmişi tahmin eder — <a href="m5-feature-engineering.html">data leakage'in</a> doğrulama düzeneğine sızmış hâli. Doğrusu <code>TimeSeriesSplit</code>: her turda geçmişle eğit, hep daha ileriki dilimle doğrula. Kronolojiyi asla kırma.</div>
+
+        <h2>Hyperparameter tuning: modelin ayar düğmeleri</h2>
+        <p>İki kavramı ayıralım: <strong>parametreler</strong>, modelin veriden <em>öğrendiği</em> değerlerdir (regresyon katsayıları, ağaçların bölme noktaları). <strong>Hyperparameter'lar</strong> ise senin eğitimden <em>önce</em> seçtiğin düğmelerdir: ağaç sayısı, derinlik, learning rate, k... Model bunları öğrenemez; denenerek bulunur.</p>
+        <p>İki klasik arama stratejisi:</p>
+        <ul>
+          <li><strong>Grid search</strong> — verdiğin değerlerin tüm kombinasyonlarını dener. Sistematiktir ama pahalıdır: 4 düğme × 5'er değer = 625 eğitim. Ve ızgara, önemli düğmenin ara değerlerini hiç görmez.</li>
+          <li><strong>Random search</strong> — aynı bütçeyle kombinasyonları rastgele örnekler. Kulağa özensiz gelir ama çoğu zaman yeterlidir, hatta üstündür: performans genelde 1–2 hyperparameter'a bağlıdır ve rastgele arama o eksenlerde çok daha fazla farklı değer dener.</li>
+        </ul>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 300" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Grid search'ün düzenli ızgarası ile random search'ün rastgele saçılmış denemeleri">
+            <g font-family="inherit">
+              <text x="180" y="34" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Grid Search — 16 deneme</text>
+              <g transform="translate(30,50)">
+                <rect x="0" y="0" width="300" height="190" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+                <g fill="var(--acc)">
+                  <circle cx="60" cy="45" r="6"/><circle cx="120" cy="45" r="6"/><circle cx="180" cy="45" r="6"/><circle cx="240" cy="45" r="6"/>
+                  <circle cx="60" cy="90" r="6"/><circle cx="120" cy="90" r="6"/><circle cx="180" cy="90" r="6"/><circle cx="240" cy="90" r="6"/>
+                  <circle cx="60" cy="135" r="6"/><circle cx="120" cy="135" r="6"/><circle cx="180" cy="135" r="6"/><circle cx="240" cy="135" r="6"/>
+                  <circle cx="60" cy="180" r="6"/><circle cx="120" cy="180" r="6"/><circle cx="180" cy="180" r="6"/><circle cx="240" cy="180" r="6"/>
+                </g>
+              </g>
+              <text x="180" y="262" text-anchor="middle" fill="var(--muted)" font-size="11">learning_rate →</text>
+              <text x="18" y="145" text-anchor="middle" fill="var(--muted)" font-size="11" transform="rotate(-90 18 145)">max_depth →</text>
+              <text x="180" y="284" text-anchor="middle" fill="var(--warn)" font-size="11" font-weight="600">her eksende yalnızca 4 farklı değer görülür</text>
+
+              <text x="520" y="34" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="700">Random Search — 16 deneme</text>
+              <g transform="translate(370,50)">
+                <rect x="0" y="0" width="300" height="190" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+                <g fill="var(--acc)">
+                  <circle cx="55" cy="60" r="6"/><circle cx="100" cy="155" r="6"/><circle cx="145" cy="45" r="6"/><circle cx="190" cy="110" r="6"/><circle cx="235" cy="170" r="6"/>
+                  <circle cx="75" cy="100" r="6"/><circle cx="120" cy="70" r="6"/><circle cx="165" cy="175" r="6"/><circle cx="210" cy="50" r="6"/><circle cx="255" cy="120" r="6"/>
+                  <circle cx="90" cy="180" r="6"/><circle cx="135" cy="130" r="6"/><circle cx="180" cy="80" r="6"/><circle cx="225" cy="150" r="6"/><circle cx="270" cy="65" r="6"/><circle cx="60" cy="135" r="6"/>
+                </g>
+              </g>
+              <text x="520" y="262" text-anchor="middle" fill="var(--muted)" font-size="11">learning_rate →</text>
+              <text x="520" y="284" text-anchor="middle" fill="var(--ok)" font-size="11" font-weight="600">aynı bütçeyle her eksende 16 farklı değer denenir</text>
+            </g>
+          </svg>
+          <figcaption>Aynı 16 denemelik bütçe: grid her eksende yalnızca 4 değer görürken random search her eksende 16 farklı değer dener — kritik düğme hangisiyse orada daha iyi tarama yapar.</figcaption>
+        </figure>
+
+        <p>Daha akıllısı da var: <strong>Bayesian optimization</strong> (Optuna, scikit-optimize gibi araçlarla) önceki denemelerin sonuçlarına bakarak bir sonraki denemeyi umut vadeden bölgeden seçer — büyük arama uzaylarında bütçeyi ciddi kısaltır. Hangi stratejiyi seçersen seç, altın kural değişmez: <strong>tuning, cross-validation ile ve yalnızca eğitim verisi içinde yapılır; test seti en sona, tek dokunuşa saklanır.</strong> Test setine defalarca bakarak ayar çekersen, farkında olmadan test'e overfit olursun ve "final skorun" anlamını yitirir.</p>
+
+        <figure class="codebox">
+          <figcaption>Python — cross-validation, arama ve test setine tek dokunuş</figcaption>
+          <pre><code data-lang="python">from sklearn.model_selection import cross_val_score, RandomizedSearchCV
+from sklearn.ensemble import RandomForestClassifier
+
+model = RandomForestClassifier(random_state=42)
+
+# 1) Tek split yerine 5-fold CV: ortalama + oynaklık
+skorlar = cross_val_score(model, X_train, y_train, cv=5, scoring="f1")
+print(f"F1: {skorlar.mean():.3f} ± {skorlar.std():.3f}")
+
+# 2) Hyperparameter arama — CV ile, X_train İÇİNDE
+param_uzayi = {"n_estimators": [200, 400, 800],
+               "max_depth": [4, 8, 16, None],
+               "min_samples_leaf": [1, 5, 20]}
+arama = RandomizedSearchCV(model, param_uzayi, n_iter=20,
+                           cv=5, scoring="f1", random_state=42)
+arama.fit(X_train, y_train)
+print(arama.best_params_)     # örn. {'n_estimators': 400, 'max_depth': 8, ...}
+print(arama.best_score_)      # CV ortalaması — henüz test'e dokunmadık
+
+# 3) Test setine TEK dokunuş: en sonda, bir kez
+print(arama.best_estimator_.score(X_test, y_test))</code></pre>
+        </figure>
+
+        <div class="warn"><b>Test seti bir kere okunur.</b> "Skor düşük çıktı, birkaç ayar daha deneyip test'e tekrar bakayım" döngüsü, test setini yavaş yavaş validation setine çevirir — artık genelleme ölçmüyorsundur, teste ezber yapıyorsundur. Model seçimi ve tuning kararlarının hepsi CV skoruyla verilir; test skoru, işin bittiğinin ilanıdır.</div>
+
+        <h2>Sahada nasıl karşına çıkar?</h2>
+        <ul>
+          <li><strong>Metrik pazarlığı →</strong> projenin ilk toplantısında "başarıyı neyle ölçeceğiz?" konuşulur; fraud ekibi recall, müşteri deneyimi ekibi precision ister — eşik, bu iki maliyetin pazarlığıyla seçilir.</li>
+          <li><strong>Model kartları ve raporlar →</strong> bir modeli devreye alırken confusion matrix, PR/ROC eğrileri ve CV sapması rapora girer; tek bir accuracy sayısı sunan rapor sahada ciddiye alınmaz.</li>
+          <li><strong>Kaggle vs gerçek hayat →</strong> yarışmalarda binde birlik AUC farkı için haftalarca tuning yapılır; işte ise çoğu zaman "random search + sağlam feature'lar" yeter — kazancın büyüğü <a href="m5-feature-engineering.html">feature engineering'dedir</a>.</li>
+          <li><strong>Canlı izleme →</strong> devreye alınan modelin metrikleri zamanla çürür (data drift); bu sayfadaki metrikler, üretimde sürekli hesaplanan birer alarm göstergesine dönüşür.</li>
+          <li><strong>İstatistiksel akrabalık →</strong> "5 skorun ortalaması ± sapması" fikri, <a href="m4-istatistiksel-cikarim.html">istatistiksel çıkarım konusundaki</a> güven aralığı mantığının ta kendisidir.</li>
+        </ul>
+        <p>Klasik ML araç çantası artık tamam: algoritmalar, feature'lar ve dürüst ölçüm. Sıradaki durak, bu kuralları bambaşka bir ölçeğe taşıyan dünya: <a href="m6-sinir-aglari.html">sinir ağları</a>.</p>
+
+        <h2>Kendini test et</h2>
+        <div class="quiz-box">
+          <details class="quiz">
+            <summary>Kanser taraması modelinde precision ve recall'dan hangisine öncelik verirsin, neden?</summary>
+            <div class="answer"><b>Recall.</b> Burada en pahalı hata FN'dir: gerçek hastaya "temiz" demek, teşhisi geciktirir ve telafisi olmayabilir. FP (yanlış alarm) ise ek tetkikle düzeltilebilir — maliyeti stres ve para, ama ölümcül değil. Tersi örnek spam filtresidir: orada FP (önemli e-postayı spam'e atmak) pahalıdır, precision öne geçer. Metrik seçimi her zaman "hangi hata daha pahalı?" sorusunun cevabıdır.</div>
+          </details>
+          <details class="quiz">
+            <summary>Accuracy %99 olan bir model nasıl "çöp" olabilir? Bunu hangi araçlar ortaya çıkarır?</summary>
+            <div class="answer">Veri %99–%1 dengesizse, <b>hep çoğunluğu söyleyen baseline</b> bile %99 accuracy alır — model hiçbir pozitifi yakalamıyor olabilir. Bunu <b>confusion matrix</b> (TP=0 görünür), <b>recall</b> (0 çıkar) ve <b>PR eğrisi</b> anında ortaya çıkarır. Bu yüzden ilk iş baseline kurmak ve dengesiz veride accuracy yerine precision/recall/F1 raporlamaktır.</div>
+          </details>
+          <details class="quiz">
+            <summary>Tek train/test split yerine neden 5-fold cross-validation kullanırsın? Ne zaman kullanamazsın?</summary>
+            <div class="answer">Tek split'in skoru, hangi örneklerin test'e düştüğü <b>şansına</b> bağlıdır. 5-fold CV her kaydı bir kez validation'da kullanır ve <b>ortalama ± sapma</b> verir: hem daha güvenilir hem oynaklığı gösterir. Kullanamayacağın yer: <b>zaman serisi</b> — fold'ları karıştırmak geleceği eğitime sızdırır; orada TimeSeriesSplit ile hep "geçmişle eğit, gelecekle doğrula" düzeni kurulur.</div>
+          </details>
+          <details class="quiz">
+            <summary>Tuning sırasında test setine neden dokunulmaz; en iyi parametreyi neyle seçersin?</summary>
+            <div class="answer">Test setine bakarak ayar çektiğin her seferde, seçimlerin o özel kümeye uyum sağlar — test artık <b>görülmemiş veri</b> olmaktan çıkar ve final skor iyimser bir yalana dönüşür. Doğru düzen: parametreler <b>eğitim verisi içindeki cross-validation skoruyla</b> seçilir (Grid/RandomizedSearchCV bunu otomatik yapar); test seti en sonda <b>tek bir kez</b> okunur ve raporlanan sayı odur.</div>
+          </details>
+        </div>
+
+        <h2>Bu konunun terimleri</h2>
+        <div class="terms-grid">
+          <div class="term"><div class="term-head"><span class="term-tr">Confusion Matrix (Karışıklık Matrisi)</span><span class="term-en">Confusion Matrix</span><span class="lvl lvl-orta">Orta</span></div><p>Tahminleri TP/FP/FN/TN olarak dörde ayıran tablo; tüm sınıflandırma metriklerinin ham maddesi.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Accuracy (Doğruluk)</span><span class="term-en">Accuracy</span><span class="lvl lvl-baslangic">Başlangıç</span></div><p>Doğru tahmin oranı; sezgisel ama dengesiz veride ciddi biçimde yanıltıcı olan metrik.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Precision (Kesinlik)</span><span class="term-en">Precision</span><span class="lvl lvl-orta">Orta</span></div><p>Pozitif dediklerimin kaçı gerçekten pozitif: TP/(TP+FP). Yanlış alarmın pahalı olduğu işlerin metriği.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Recall (Duyarlılık)</span><span class="term-en">Recall</span><span class="lvl lvl-orta">Orta</span></div><p>Gerçek pozitiflerin kaçını yakaladım: TP/(TP+FN). Kaçırmanın pahalı olduğu işlerin (tarama, fraud) metriği.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">F1 Skoru</span><span class="term-en">F1 Score</span><span class="lvl lvl-orta">Orta</span></div><p>Precision ile recall'un harmonik ortalaması; ikisinden biri düşükse acımasızca düşer.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">ROC Eğrisi</span><span class="term-en">ROC Curve</span><span class="lvl lvl-ileri">İleri</span></div><p>Tüm eşikler için TPR–FPR ilişkisini çizen eğri; modele eşikten bağımsız bakmayı sağlar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">AUC</span><span class="term-en">Area Under the Curve</span><span class="lvl lvl-ileri">İleri</span></div><p>ROC eğrisinin altındaki alan: 0.5 rastgele, 1.0 mükemmel ayrım. Ağır dengesiz veride PR eğrisi tercih edilir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">MAE &amp; RMSE</span><span class="term-en">MAE &amp; RMSE</span><span class="lvl lvl-orta">Orta</span></div><p>Regresyonun iki hata ölçüsü: MAE yorumu kolay ortalama sapma, RMSE büyük hataları orantısız cezalandıran versiyon.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">R²</span><span class="term-en">R-squared</span><span class="lvl lvl-orta">Orta</span></div><p>Modelin hedefteki varyansın ne kadarını açıkladığı; 0 "ortalamadan farksız", 1 mükemmel demektir.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Cross-Validation (Çapraz Doğrulama)</span><span class="term-en">Cross-Validation</span><span class="lvl lvl-orta">Orta</span></div><p>Veriyi dönüşümlü eğitim/doğrulama parçalarına bölerek skoru tek split'in şansından kurtaran ölçüm düzeneği.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">K-Fold</span><span class="term-en">K-Fold</span><span class="lvl lvl-orta">Orta</span></div><p>CV'nin standart biçimi: k parça, k tur, her turda farklı parça validation. Sınıf oranlarını koruyan hâli stratified k-fold.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Hyperparameter (Üst Parametre)</span><span class="term-en">Hyperparameter</span><span class="lvl lvl-orta">Orta</span></div><p>Modelin öğrenmediği, senin eğitimden önce seçtiğin ayar düğmeleri: derinlik, ağaç sayısı, learning rate.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Grid Search</span><span class="term-en">Grid Search</span><span class="lvl lvl-orta">Orta</span></div><p>Verilen hyperparameter değerlerinin tüm kombinasyonlarını CV ile deneyen arama; alternatifi çoğu zaman yeterli olan random search.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Baseline (Taban Model)</span><span class="term-en">Baseline Model</span><span class="lvl lvl-orta">Orta</span></div><p>"Hep çoğunluğu/ortalamayı söyle" gibi en basit kıyas modeli; her skorun anlamı baseline'a olan farkıdır.</p></div>
+        </div>
+
+        <div class="done-row">
+          <button id="mark-done" type="button" data-slug="m5-model-degerlendirme">Bu konuyu tamamladım olarak işaretle</button>
+        </div>
+
+        <nav class="pager" aria-label="Konu gezinmesi">
+          <a class="prev" href="m5-feature-engineering.html"><span>← Önceki</span><b>Feature Engineering</b></a>
+          <a class="next" href="m5-oneri-sistemleri.html"><span>Sonraki →</span><b>Öneri Sistemleri</b></a>
+        </nav>
+
+      </article>
+
+      <aside class="toc-wrap" aria-label="İçindekiler">
+        <p class="toc-title">Bu sayfada</p>
+        <ul id="toc"></ul>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Veri Atlası · AI &amp; Data Engineering öğrencileri için açık öğrenme kaynağı · <span id="year"></span></p>
+    <nav aria-label="Alt gezinme">
+      <a href="../index.html#konular">Konular</a>
+      <a href="../sozluk.html">Sözlük</a>
+      <a href="m9-yol-haritasi.html">Yol Haritası</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>
