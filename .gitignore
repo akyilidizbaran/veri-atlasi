@@ -19,3 +19,6 @@ node_modules/
 # Loglar ve geçici dosyalar
 *.log
 tmp/
+
+# Gizli anahtarlar
+.env

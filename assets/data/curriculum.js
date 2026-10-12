@@ -74,7 +74,7 @@ window.CURRICULUM = [
       { slug: "m6-sinir-aglari", title: "Sinir Ağlarının Temelleri", en: "Neural Network Fundamentals", level: "orta", min: 19, keywords: ["neural network", "perceptron", "weight", "activation", "relu", "backpropagation", "gradient descent", "adam", "loss", "epoch"] },
       { slug: "m6-cnn", title: "CNN: Görüntü İşleyen Ağlar", en: "Convolutional Neural Networks", level: "ileri", min: 17, keywords: ["cnn", "convolution", "kernel", "filter", "pooling", "stride", "padding", "resnet", "transfer learning", "data augmentation"] },
       { slug: "m6-rnn", title: "Diziler: RNN, LSTM ve GRU", en: "Sequences: RNN, LSTM & GRU", level: "ileri", min: 16, keywords: ["rnn", "lstm", "gru", "sequence", "vanishing gradient", "seq2seq", "time series", "hidden state", "gate", "dizi"] },
-      { slug: "m6-transformer", title: "Transformer ve Attention", en: "Transformers & Attention", level: "ileri", min: 18, keywords: ["transformer", "attention", "self-attention", "query key value", "multi-head", "positional encoding", "bert", "gpt", "encoder", "decoder"] },
+      { slug: "m6-transformer", title: "Transformer ve Attention", en: "Transformers & Attention", level: "ileri", min: 21, keywords: ["transformer", "attention", "self-attention", "flash attention", "query key value", "multi-head", "positional encoding", "bert", "gpt", "encoder", "decoder"] },
       { slug: "m6-egitim-pratikleri", title: "Derin Öğrenme Eğitim Pratikleri", en: "Deep Learning Training Practices", level: "ileri", min: 17, keywords: ["regularization", "dropout", "batch norm", "learning rate", "early stopping", "gradient clipping", "mixed precision", "gpu", "distributed training", "initialization"] }
     ]
   },
@@ -83,7 +83,7 @@ window.CURRICULUM = [
     name: "Üretken AI ve LLM'ler",
     desc: "Büyük dil modelleri çağı: tokenlardan RAG'e, fine-tuning'den AI ajanlarına.",
     topics: [
-      { slug: "m7-llm-temelleri", title: "LLM'lerin Temelleri", en: "LLM Fundamentals", level: "orta", min: 17, keywords: ["llm", "token", "tokenization", "embedding", "pretraining", "context window", "temperature", "hallucination", "next token", "scaling laws"] },
+      { slug: "m7-llm-temelleri", title: "LLM'lerin Temelleri", en: "LLM Fundamentals", level: "orta", min: 20, keywords: ["llm", "open-weight", "açık model", "token", "tokenization", "embedding", "pretraining", "context window", "temperature", "hallucination", "next token", "scaling laws"] },
       { slug: "m7-prompt-engineering", title: "Prompt Engineering", en: "Prompt Engineering", level: "baslangic", min: 14, keywords: ["prompt", "system prompt", "few-shot", "zero-shot", "chain-of-thought", "in-context learning", "structured output", "prompt injection", "talimat", "örnek"] },
       { slug: "m7-rag", title: "RAG ve Vektör Veritabanları", en: "RAG & Vector Databases", level: "orta", min: 17, keywords: ["rag", "vector database", "embedding", "cosine similarity", "chunking", "retrieval", "reranking", "faiss", "pgvector", "hybrid search"] },
       { slug: "m7-fine-tuning", title: "Fine-tuning ve Model Hizalama", en: "Fine-tuning & Alignment", level: "ileri", min: 18, keywords: ["fine-tuning", "lora", "qlora", "peft", "rlhf", "dpo", "instruction tuning", "quantization", "distillation", "alignment"] },

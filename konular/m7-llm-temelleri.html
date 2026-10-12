@@ -64,8 +64,8 @@
       <p class="en-title">LLM Fundamentals</p>
       <div class="topic-meta">
         <span class="lvl lvl-orta">Orta</span>
-        <span class="chip">⏱️ ~17 dk okuma</span>
-        <span class="chip">🔤 14 temel terim</span>
+        <span class="chip">⏱️ ~20 dk okuma</span>
+        <span class="chip">🔤 15 temel terim</span>
       </div>
     </div>
 
@@ -307,6 +307,82 @@ print(sor(1.0))
 
         <div class="warn"><b>LLM çıktısı kaynak değildir.</b> Modelin verdiği istatistiği, API adını veya hukuki bilgiyi doğrulamadan rapora, koda ya da production pipeline'ına koyma. Halüsinasyon bir hata (bug) değil, olasılıksal üretimin doğal yan ürünüdür — savunma hattını sen kurmak zorundasın: kaynak göster(t), test yaz, kritik alanları insana onaylat.</div>
 
+        <h2>Açık mı kapalı mı: modelin ağırlıkları kimde?</h2>
+        <p>Bir LLM'i kullanmanın iki temel yolu var. <strong>Kapalı modellerde (closed model)</strong>, örneğin GPT, Claude ve Gemini'de, eğitilmiş ağırlıklar şirketin sunucusunda kalır. Modele yalnızca API üzerinden erişir, token başına ödersin. <strong>Açık ağırlıklı modellerde (open-weight model)</strong>, örneğin Llama, Gemma, Mistral ve Qwen'de, parametre dosyaları indirilebilir. Modeli kendi bilgisayarında ya da sunucunda çalıştırabilir, kendi verinle ince ayar yapabilirsin.</p>
+        <p>"Açık" kelimesi tek bir şeyi anlatmaz. Çoğu açık ağırlıklı modelde yalnızca son ağırlıklar paylaşılır; eğitim verisi ve eğitim kodu gizli kalır, lisans da ticari kullanıma şart koyabilir. Yelpazenin en ucunda <strong>tamamen açık (fully open)</strong> modeller durur. İsviçre'de EPFL, ETH Zürih ve CSCS ekiplerinin geliştirdiği <strong>Apertus</strong> ya da Ai2'nin <strong>OLMo</strong>'su ağırlıkların yanında eğitim verisinin dökümünü ve eğitim kodunu da yayımlar. Bu, modelin neyle eğitildiğini dışarıdan denetleyebilmek demektir.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 262" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kapalı, açık ağırlıklı ve tamamen açık modellerin karşılaştırması">
+            <defs>
+              <marker id="arr7" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--acc)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <rect x="180" y="18" width="150" height="42" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="255" y="44" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Kapalı (API)</text>
+              <rect x="352" y="18" width="150" height="42" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="427" y="44" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Açık ağırlıklı</text>
+              <rect x="524" y="18" width="150" height="42" rx="10" fill="rgba(var(--acc-rgb),.16)" stroke="var(--acc)" stroke-width="1.8"/>
+              <text x="599" y="44" text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="700">Tamamen açık</text>
+
+              <line x1="30" y1="76" x2="674" y2="76" stroke="var(--dg-line)" stroke-width="1"/>
+              <text x="40" y="100" fill="var(--ink)" font-size="12">Ağırlıklar indirilebilir</text>
+              <text x="255" y="102" text-anchor="middle" fill="var(--bad)" font-size="16" font-weight="700">✗</text>
+              <text x="427" y="102" text-anchor="middle" fill="var(--ok)" font-size="16" font-weight="700">✓</text>
+              <text x="599" y="102" text-anchor="middle" fill="var(--ok)" font-size="16" font-weight="700">✓</text>
+              <line x1="30" y1="116" x2="674" y2="116" stroke="var(--dg-line)" stroke-width="1" stroke-opacity="0.5"/>
+              <text x="40" y="140" fill="var(--ink)" font-size="12">Eğitim verisi açık</text>
+              <text x="255" y="142" text-anchor="middle" fill="var(--bad)" font-size="16" font-weight="700">✗</text>
+              <text x="427" y="142" text-anchor="middle" fill="var(--bad)" font-size="16" font-weight="700">✗</text>
+              <text x="599" y="142" text-anchor="middle" fill="var(--ok)" font-size="16" font-weight="700">✓</text>
+              <line x1="30" y1="156" x2="674" y2="156" stroke="var(--dg-line)" stroke-width="1" stroke-opacity="0.5"/>
+              <text x="40" y="180" fill="var(--ink)" font-size="12">Eğitim kodu açık</text>
+              <text x="255" y="182" text-anchor="middle" fill="var(--bad)" font-size="16" font-weight="700">✗</text>
+              <text x="427" y="182" text-anchor="middle" fill="var(--bad)" font-size="16" font-weight="700">✗</text>
+              <text x="599" y="182" text-anchor="middle" fill="var(--ok)" font-size="16" font-weight="700">✓</text>
+              <line x1="30" y1="196" x2="674" y2="196" stroke="var(--dg-line)" stroke-width="1" stroke-opacity="0.5"/>
+              <text x="40" y="220" fill="var(--muted)" font-size="12">Örnekler</text>
+              <text x="255" y="220" text-anchor="middle" fill="var(--muted)" font-size="11">GPT, Claude, Gemini</text>
+              <text x="427" y="220" text-anchor="middle" fill="var(--muted)" font-size="11">Llama, Gemma, Qwen</text>
+              <text x="599" y="220" text-anchor="middle" fill="var(--muted)" font-size="11">Apertus, OLMo</text>
+              <path d="M200 246 L650 246" stroke="var(--acc)" stroke-width="1.6" fill="none" marker-end="url(#arr7)"/>
+              <text x="120" y="250" text-anchor="middle" fill="var(--acc)" font-size="11" font-weight="700">şeffaflık artar</text>
+            </g>
+          </svg>
+          <figcaption>"Açık" bir yelpazedir. Açık ağırlıklı modellerin çoğu verisini ve kodunu paylaşmaz; bazıları kısmen paylaşır.</figcaption>
+        </figure>
+
+        <p>Seçim çoğu zaman şu takasa dayanır:</p>
+        <ul>
+          <li><strong>Kapalı model:</strong> Genellikle en güçlü seçenektir ve altyapı derdi yoktur. Buna karşılık verin sağlayıcının sunucusuna gider, maliyet kullanımla birlikte büyür ve sağlayıcının fiyat ya da model değişikliklerine bağımlı kalırsın (vendor lock-in).</li>
+          <li><strong>Açık ağırlıklı model:</strong> Veri kendi altyapında kalır, ince ayar ve tam kontrol mümkündür. Karşılığında GPU, kurulum ve bakım yükü sende olur.</li>
+        </ul>
+        <p>Sağlık, kamu ve bankacılık gibi hassas veriyle çalışan kurumlarda <strong>veri egemenliği (data sovereignty)</strong> çoğu zaman kararı tek başına belirler. Veri kurum ya da ülke dışına çıkamıyorsa kapalı API seçeneği masadan kalkar. Arada bir yol da var: açık bir modeli kendin barındırmak yerine Hugging Face Inference Providers gibi bir servisten API olarak çağırmak. Böylece altyapı kurmadan açık modeli deneyebilir, gerekirse sonra kendi sunucuna taşıyabilirsin.</p>
+
+        <figure class="codebox">
+          <figcaption>Python — aynı açık modeli önce API ile, sonra kendi makinende çalıştırmak</figcaption>
+          <pre><code data-lang="python"># pip install huggingface_hub transformers
+import os
+from huggingface_hub import InferenceClient
+
+# 1) Açık model, başkasının sunucusunda: HF Inference Providers
+#    Sağlayıcıyı Hugging Face otomatik seçer; token'ı koda değil ortama koy
+client = InferenceClient(api_key=os.environ["HF_TOKEN"])
+cevap = client.chat.completions.create(
+    model="swiss-ai/Apertus-v1.5-70B",
+    messages=[{"role": "user", "content": "Açık ağırlıklı model ne demek? Tek cümle."}],
+    max_tokens=100,
+)
+print(cevap.choices[0].message.content)
+
+# 2) Aynı aileden küçük bir model, kendi makinende: veri dışarı çıkmaz
+#    İlk çalıştırmada ağırlıklar indirilir; 8B model ~16 GB bellek ister
+from transformers import pipeline
+yerel = pipeline("text-generation", model="swiss-ai/Apertus-8B-Instruct-2509")
+print(yerel([{"role": "user", "content": "Merhaba!"}], max_new_tokens=50))</code></pre>
+        </figure>
+
+        <div class="tip"><b>Gated model hatasına takılma.</b> Hugging Face'teki bazı açık modeller "gated"dır: indirmeden ya da API'den çağırmadan önce model sayfasında lisans koşullarını kabul etmen gerekir. Kabul etmeden denersen 401 ya da 403 hatası alırsın. Bu durumda sorun kodunda değil, model sayfasındaki onay formundadır.</div>
+
         <h2>Sahada nasıl karşına çıkar?</h2>
         <p>Bu sayfadaki kavramlar, LLM'lerle çalışan bir veri mühendisinin günlük diline şöyle sızar:</p>
         <ul>
@@ -315,6 +391,7 @@ print(sor(1.0))
           <li><strong>Embedding →</strong> semantik arama, öneri sistemleri ve vektör veritabanlarının temeli; "benzer kayıtları bul" gördüğün her yerde embedding vardır.</li>
           <li><strong>Temperature=0 →</strong> LLM'i ETL adımı olarak kullanırken (veri çıkarma, sınıflandırma) determinizme en yakın ayar; test edilebilirliğin ön şartı.</li>
           <li><strong>Hallucination savunması →</strong> LLM çıktısını doğrulayan şema kontrolleri ve <a href="m3-veri-kalitesi.html">veri kalitesi</a> yaklaşımları, artık AI pipeline'larının da standart parçası.</li>
+          <li><strong>Açık mı kapalı mı →</strong> Projenin ilk mimari kararlarından biri: veri dışarı çıkabiliyor mu, bütçe token başına mı yoksa GPU başına mı? Cevap, kapalı bir API mi yoksa açık bir model mi kullanacağını belirler.</li>
           <li><strong>Prompt tasarımı →</strong> modelden istikrarlı çıktı almanın asıl kaldıracı bir sonraki konu: <a href="m7-prompt-engineering.html">Prompt Engineering</a>.</li>
         </ul>
 
@@ -354,6 +431,7 @@ print(sor(1.0))
           <div class="term"><div class="term-head"><span class="term-tr">Hallucination (Halüsinasyon)</span><span class="term-en">Hallucination</span><span class="lvl lvl-orta">Orta</span></div><p>Modelin akıcı ama olgusal olarak yanlış/uydurma içerik üretmesi; olasılıksal üretimin doğal yan ürünü.</p></div>
           <div class="term"><div class="term-head"><span class="term-tr">Knowledge Cutoff (Bilgi Kesim Tarihi)</span><span class="term-en">Knowledge Cutoff</span><span class="lvl lvl-orta">Orta</span></div><p>Eğitim verisinin toplandığı son tarih; model bu tarihten sonraki gelişmeleri bilmez ama sorulunca cevap uydurabilir.</p></div>
           <div class="term"><div class="term-head"><span class="term-tr">Scaling Laws (Ölçekleme Yasaları)</span><span class="term-en">Scaling Laws</span><span class="lvl lvl-ileri">İleri</span></div><p>Model boyutu, veri ve hesaplama arttıkça performansın öngörülebilir biçimde iyileştiğini gösteren deneysel yasalar.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">Open-Weight Model (Açık Ağırlıklı Model)</span><span class="term-en">Open-Weight Model</span><span class="lvl lvl-orta">Orta</span></div><p>Eğitilmiş ağırlıkları indirilebilen model; kendi altyapında çalıştırılıp ince ayar yapılabilir. Verisi ve kodu her zaman açık değildir.</p></div>
         </div>
 
         <div class="done-row">

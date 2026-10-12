@@ -64,8 +64,8 @@
       <p class="en-title">Transformers &amp; Attention</p>
       <div class="topic-meta">
         <span class="lvl lvl-ileri">İleri</span>
-        <span class="chip">⏱️ ~18 dk okuma</span>
-        <span class="chip">🔤 12 temel terim</span>
+        <span class="chip">⏱️ ~21 dk okuma</span>
+        <span class="chip">🔤 13 temel terim</span>
       </div>
     </div>
 
@@ -234,6 +234,83 @@ print(cikti.shape)           # (4, 8) → her kelime bağlamla zenginleşti</cod
 
         <div class="warn"><b>Ölçeğin bedeli: n² maliyet.</b> Her kelime her kelimeyle karşılaştırıldığı için attention'ın bellek ve işlem maliyeti dizi uzunluğunun karesiyle büyür: 10 kat uzun metin ≈ 100 kat maliyet. LLM'lerin "context window" sınırının ve bu sınırı büyütmeye çalışan onca araştırmanın kökünde bu n² vardır.</div>
 
+        <h2>FlashAttention: aynı hesap, daha az bellek trafiği</h2>
+        <p>n² sorunu aslında iki ayrı maliyetten oluşur: işlem sayısı ve bellek. 2022'de Tri Dao ve arkadaşlarının yayımladığı <strong>FlashAttention</strong> şu tespitle başladı: GPU'da attention'ı yavaşlatan çoğu zaman çarpma işlemleri değil, verinin bellek katmanları arasında taşınmasıdır. GPU'nun iki tür belleği vardır: çipin üstünde duran, çok hızlı ama yalnızca onlarca MB'lık <strong>SRAM</strong> ve onlarca GB'lık ama görece yavaş <strong>HBM (High Bandwidth Memory)</strong>. Standart attention n×n'lik skor matrisini (S = QKᵀ) ve softmax sonucunu HBM'e yazar, sonra tekrar okur. 8.000 token'lık bir dizide bu, her attention başı için 64 milyon elemanlık bir matris demektir.</p>
+        <p>FlashAttention bu matrisi hiçbir zaman bütün olarak oluşturmaz. Q, K ve V'yi küçük bloklara (tile) böler, her bloğu SRAM'e alır, skorları orada hesaplar ve sonucu biriktirir. İşin zor kısmı softmax'tir: normalde bir satırın paydasını bilmek için o satırın tamamını görmen gerekir. Çözüm <strong>online softmax (çevrimiçi softmax)</strong>: her yeni blokta o ana kadarki en büyük değeri ve toplamı günceller, önceki ara sonucu buna göre yeniden ölçekler. Ortaya çıkan sonuç standart attention'la matematiksel olarak aynıdır; bu bir yaklaşıklık değil, birebir aynı hesaptır (exact attention).</p>
+        <p>Mutfaktan düşün: tezgâh (SRAM) küçük ama elinin altında, kiler (HBM) büyük ama uzakta. Standart yöntem her ara ürünü kilere taşıyıp geri getirir. FlashAttention malzemeyi parça parça tezgâha alır ve kilere yalnızca bitmiş yemeği koyar.</p>
+
+        <figure class="diagram">
+          <svg viewBox="0 0 700 304" width="700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Standart attention ile FlashAttention'ın GPU bellek trafiği karşılaştırması">
+            <defs>
+              <marker id="faWarn" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto"><path d="M0 0L5 2.5L0 5Z" fill="var(--warn)"/></marker>
+              <marker id="flashAcc" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto"><path d="M0 0L5 2.5L0 5Z" fill="var(--acc)"/></marker>
+              <marker id="faLine" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto"><path d="M0 0L5 2.5L0 5Z" fill="var(--dg-line)"/></marker>
+            </defs>
+            <g font-family="inherit">
+              <text x="180" y="28" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">Standart attention</text>
+              <rect x="40" y="44" width="280" height="58" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="180" y="68" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">SRAM (çip üstü)</text>
+              <text x="180" y="88" text-anchor="middle" fill="var(--muted)" font-size="11">hızlı ama küçük: onlarca MB</text>
+              <rect x="40" y="152" width="280" height="118" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="180" y="259" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">HBM (GPU belleği)</text>
+              <rect x="54" y="184" width="74" height="50" rx="7" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="91" y="214" text-anchor="middle" fill="var(--ink)" font-size="11.5">Q, K, V</text>
+              <rect x="140" y="182" width="104" height="56" rx="7" fill="var(--warn)" fill-opacity="0.22" stroke="var(--warn)" stroke-width="1.8"/>
+              <text x="192" y="205" text-anchor="middle" fill="var(--ink)" font-size="11.5" font-weight="700">S ve softmax</text>
+              <text x="192" y="223" text-anchor="middle" fill="var(--ink)" font-size="11.5">n × n matris</text>
+              <rect x="256" y="184" width="50" height="50" rx="7" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="281" y="214" text-anchor="middle" fill="var(--ink)" font-size="11.5">O</text>
+              <path d="M91 182 L91 108" stroke="var(--dg-line)" stroke-width="1.4" fill="none" marker-end="url(#faLine)"/>
+              <path d="M176 104 L176 176" stroke="var(--warn)" stroke-width="2.6" fill="none" marker-end="url(#faWarn)"/>
+              <path d="M210 180 L210 108" stroke="var(--warn)" stroke-width="2.6" fill="none" marker-end="url(#faWarn)"/>
+              <path d="M281 104 L281 178" stroke="var(--dg-line)" stroke-width="1.4" fill="none" marker-end="url(#faLine)"/>
+              <text x="180" y="292" text-anchor="middle" fill="var(--muted)" font-size="10.5">n × n ara matris HBM'e yazılır, sonra geri okunur</text>
+
+              <text x="520" y="28" text-anchor="middle" fill="var(--ink)" font-size="13.5" font-weight="700">FlashAttention</text>
+              <rect x="380" y="44" width="280" height="58" rx="10" fill="rgba(var(--acc-rgb),.14)" stroke="var(--acc)" stroke-width="1.8"/>
+              <text x="520" y="68" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">SRAM: bloklar burada hesaplanır</text>
+              <text x="520" y="88" text-anchor="middle" fill="var(--muted)" font-size="11">Q bloğu × K/V bloğu, online softmax</text>
+              <rect x="380" y="152" width="280" height="118" rx="10" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.4"/>
+              <text x="520" y="259" text-anchor="middle" fill="var(--ink)" font-size="12" font-weight="700">HBM (GPU belleği)</text>
+              <rect x="394" y="184" width="84" height="50" rx="7" fill="var(--dg-box)" stroke="var(--dg-line)" stroke-width="1.2"/>
+              <text x="436" y="214" text-anchor="middle" fill="var(--ink)" font-size="11.5">Q, K, V</text>
+              <text x="519" y="205" text-anchor="middle" fill="var(--muted)" font-size="10.5">n × n</text>
+              <text x="519" y="221" text-anchor="middle" fill="var(--muted)" font-size="10.5">yazılmaz</text>
+              <rect x="560" y="184" width="84" height="50" rx="7" fill="rgba(var(--acc-rgb),.14)" stroke="var(--acc)" stroke-width="1.4"/>
+              <text x="602" y="214" text-anchor="middle" fill="var(--ink)" font-size="11.5">O</text>
+              <path d="M436 182 L436 108" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#flashAcc)"/>
+              <path d="M602 104 L602 178" stroke="var(--acc)" stroke-width="1.8" fill="none" marker-end="url(#flashAcc)"/>
+              <text x="520" y="292" text-anchor="middle" fill="var(--muted)" font-size="10.5">bloklar okunur, sonuç O belleğe yalnızca bir kez yazılır</text>
+            </g>
+          </svg>
+          <figcaption>İki yöntem aynı sonucu üretir. Fark, ara sonuçların nerede tutulduğundadır: sarı oklar standart yöntemin HBM'e gidip gelen n × n trafiğidir.</figcaption>
+        </figure>
+
+        <div class="note"><b>n² ortadan kalkmadı.</b> FlashAttention işlem sayısını değiştirmez; her token yine her token'la karşılaştırılır. Değişen iki şey var: bellek kullanımı dizi uzunluğuyla kare yerine doğrusal büyür ve yavaş HBM'e giden trafik azalır. Bu sayede aynı GPU'da hem birkaç kat hızlanma hem de çok daha uzun context mümkün olur. Bugün uzun context window'lu modellerin eğitim ve çalıştırma altyapısında bu fikrin sürümleri yaygın olarak kullanılır.</div>
+
+        <figure class="codebox">
+          <figcaption>Python — FlashAttention'ı elle yazmana gerek yok</figcaption>
+          <pre><code data-lang="python">import torch
+import torch.nn.functional as F
+
+# Şekil: (batch, baş sayısı, dizi uzunluğu, baş boyutu)
+q = torch.randn(1, 8, 4096, 64, device="cuda", dtype=torch.float16)
+k = torch.randn_like(q)
+v = torch.randn_like(q)
+
+# Elle yazılmış attention: 4096 x 4096'lık skor matrisi bellekte oluşur
+skor = (q @ k.transpose(-2, -1)) / 64 ** 0.5
+cikti_elle = torch.softmax(skor, dim=-1) @ v
+
+# PyTorch'un birleşik çekirdeği: uygun GPU'da FlashAttention'ı kendisi seçer
+cikti_flash = F.scaled_dot_product_attention(q, k, v)
+
+print(torch.allclose(cikti_elle, cikti_flash, atol=1e-2))  # True: sonuç aynı
+
+# Hugging Face'te model yüklerken aynı çekirdeği seçmek için:
+# AutoModelForCausalLM.from_pretrained(model_adi, attn_implementation="sdpa")</code></pre>
+        </figure>
+
         <h2>Üç aile: BERT, GPT ve T5</h2>
         <p>Orijinal Transformer, seq2seq geleneğine uygun olarak encoder + decoder'dan oluşuyordu. Sonraki yıllarda mimari üçe bölündü; hangi yarıyı kullandığına göre modelin karakteri değişir:</p>
         <ul>
@@ -328,6 +405,7 @@ print(tok.encode("Transformer öğreniyorum"))
           <li><strong>Embedding tabanlı arama:</strong> Encoder modellerin ürettiği vektörlerle anlamsal arama ve öneri kurulur; Modül 7'deki RAG mimarilerinin temelidir.</li>
           <li><strong>LLM API'leriyle ürün geliştirme:</strong> Decoder-only modellerin token token üretmesi, "streaming yanıt", maliyet hesabı ve context window sınırı olarak günlük işine yansır (<a href="m7-llm-temelleri.html">Modül 7</a>).</li>
           <li><strong>Maliyet mühendisliği:</strong> n² attention maliyeti, "prompt'u neden kısaltmalıyım?" ve "uzun belge nasıl parçalanır?" sorularının teknik arka planıdır.</li>
+          <li><strong>GPU belleği ve uzun context:</strong> Model yüklerken "CUDA out of memory" hatası aldığında ilk bakacağın yerlerden biri attention çekirdeğidir; <code>attn_implementation</code> ayarı ve GPU'nun FlashAttention desteği aynı modeli sığdırıp sığdıramayacağını belirleyebilir.</li>
           <li><strong>Mülakat klasiği:</strong> "Q-K-V'yi kendi cümlelerinle anlat" ve "positional encoding neden gerekli?" — ikisinin de cevabı bu sayfada.</li>
         </ul>
 
@@ -365,6 +443,7 @@ print(tok.encode("Transformer öğreniyorum"))
           <div class="term"><div class="term-head"><span class="term-tr">Encoder-only &amp; Decoder-only</span><span class="term-en">Encoder-only &amp; Decoder-only</span><span class="lvl lvl-ileri">İleri</span></div><p>Transformer'ın iki yarısından birini kullanan mimari aileleri: anlama (encoder) ve üretme (decoder) uzmanlıkları.</p></div>
           <div class="term"><div class="term-head"><span class="term-tr">Hugging Face</span><span class="term-en">Hugging Face</span><span class="lvl lvl-orta">Orta</span></div><p>Hazır model, tokenizer ve veri kümesi ekosistemi; transformers kütüphanesiyle fiilî endüstri standardı.</p></div>
           <div class="term"><div class="term-head"><span class="term-tr">Paralelleştirme</span><span class="term-en">Parallelization</span><span class="lvl lvl-orta">Orta</span></div><p>Hesabı aynı anda yürüyen parçalara bölme. Transformer'ın GPU'yu doldurup ölçeklenmesinin anahtarı.</p></div>
+          <div class="term"><div class="term-head"><span class="term-tr">FlashAttention</span><span class="term-en">FlashAttention</span><span class="lvl lvl-ileri">İleri</span></div><p>Attention'ı bloklar hâlinde GPU'nun hızlı SRAM'inde hesaplayıp n×n matrisi belleğe hiç yazmayan, sonucu değiştirmeyen hızlandırma tekniği.</p></div>
         </div>
 
         <div class="done-row">
